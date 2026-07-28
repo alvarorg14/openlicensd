@@ -1,0 +1,35 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+server/vendor/
+
+# Node
+ui/node_modules/
+ui/.nuxt/
+ui/.output/
+ui/dist
+
+# Embedded UI build artifacts (generated)
+server/internal/static/dist/*
+!server/internal/static/dist/index.html
+!server/internal/static/dist/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Env
+.env
+.env.local
+
+# Test / coverage
+coverage.out
+*.test
