@@ -1,5 +1,13 @@
 <template>
   <UModal v-model:open="open" title="Create license">
+    <template #header>
+      <div class="flex items-center gap-2">
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
+          <UIcon name="i-lucide-plus" class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <span class="font-semibold">Create license</span>
+      </div>
+    </template>
     <template #body>
       <UForm :state="form" class="space-y-4" @submit="onSubmit">
         <UFormField label="Label" name="label" required>
@@ -14,9 +22,9 @@
           <UInput v-model="form.expiresAt" type="datetime-local" />
         </UFormField>
 
-        <UAlert v-if="error" color="error" variant="subtle" :title="error" />
+        <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="outline" @click="open = false">
             Cancel
           </UButton>
