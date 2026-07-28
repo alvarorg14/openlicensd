@@ -30,6 +30,7 @@ jobs:
       - name: Build UI
         working-directory: ui
         run: |
+          npm install -g npm@11
           npm ci
           npm run generate
 
