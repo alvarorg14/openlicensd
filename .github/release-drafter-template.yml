@@ -1,0 +1,47 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+categories:
+  - title: 'Breaking Changes 🔥'
+    label: 'breaking-change'
+  - title: 'New Features 🎉'
+    labels:
+      - 'feature'
+  - title: 'Improvements 🔝'
+    labels:
+      - 'enhancement'
+  - title: 'Bug Fixes 🐛'
+    labels:
+      - 'bug'
+  - title: 'Updated Dependencies 🔒'
+    label: 'dependencies'
+  - title: 'Documentation 📚'
+    label: 'documentation'
+  - title: 'Deprecations 🧹'
+    label: 'deprecations'
+  - title: 'CI 🤖'
+    label: 'ci'
+  - title: 'Other Changes 🛠️'
+change-template: '- $TITLE (#$NUMBER)'
+change-title-escapes: '\<*_&'
+version-resolver:
+  major:
+    labels:
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+      - 'deprecations'
+  patch:
+    labels:
+      - 'bug'
+      - 'dependencies'
+      - 'documentation'
+      - 'ci'
+  default: patch
+replacers:
+  - search: '/(\w+)-(\d+)/g'
+    replace: '[$1-$2](https://searchbroker.atlassian.net/browse/$1-$2)'
+
+template: |
+  $CHANGES
