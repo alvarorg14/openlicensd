@@ -1,0 +1,12 @@
+run:
+  timeout: 5m
+  modules:
+    - github.com/openlicensd/openlicensd/server
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
