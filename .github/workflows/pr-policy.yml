@@ -1,0 +1,20 @@
+name: PR Policy
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, edited, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  check-labels:
+    name: Check labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a label
+        uses: yogevbd/enforce-label-action@a3c219da6b8fa73f6ba62b68ff09c469b3a1c024 # 2.2.2
+        with:
+          REQUIRED_LABELS_ANY: "breaking-change,feature,enhancement,bug,dependencies,documentation,deprecations,ci"
+          REQUIRED_LABELS_ANY_DESCRIPTION: "Add exactly one label (required): breaking-change | feature | enhancement | bug | dependencies | documentation | deprecations | ci"

@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: openlicensd
+          POSTGRES_PASSWORD: openlicensd
+          POSTGRES_DB: openlicensd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openlicensd -d openlicensd"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: server/go.sum
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
+      - name: Vet
+        working-directory: server
+        run: go vet ./...
+
+      - name: Lint
+        working-directory: server
+        run: golangci-lint run ./...
+
+      - name: Test
+        working-directory: server
+        env:
+          OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable
+        run: go test ./...
+
+      - name: Build
+        working-directory: server
+        run: go build -o /tmp/openlicensd ./cmd/openlicensd
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install
+        working-directory: ui
+        run: npm ci
+
+      - name: Lint
+        working-directory: ui
+        run: npm run lint
+
+      - name: Generate
+        working-directory: ui
+        run: npm run generate
