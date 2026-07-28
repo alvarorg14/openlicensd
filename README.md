@@ -4,8 +4,9 @@ Open source license server for creating and validating license keys.
 
 ## Features
 
-- Admin UI to create, list, and revoke license keys
+- Admin UI to create, edit, list, revoke, activate, and delete license keys
 - Optional expiration dates (or never expires)
+- Usage tracking (last validated time and validation count)
 - Public validation endpoint for license key checks
 - Single binary distribution with embedded UI
 - PostgreSQL storage
@@ -94,16 +95,47 @@ Omit `expires_at` or set it to `null` for a key that never expires. Returns the 
 
 ### `GET /licenses` (admin)
 
-Lists licenses (without raw keys).
+Lists licenses (without raw keys). Each license includes:
+
+```json
+{
+  "id": "...",
+  "label": "Acme Corp",
+  "key_prefix": "X4F9K",
+  "expires_at": null,
+  "revoked": false,
+  "created_at": "2026-01-01T00:00:00Z",
+  "last_validated_at": "2026-01-02T12:00:00Z",
+  "validation_count": 42
+}
+```
+
+### `PATCH /licenses/{id}` (admin)
+
+Update a license label and/or expiration date:
+
+```json
+{ "label": "Updated label", "expires_at": "2028-01-01T00:00:00Z" }
+```
+
+Set `expires_at` to `null` for a key that never expires.
 
 ### `PATCH /licenses/{id}/revoke` (admin)
 
-Revokes a license.
+Revokes a license. The key stops validating immediately.
+
+### `PATCH /licenses/{id}/activate` (admin)
+
+Re-activates a previously revoked license.
+
+### `DELETE /licenses/{id}` (admin)
+
+Permanently deletes a license from the server. Returns `204 No Content`.
 
 ### `POST /validate` (public)
 
 ```json
-{ "key": "ol_..." }
+{ "key": "X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD" }
 ```
 
 Returns:
@@ -119,6 +151,23 @@ Or when invalid:
 ```
 
 Possible reasons: `not_found`, `expired`, `revoked`.
+
+Each successful validation (when the key is found) records `last_validated_at` and increments `validation_count`.
+
+## Key format
+
+New keys are generated in a human-readable grouped format using Crockford Base32:
+
+```
+XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+```
+
+Example: `X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD`
+
+- 5 groups of 5 characters, separated by dashes
+- Charset: `0-9`, `A-Z` excluding ambiguous characters (`I`, `L`, `O`, `U`)
+- ~125 bits of entropy
+- Only the first group is stored as `key_prefix` for display; the full key is shown once at creation
 
 ## Configuration
 

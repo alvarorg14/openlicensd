@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
@@ -16,8 +15,8 @@ import (
 )
 
 type Server struct {
-	cfg  *config.Config
-	auth *auth.Service
+	cfg   *config.Config
+	auth  *auth.Service
 	store *store.Store
 }
 
@@ -44,7 +43,10 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 			r.Use(s.auth.Middleware)
 			r.Post("/licenses", s.handleCreateLicense)
 			r.Get("/licenses", s.handleListLicenses)
+			r.Patch("/licenses/{id}", s.handleUpdateLicense)
+			r.Delete("/licenses/{id}", s.handleDeleteLicense)
 			r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
+			r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
 		})
 	})
 
@@ -86,14 +88,35 @@ type createLicenseRequest struct {
 	ExpiresAt *time.Time `json:"expires_at"`
 }
 
-type licenseResponse struct {
-	ID        uuid.UUID  `json:"id"`
+type updateLicenseRequest struct {
 	Label     string     `json:"label"`
-	Key       string     `json:"key,omitempty"`
-	KeyPrefix string     `json:"key_prefix"`
 	ExpiresAt *time.Time `json:"expires_at"`
-	Revoked   bool       `json:"revoked"`
-	CreatedAt time.Time  `json:"created_at"`
+}
+
+type licenseResponse struct {
+	ID               uuid.UUID  `json:"id"`
+	Label            string     `json:"label"`
+	Key              string     `json:"key,omitempty"`
+	KeyPrefix        string     `json:"key_prefix"`
+	ExpiresAt        *time.Time `json:"expires_at"`
+	Revoked          bool       `json:"revoked"`
+	CreatedAt        time.Time  `json:"created_at"`
+	LastValidatedAt  *time.Time `json:"last_validated_at"`
+	ValidationCount  int64      `json:"validation_count"`
+}
+
+func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
+	return licenseResponse{
+		ID:              lic.ID,
+		Label:           lic.Label,
+		Key:             rawKey,
+		KeyPrefix:       lic.KeyPrefix,
+		ExpiresAt:       lic.ExpiresAt,
+		Revoked:         lic.Revoked,
+		CreatedAt:       lic.CreatedAt,
+		LastValidatedAt: lic.LastValidatedAt,
+		ValidationCount: lic.ValidationCount,
+	}
 }
 
 func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
@@ -120,15 +143,7 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, licenseResponse{
-		ID:        lic.ID,
-		Label:     lic.Label,
-		Key:       rawKey,
-		KeyPrefix: lic.KeyPrefix,
-		ExpiresAt: lic.ExpiresAt,
-		Revoked:   lic.Revoked,
-		CreatedAt: lic.CreatedAt,
-	})
+	writeJSON(w, http.StatusCreated, licenseToResponse(lic, rawKey))
 }
 
 func (s *Server) handleListLicenses(w http.ResponseWriter, r *http.Request) {
@@ -140,17 +155,61 @@ func (s *Server) handleListLicenses(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]licenseResponse, 0, len(licenses))
 	for _, lic := range licenses {
-		resp = append(resp, licenseResponse{
-			ID:        lic.ID,
-			Label:     lic.Label,
-			KeyPrefix: lic.KeyPrefix,
-			ExpiresAt: lic.ExpiresAt,
-			Revoked:   lic.Revoked,
-			CreatedAt: lic.CreatedAt,
-		})
+		resp = append(resp, licenseToResponse(&lic, ""))
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid license id")
+		return
+	}
+
+	var req updateLicenseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Label == "" {
+		writeError(w, http.StatusBadRequest, "label is required")
+		return
+	}
+
+	lic, err := s.store.UpdateLicense(r.Context(), id, req.Label, req.ExpiresAt)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to update license")
+		return
+	}
+	if lic == nil {
+		writeError(w, http.StatusNotFound, "license not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
+}
+
+func (s *Server) handleDeleteLicense(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid license id")
+		return
+	}
+
+	deleted, err := s.store.DeleteLicense(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to delete license")
+		return
+	}
+	if !deleted {
+		writeError(w, http.StatusNotFound, "license not found")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +219,7 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lic, err := s.store.RevokeLicense(r.Context(), id)
+	lic, err := s.store.SetLicenseRevoked(r.Context(), id, true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to revoke license")
 		return
@@ -170,14 +229,27 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, licenseResponse{
-		ID:        lic.ID,
-		Label:     lic.Label,
-		KeyPrefix: lic.KeyPrefix,
-		ExpiresAt: lic.ExpiresAt,
-		Revoked:   lic.Revoked,
-		CreatedAt: lic.CreatedAt,
-	})
+	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
+}
+
+func (s *Server) handleActivateLicense(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid license id")
+		return
+	}
+
+	lic, err := s.store.SetLicenseRevoked(r.Context(), id, false)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to activate license")
+		return
+	}
+	if lic == nil {
+		writeError(w, http.StatusNotFound, "license not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }
 
 type validateRequest struct {
@@ -208,6 +280,8 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = s.store.RecordValidation(r.Context(), lic.ID)
+
 	result := license.Validate(lic.ExpiresAt, lic.Revoked, time.Now())
 	writeJSON(w, http.StatusOK, result)
 }
@@ -221,5 +295,3 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
-
-var ErrNotFound = errors.New("not found")

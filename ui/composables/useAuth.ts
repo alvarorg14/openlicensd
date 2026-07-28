@@ -64,9 +64,28 @@ export const useAuth = () => {
       }
     })
 
+  const updateLicense = (id: string, label: string, expiresAt: string | null) =>
+    authFetch<License>(`/api/v1/licenses/${id}`, {
+      method: 'PATCH',
+      body: {
+        label,
+        expires_at: expiresAt
+      }
+    })
+
   const revokeLicense = (id: string) =>
     authFetch<License>(`/api/v1/licenses/${id}/revoke`, {
       method: 'PATCH'
+    })
+
+  const activateLicense = (id: string) =>
+    authFetch<License>(`/api/v1/licenses/${id}/activate`, {
+      method: 'PATCH'
+    })
+
+  const deleteLicense = (id: string) =>
+    authFetch(`/api/v1/licenses/${id}`, {
+      method: 'DELETE'
     })
 
   return {
@@ -76,6 +95,9 @@ export const useAuth = () => {
     logout,
     listLicenses,
     createLicense,
-    revokeLicense
+    updateLicense,
+    revokeLicense,
+    activateLicense,
+    deleteLicense
   }
 }
