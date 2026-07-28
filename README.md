@@ -15,7 +15,7 @@ Open source license server for creating and validating license keys.
 ### Prerequisites
 
 - Go 1.23+
-- Node.js 22+
+- Node.js 24+
 - Docker (for local PostgreSQL)
 
 ### Development
