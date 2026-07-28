@@ -1,3 +1,5 @@
+import { APP_NAME } from './constants/app'
+
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: true },
@@ -5,9 +7,17 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
-      title: 'openlicensd',
+      title: APP_NAME,
       meta: [
         { name: 'description', content: 'Open source license server' }
+      ],
+      link: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+        }
       ]
     }
   },
