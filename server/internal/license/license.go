@@ -3,31 +3,37 @@ package license
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 )
 
 const (
-	keyPrefixLen = 8
-	keyBytes     = 32
+	keyGroups    = 5
+	keyGroupLen  = 5
+	keyPrefixLen = keyGroupLen
 )
 
+const crockfordBase32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
 func GenerateKey() (raw string, hash string, prefix string, err error) {
-	buf := make([]byte, keyBytes)
-	if _, err = rand.Read(buf); err != nil {
-		return "", "", "", fmt.Errorf("generate random bytes: %w", err)
+	groups := make([]string, keyGroups)
+	for i := 0; i < keyGroups; i++ {
+		group := make([]byte, keyGroupLen)
+		for j := 0; j < keyGroupLen; j++ {
+			b := make([]byte, 1)
+			if _, err = rand.Read(b); err != nil {
+				return "", "", "", fmt.Errorf("generate random bytes: %w", err)
+			}
+			group[j] = crockfordBase32[b[0]>>3]
+		}
+		groups[i] = string(group)
 	}
 
-	raw = "ol_" + base64.RawURLEncoding.EncodeToString(buf)
+	raw = strings.Join(groups, "-")
 	hash = HashKey(raw)
-
-	if len(raw) < keyPrefixLen {
-		prefix = raw
-	} else {
-		prefix = raw[:keyPrefixLen]
-	}
+	prefix = groups[0]
 
 	return raw, hash, prefix, nil
 }

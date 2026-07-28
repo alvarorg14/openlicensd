@@ -1,6 +1,7 @@
 package license
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -22,6 +23,26 @@ func TestGenerateKey(t *testing.T) {
 	if len(prefix) != keyPrefixLen {
 		t.Fatalf("expected prefix length %d, got %d", keyPrefixLen, len(prefix))
 	}
+
+	groups := strings.Split(raw, "-")
+	if len(groups) != keyGroups {
+		t.Fatalf("expected %d groups, got %d", keyGroups, len(groups))
+	}
+
+	for i, group := range groups {
+		if len(group) != keyGroupLen {
+			t.Fatalf("group %d: expected length %d, got %d", i, keyGroupLen, len(group))
+		}
+		for _, ch := range group {
+			if !strings.ContainsRune(crockfordBase32, ch) {
+				t.Fatalf("group %d: invalid character %q", i, ch)
+			}
+		}
+	}
+
+	if prefix != groups[0] {
+		t.Fatalf("prefix %q does not match first group %q", prefix, groups[0])
+	}
 }
 
 func TestValidate(t *testing.T) {
@@ -30,10 +51,10 @@ func TestValidate(t *testing.T) {
 	past := now.Add(-24 * time.Hour)
 
 	tests := []struct {
-		name      string
-		expiresAt *time.Time
-		revoked   bool
-		wantValid bool
+		name       string
+		expiresAt  *time.Time
+		revoked    bool
+		wantValid  bool
 		wantReason string
 	}{
 		{"valid forever", nil, false, true, ""},
