@@ -2,43 +2,43 @@ name-template: '$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 categories:
   - title: 'Breaking Changes 🔥'
-    label: 'breaking-change'
+    semver-increment: major
+    when:
+      label: 'breaking-change'
   - title: 'New Features 🎉'
-    labels:
-      - 'feature'
+    semver-increment: minor
+    when:
+      labels:
+        - 'feature'
   - title: 'Improvements 🔝'
-    labels:
-      - 'enhancement'
+    semver-increment: minor
+    when:
+      labels:
+        - 'enhancement'
   - title: 'Bug Fixes 🐛'
-    labels:
-      - 'bug'
+    semver-increment: patch
+    when:
+      labels:
+        - 'bug'
   - title: 'Updated Dependencies 🔒'
-    label: 'dependencies'
+    semver-increment: patch
+    when:
+      label: 'dependencies'
   - title: 'Documentation 📚'
-    label: 'documentation'
+    semver-increment: patch
+    when:
+      label: 'documentation'
   - title: 'Deprecations 🧹'
-    label: 'deprecations'
+    semver-increment: minor
+    when:
+      label: 'deprecations'
   - title: 'CI 🤖'
-    label: 'ci'
+    semver-increment: patch
+    when:
+      label: 'ci'
   - title: 'Other Changes 🛠️'
 change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
-version-resolver:
-  major:
-    labels:
-      - 'breaking-change'
-  minor:
-    labels:
-      - 'feature'
-      - 'enhancement'
-      - 'deprecations'
-  patch:
-    labels:
-      - 'bug'
-      - 'dependencies'
-      - 'documentation'
-      - 'ci'
-  default: patch
 replacers:
   - search: '/(\w+)-(\d+)/g'
     replace: '[$1-$2](https://searchbroker.atlassian.net/browse/$1-$2)'
