@@ -8,6 +8,9 @@ bin/
 # Go
 server/vendor/
 
+# GoReleaser
+/dist/
+
 # Node
 ui/node_modules/
 ui/.nuxt/
