@@ -1,7 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -10,22 +13,40 @@ import (
 	"github.com/google/uuid"
 	"github.com/openlicensd/openlicensd/server/internal/auth"
 	"github.com/openlicensd/openlicensd/server/internal/config"
+	"github.com/openlicensd/openlicensd/server/internal/harbor"
 	"github.com/openlicensd/openlicensd/server/internal/license"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type Server struct {
-	cfg   *config.Config
-	auth  *auth.Service
-	store *store.Store
+	cfg    *config.Config
+	auth   *auth.Service
+	store  *store.Store
+	harbor *harbor.Client
 }
 
 func New(cfg *config.Config, st *store.Store) *Server {
-	return &Server{
+	srv := &Server{
 		cfg:   cfg,
 		auth:  auth.NewService(cfg.AdminUser, cfg.AdminPasswordHash, cfg.JWTSecret),
 		store: st,
 	}
+
+	if cfg.Harbor.Enabled {
+		client, err := harbor.New(
+			cfg.Harbor.URL,
+			cfg.Harbor.AdminUsername,
+			cfg.Harbor.AdminPassword,
+			cfg.Harbor.InsecureSkipVerify,
+			cfg.Harbor.Debug,
+		)
+		if err != nil {
+			log.Fatalf("harbor client: %v", err)
+		}
+		srv.harbor = client
+	}
+
+	return srv
 }
 
 func (s *Server) Router(staticHandler http.Handler) http.Handler {
@@ -38,6 +59,9 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/login", s.handleLogin)
 		r.Post("/validate", s.handleValidate)
+		if s.cfg.Harbor.Enabled {
+			r.Post("/registry-credentials", s.handleRegistryCredentials)
+		}
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.auth.Middleware)
@@ -256,6 +280,34 @@ type validateRequest struct {
 	Key string `json:"key"`
 }
 
+type registryCredentialsResponse struct {
+	Registry  string `json:"registry"`
+	Username  string `json:"username"`
+	Secret    string `json:"secret"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
+func (s *Server) resolveValidLicense(ctx context.Context, rawKey string) (*store.License, license.ValidationResult, error) {
+	keyHash := license.HashKey(rawKey)
+	lic, err := s.store.GetLicenseByKeyHash(ctx, keyHash)
+	if err != nil {
+		return nil, license.ValidationResult{}, err
+	}
+
+	if lic == nil {
+		return nil, license.ValidationResult{Valid: false, Reason: "not_found"}, nil
+	}
+
+	_ = s.store.RecordValidation(ctx, lic.ID)
+
+	result := license.Validate(lic.ExpiresAt, lic.Revoked, time.Now())
+	if !result.Valid {
+		return lic, result, nil
+	}
+
+	return lic, result, nil
+}
+
 func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	var req validateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -268,22 +320,69 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyHash := license.HashKey(req.Key)
-	lic, err := s.store.GetLicenseByKeyHash(r.Context(), keyHash)
+	_, result, err := s.resolveValidLicense(r.Context(), req.Key)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to validate license")
 		return
 	}
 
-	if lic == nil {
-		writeJSON(w, http.StatusOK, license.ValidationResult{Valid: false, Reason: "not_found"})
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Request) {
+	var req validateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	_ = s.store.RecordValidation(r.Context(), lic.ID)
+	if req.Key == "" {
+		writeError(w, http.StatusBadRequest, "key is required")
+		return
+	}
 
-	result := license.Validate(lic.ExpiresAt, lic.Revoked, time.Now())
-	writeJSON(w, http.StatusOK, result)
+	lic, result, err := s.resolveValidLicense(r.Context(), req.Key)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to validate license")
+		return
+	}
+
+	if !result.Valid {
+		reason := result.Reason
+		if reason == "" {
+			reason = "invalid"
+		}
+		writeError(w, http.StatusForbidden, reason)
+		return
+	}
+
+	creds, err := s.harbor.CreateEphemeralRobot(
+		r.Context(),
+		s.cfg.Harbor.Projects,
+		s.cfg.Harbor.RobotDurationDays,
+		s.cfg.Harbor.RobotNamePrefix,
+		lic.KeyPrefix,
+	)
+	if err != nil {
+		log.Printf("registry credentials: harbor create robot failed: %v", err)
+		message := "failed to issue registry credentials"
+		if s.cfg.Harbor.Debug {
+			message = fmt.Sprintf("%s: %v", message, err)
+		}
+		writeError(w, http.StatusBadGateway, message)
+		return
+	}
+
+	if err := s.harbor.CleanupExpiredRobots(r.Context(), s.cfg.Harbor.RobotNamePrefix); err != nil {
+		log.Printf("registry credentials: harbor cleanup failed: %v", err)
+	}
+
+	writeJSON(w, http.StatusOK, registryCredentialsResponse{
+		Registry:  s.harbor.RegistryHost(),
+		Username:  creds.Name,
+		Secret:    creds.Secret,
+		ExpiresAt: creds.ExpiresAt,
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
