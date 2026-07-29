@@ -52,7 +52,7 @@ func New(cfg *config.Config, st *store.Store) *Server {
 func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
