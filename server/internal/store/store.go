@@ -54,6 +54,10 @@ func (s *Store) Close() {
 	s.pool.Close()
 }
 
+func (s *Store) Ping(ctx context.Context) error {
+	return s.pool.Ping(ctx)
+}
+
 const licenseColumns = `id, label, key_hash, key_prefix, expires_at, revoked, created_at, last_validated_at, validation_count`
 
 func (s *Store) CreateLicense(ctx context.Context, label, keyHash, keyPrefix string, expiresAt *time.Time) (*License, error) {
