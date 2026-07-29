@@ -4,7 +4,7 @@ project_name: openlicensd
 
 before:
   hooks:
-    - cd ui && npm ci && npm run generate
+    - sh -c "cd ui && npm ci && npm run generate"
 
 builds:
   - id: openlicensd
