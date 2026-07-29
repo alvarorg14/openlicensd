@@ -1,2 +1,134 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --radius-app: 0.75rem;
+  --shadow-app: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-app-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+}
+
+/* App background */
+.app-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(99 102 241 / 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(99 102 241 / 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(99 102 241 / 0.04), transparent);
+}
+
+.dark .app-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(99 102 241 / 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(99 102 241 / 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(99 102 241 / 0.05), transparent);
+}
+
+/* Keyframes */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.35s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(148 163 184 / 0.15) 25%,
+    rgb(148 163 184 / 0.3) 50%,
+    rgb(148 163 184 / 0.15) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(71 85 105 / 0.2) 25%,
+    rgb(71 85 105 / 0.4) 50%,
+    rgb(71 85 105 / 0.2) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* Stagger delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+
+/* Smooth transitions */
+.transition-app {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Page transition */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-shimmer {
+    animation: none;
+  }
+
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+
+  .transition-app {
+    transition: none;
+  }
+}
