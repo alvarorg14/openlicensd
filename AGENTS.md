@@ -26,7 +26,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Frontend (Nuxt)
 
 - **Location**: `ui/`
-- **Framework**: Nuxt 3 (Vue 3), `@nuxt/ui` v3, TypeScript
+- **Framework**: Nuxt 4 (Vue 3), `@nuxt/ui` v4, TypeScript
 - **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`)
 
 ### Key Components
