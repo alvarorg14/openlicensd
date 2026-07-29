@@ -20,5 +20,11 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.2.0",
     "typescript": "^7.0.0"
+  },
+  "overrides": {
+    "@nuxt/ui": {
+      "typescript": "$typescript"
+    },
+    "ts-api-utils": "3.0.0-rc.1"
   }
 }
