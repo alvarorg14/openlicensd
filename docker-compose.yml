@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: openlicensd
       POSTGRES_DB: openlicensd
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U openlicensd -d openlicensd"]
       interval: 5s
