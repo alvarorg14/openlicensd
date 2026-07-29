@@ -15,6 +15,8 @@ import (
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
+var version = "dev"
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -39,7 +41,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("listening on %s", cfg.Addr)
+		log.Printf("openlicensd %s listening on %s", version, cfg.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server: %v", err)
 		}
