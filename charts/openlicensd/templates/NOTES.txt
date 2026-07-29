@@ -1,0 +1,39 @@
+openlicensd has been deployed.
+
+Get the application URL by running these commands:
+
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "openlicensd.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "openlicensd.fullname" . }}
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "openlicensd.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "openlicensd.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  echo "Visit http://127.0.0.1:{{ .Values.service.port }}"
+{{- end }}
+
+Verify the deployment:
+
+  kubectl -n {{ .Release.Namespace }} get pods -l "app.kubernetes.io/name={{ include "openlicensd.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+
+Health endpoints:
+  liveness:  /healthz
+  readiness: /readyz
+
+{{- if eq .Values.secret.mode "create" }}
+Remember to set secret values before deploying to production. This chart expects an external PostgreSQL database via OPENLICENSD_DATABASE_URL.
+{{- else if eq .Values.secret.mode "existing" }}
+Using existing Secret: {{ .Values.secret.existingSecret }}
+{{- else if eq .Values.secret.mode "externalSecrets" }}
+ExternalSecret will materialize Secret: {{ include "openlicensd.secretName" . }}
+{{- end }}

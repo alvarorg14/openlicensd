@@ -1,0 +1,16 @@
+apiVersion: v2
+name: openlicensd
+description: Open source license server for creating and validating license keys
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - license
+  - licensing
+  - kubernetes
+home: https://github.com/alvarorg14/openlicensd
+sources:
+  - https://github.com/alvarorg14/openlicensd
+maintainers:
+  - name: alvarorg14
+    url: https://github.com/alvarorg14
