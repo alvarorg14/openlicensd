@@ -142,3 +142,18 @@ jobs:
 
       - name: Package chart
         run: helm package charts/openlicensd
+
+  openapi:
+    name: OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Lint OpenAPI spec
+        run: npx @redocly/cli@latest lint docs/openapi.yaml --config docs/redocly.yaml

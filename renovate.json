@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["server/**"],
+      "labels": ["dependencies"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchFileNames": ["ui/**"],
+      "labels": ["dependencies"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "labels": ["dependencies"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "labels": ["ci"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["golangci/golangci-lint"],
+      "labels": ["ci"]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
+      "matchStrings": [
+        "version: (?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "golangci/golangci-lint",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ]
+}
