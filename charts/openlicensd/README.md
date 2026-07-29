@@ -1,4 +1,4 @@
-# openlicensd
+# OpenLicensd
 
 Open source license server for creating and validating license keys
 
@@ -62,8 +62,8 @@ helm install openlicensd ./charts/openlicensd \
 | config.harbor.robotDurationDays | int | `1` | Robot account lifetime in days (maps to OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS) |
 | config.harbor.robotNamePrefix | string | `"openlicensd"` | Prefix for generated robot account names (maps to OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX) |
 | config.harbor.url | string | `""` | Harbor base URL (maps to OPENLICENSD_HARBOR_URL) |
-| extraArgs | list | `[]` | Extra command-line arguments passed to openlicensd |
-| extraEnv | list | `[]` | Extra environment variables for the openlicensd container |
+| extraArgs | list | `[]` | Extra command-line arguments passed to OpenLicensd |
+| extraEnv | list | `[]` | Extra environment variables for the OpenLicensd container |
 | fullnameOverride | string | `""` | Override the full release name used for all resources |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.repository | string | `"ghcr.io/alvarorg14/openlicensd"` | Container image repository |
@@ -76,11 +76,11 @@ helm install openlicensd ./charts/openlicensd \
 | ingress.tls | list | `[]` | Ingress TLS configuration |
 | nameOverride | string | `""` | Override the chart name used in labels and resource names |
 | nodeSelector | object | `{}` | Node labels for pod assignment |
-| podAnnotations | object | `{}` | Annotations to add to openlicensd pods |
-| podLabels | object | `{}` | Labels to add to openlicensd pods |
+| podAnnotations | object | `{}` | Annotations to add to OpenLicensd pods |
+| podLabels | object | `{}` | Labels to add to OpenLicensd pods |
 | podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532}` | Pod-level security context |
-| replicaCount | int | `1` | Number of openlicensd replicas |
-| resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | CPU and memory resource requests and limits for the openlicensd container |
+| replicaCount | int | `1` | Number of OpenLicensd replicas |
+| resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | CPU and memory resource requests and limits for the OpenLicensd container |
 | secret.data.adminPasswordHash | string | `""` | Bcrypt hash of the admin password (maps to OPENLICENSD_ADMIN_PASSWORD_HASH) |
 | secret.data.databaseUrl | string | `""` | PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL) |
 | secret.data.harborAdminPassword | string | `""` | Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD) |
@@ -98,7 +98,7 @@ helm install openlicensd ./charts/openlicensd \
 | service.port | int | `8080` | Service port exposed for the API and UI |
 | service.type | string | `"ClusterIP"` | Kubernetes Service type |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount |
-| serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount for openlicensd |
+| serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount for OpenLicensd |
 | serviceAccount.name | string | `""` | ServiceAccount name |
 | tolerations | list | `[]` | Tolerations for pod assignment |
 

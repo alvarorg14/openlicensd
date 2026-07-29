@@ -1,0 +1,548 @@
+openapi: 3.1.0
+info:
+  title: OpenLicensd API
+  description: |
+    HTTP API for OpenLicensd — an open source license server for creating and validating license keys.
+
+    Admin endpoints require a JWT obtained from `POST /api/v1/auth/login`.
+    Public endpoints (`/validate`, `/registry-credentials`) do not require authentication.
+
+    The `/api/v1/registry-credentials` endpoint is only available when
+    `OPENLICENSD_HARBOR_ENABLED=true` on the server.
+  version: 0.1.0
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: OpenLicensd
+    url: https://github.com/alvarorg14/openlicensd
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://openlicensd.example.com
+    description: Production
+
+tags:
+  - name: Health
+    description: Liveness and readiness probes
+  - name: Auth
+    description: Admin authentication
+  - name: Licenses
+    description: License management (admin only)
+  - name: Validation
+    description: Public license validation
+  - name: Registry
+    description: Harbor registry credentials (optional, public)
+
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      operationId: healthz
+      responses:
+        "200":
+          description: Server is alive
+      security: []
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      operationId: readyz
+      responses:
+        "200":
+          description: Server is ready (database reachable)
+        "503":
+          description: Database unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: []
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Admin login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: []
+
+  /api/v1/licenses:
+    get:
+      tags: [Licenses]
+      summary: List licenses
+      operationId: listLicenses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of licenses (raw keys are never returned)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/License"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Licenses]
+      summary: Create a license
+      description: |
+        Generates a new license key and returns it once in the response.
+        Only the key prefix is stored for display; the full key cannot be retrieved later.
+      operationId: createLicense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLicenseRequest"
+      responses:
+        "201":
+          description: License created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseCreated"
+        "400":
+          description: Invalid request body or missing label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/licenses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/LicenseId"
+
+    patch:
+      tags: [Licenses]
+      summary: Update a license
+      operationId: updateLicense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLicenseRequest"
+      responses:
+        "200":
+          description: License updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+        "400":
+          description: Invalid license ID, request body, or missing label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Licenses]
+      summary: Delete a license
+      operationId: deleteLicense
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: License deleted
+        "400":
+          description: Invalid license ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/licenses/{id}/revoke:
+    parameters:
+      - $ref: "#/components/parameters/LicenseId"
+    patch:
+      tags: [Licenses]
+      summary: Revoke a license
+      description: Revoked licenses fail validation immediately.
+      operationId: revokeLicense
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: License revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+        "400":
+          description: Invalid license ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/licenses/{id}/activate:
+    parameters:
+      - $ref: "#/components/parameters/LicenseId"
+    patch:
+      tags: [Licenses]
+      summary: Activate a revoked license
+      operationId: activateLicense
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: License activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+        "400":
+          description: Invalid license ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/validate:
+    post:
+      tags: [Validation]
+      summary: Validate a license key
+      description: |
+        Public endpoint. Always returns HTTP 200 with a validation result,
+        even when the key is invalid. Invalid keys include a `reason` field.
+      operationId: validateLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRequest"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          description: Invalid request body or missing key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security: []
+
+  /api/v1/registry-credentials:
+    post:
+      tags: [Registry]
+      summary: Issue Harbor registry credentials
+      description: |
+        Public endpoint. Available only when `OPENLICENSD_HARBOR_ENABLED=true`.
+        When disabled, the route is not registered and requests return 404.
+
+        Validates the license key and, if valid, creates a short-lived Harbor
+        robot account with pull access to the configured projects.
+      operationId: registryCredentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRequest"
+      responses:
+        "200":
+          description: Registry credentials issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryCredentials"
+        "400":
+          description: Invalid request body or missing key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Invalid license
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                not_found:
+                  value:
+                    error: not_found
+                expired:
+                  value:
+                    error: expired
+                revoked:
+                  value:
+                    error: revoked
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          description: Harbor API failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: failed to issue registry credentials
+      security: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT obtained from `POST /api/v1/auth/login`.
+        Signed with HS256 using `OPENLICENSD_JWT_SECRET`. Expires after 24 hours.
+
+  parameters:
+    LicenseId:
+      name: id
+      in: path
+      required: true
+      description: License UUID
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authorization
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            missing:
+              value:
+                error: missing authorization header
+            invalid:
+              value:
+                error: invalid token
+    NotFound:
+      description: License not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: license not found
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: admin
+
+    LoginResponse:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: JWT bearer token
+
+    CreateLicenseRequest:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+          description: Human-readable label for the license
+          example: Acme Corp
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Expiration time in RFC3339. Omit or set to null for a key that never expires.
+          example: "2027-01-01T00:00:00Z"
+
+    UpdateLicenseRequest:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+          example: Updated label
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Set to null for a key that never expires.
+
+    License:
+      type: object
+      required:
+        - id
+        - label
+        - key_prefix
+        - revoked
+        - created_at
+        - validation_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        key_prefix:
+          type: string
+          description: First group of the license key (for display only)
+          example: X4F9K
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+        revoked:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        last_validated_at:
+          type: ["string", "null"]
+          format: date-time
+        validation_count:
+          type: integer
+          format: int64
+
+    LicenseCreated:
+      allOf:
+        - $ref: "#/components/schemas/License"
+        - type: object
+          required: [key]
+          properties:
+            key:
+              type: string
+              description: Full license key. Returned only once at creation.
+              example: X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD
+
+    ValidateRequest:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          description: Full license key
+          example: X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD
+
+    ValidationResult:
+      type: object
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Present when the key is expired
+        reason:
+          type: string
+          enum: [not_found, expired, revoked]
+          description: Present when valid is false
+
+    RegistryCredentials:
+      type: object
+      required: [registry, username, secret, expires_at]
+      properties:
+        registry:
+          type: string
+          description: Harbor registry host
+          example: harbor.example.com
+        username:
+          type: string
+          description: Robot account username
+          example: robot$myproject+openlicensd-x4f9k-123
+        secret:
+          type: string
+          description: Robot account secret
+        expires_at:
+          type: integer
+          format: int64
+          description: Unix timestamp when credentials expire

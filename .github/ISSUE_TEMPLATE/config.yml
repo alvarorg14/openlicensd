@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/alvarorg14/openlicensd/security/advisories/new
+    about: Report a security vulnerability via a private GitHub security advisory
+  - name: Documentation
+    url: https://github.com/alvarorg14/openlicensd/tree/main/docs
+    about: Browse the documentation

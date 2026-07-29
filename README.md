@@ -1,223 +1,137 @@
-# openlicensd
+<div align="center">
 
-Open source license server for creating and validating license keys.
+# 🔑 OpenLicensd
 
-## Features
+<h3>Open source license server for creating and validating license keys</h3>
+
+<sub><em>Self-hosted. Single binary. PostgreSQL-backed.</em></sub>
+
+<br>
+
+[![CI](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml)
+[![Vulnerability Scan](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml)
+[![Release](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/releases)
+[![License](https://img.shields.io/github/license/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/blob/main/LICENSE)
+[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io%2Falvarorg14%2Fopenlicensd-blue)](https://github.com/alvarorg14/openlicensd/pkgs/container/openlicensd)
+[![Helm OCI](https://img.shields.io/badge/Helm-oci%3A%2F%2Fghcr.io%2Falvarorg14%2Fcharts%2Fopenlicensd-0F1689)](https://github.com/alvarorg14/openlicensd/pkgs/container/charts%2Fopenlicensd)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/alvarorg14/openlicensd/pulls)
+
+<br>
+
+[![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![Vue](https://img.shields.io/badge/Vue-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
+[![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?style=for-the-badge&logo=nuxt.js&logoColor=white)](https://nuxt.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Helm](https://img.shields.io/badge/Helm-0F1689?style=for-the-badge&logo=helm&logoColor=white)](https://helm.sh/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+
+<br>
+
+[Quick Start](#-quick-start) · [API](#-api) · [Configuration](#%EF%B8%8F-configuration) · [Contributing](#-contributing)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [🔑 OpenLicensd](#-openlicensd)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [📖 Overview](#-overview)
+  - [🤔 Why OpenLicensd?](#-why-openlicensd)
+  - [✨ Features](#-features)
+  - [🚀 Quick Start](#-quick-start)
+  - [📡 API](#-api)
+  - [⚙️ Configuration](#️-configuration)
+  - [🔧 How It Works](#-how-it-works)
+  - [🐳 Harbor Registry Credentials](#-harbor-registry-credentials)
+  - [💻 Local Development](#-local-development)
+  - [🤝 Contributing](#-contributing)
+  - [🔒 Security](#-security)
+  - [📄 License](#-license)
+
+---
+
+## 📖 Overview
+
+**OpenLicensd** is a self-hosted license server for creating, managing, and validating license keys. It ships as a single Go binary with an embedded Nuxt admin UI and stores data in PostgreSQL.
+
+Use it to gate access to your software, issue time-limited keys, track validation usage, and optionally provide short-lived Harbor registry credentials to licensed clients.
+
+## 🤔 Why OpenLicensd?
+
+- **Self-hosted** — no third-party license service dependency
+- **Single binary** — API and admin UI in one deployable artifact
+- **Simple API** — public validation endpoint for client applications
+- **Harbor integration** — optional short-lived registry credentials for container image distribution
+- **Kubernetes-ready** — Helm chart with Ingress, External Secrets, and health probes
+
+## ✨ Features
 
 - Admin UI to create, edit, list, revoke, activate, and delete license keys
 - Optional expiration dates (or never expires)
-- Usage tracking (last validated time and validation count)
+- Usage tracking (`last_validated_at` and `validation_count`)
 - Public validation endpoint for license key checks
+- Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
+- Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Single binary distribution with embedded UI
-- PostgreSQL storage
+- PostgreSQL storage with automatic migrations
+- Helm chart for Kubernetes deployment
 
-## Quick start
+## 🚀 Quick Start
 
-### Prerequisites
+> **New here?** See [QUICKSTART.md](QUICKSTART.md) for a step-by-step get-running guide.
 
-- Go 1.23+
-- Node.js 24+
-- Docker (for local PostgreSQL)
+Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (tags: `vX.Y.Z`, `X.Y`, `latest`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
 
-### Development
+```bash
+helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
+  --version X.Y.Z \
+  --namespace openlicensd \
+  --create-namespace
+```
 
-1. Start PostgreSQL:
+For local development:
 
 ```bash
 make dev-db
-```
-
-2. Copy environment variables:
-
-```bash
 cp .env.example .env
+make dev-server   # terminal 1
+make dev-ui       # terminal 2
 ```
 
-If you regenerate `OPENLICENSD_ADMIN_PASSWORD_HASH`, wrap the bcrypt value in single quotes in `.env` (e.g. `'$2a$10$...'`) so Docker Compose does not misinterpret `$` characters.
+Open http://localhost:3000 and sign in with `admin` / `admin`.
 
-3. In one terminal, start the API server (loads configuration from `.env`):
+## 📡 API
 
-```bash
-make dev-server
-```
+All endpoints are under `/api/v1`. The full specification is in [docs/openapi.yaml](docs/openapi.yaml).
 
-4. In another terminal, start the UI dev server:
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/auth/login` | None | Admin login (returns JWT) |
+| `POST` | `/api/v1/validate` | None | Validate a license key |
+| `POST` | `/api/v1/registry-credentials` | None | Issue Harbor credentials (when enabled) |
+| `POST` | `/api/v1/licenses` | JWT | Create a license |
+| `GET` | `/api/v1/licenses` | JWT | List licenses |
+| `PATCH` | `/api/v1/licenses/{id}` | JWT | Update a license |
+| `DELETE` | `/api/v1/licenses/{id}` | JWT | Delete a license |
+| `PATCH` | `/api/v1/licenses/{id}/revoke` | JWT | Revoke a license |
+| `PATCH` | `/api/v1/licenses/{id}/activate` | JWT | Re-activate a license |
 
-```bash
-make dev-ui
-```
+See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 
-Open http://localhost:3000 and sign in with:
+## ⚙️ Configuration
 
-- Username: `admin`
-- Password: `admin`
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
+| `OPENLICENSD_DATABASE_URL` | *(required)* | PostgreSQL connection URL |
+| `OPENLICENSD_ADMIN_USER` | *(required)* | Admin username |
+| `OPENLICENSD_ADMIN_PASSWORD_HASH` | *(required)* | Bcrypt hash of admin password |
+| `OPENLICENSD_JWT_SECRET` | *(required)* | Secret for signing JWT tokens |
 
-### Production build
-
-Build the UI and compile the server into a single binary:
-
-```bash
-make build
-```
-
-The binary is written to `bin/openlicensd`.
-
-Run it with the required environment variables:
-
-```bash
-export OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/openlicensd?sslmode=disable
-export OPENLICENSD_ADMIN_USER=admin
-export OPENLICENSD_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
-export OPENLICENSD_JWT_SECRET=your-jwt-secret
-
-./bin/openlicensd
-```
-
-The server serves the API and embedded UI on `OPENLICENSD_ADDR` (default `:8080`).
-
-## API
-
-All endpoints are under `/api/v1`.
-
-### `POST /auth/login`
-
-```json
-{ "username": "admin", "password": "admin" }
-```
-
-Returns `{ "token": "..." }`.
-
-### `POST /licenses` (admin)
-
-```json
-{ "label": "Acme Corp", "expires_at": "2027-01-01T00:00:00Z" }
-```
-
-Omit `expires_at` or set it to `null` for a key that never expires. Returns the raw key once.
-
-### `GET /licenses` (admin)
-
-Lists licenses (without raw keys). Each license includes:
-
-```json
-{
-  "id": "...",
-  "label": "Acme Corp",
-  "key_prefix": "X4F9K",
-  "expires_at": null,
-  "revoked": false,
-  "created_at": "2026-01-01T00:00:00Z",
-  "last_validated_at": "2026-01-02T12:00:00Z",
-  "validation_count": 42
-}
-```
-
-### `PATCH /licenses/{id}` (admin)
-
-Update a license label and/or expiration date:
-
-```json
-{ "label": "Updated label", "expires_at": "2028-01-01T00:00:00Z" }
-```
-
-Set `expires_at` to `null` for a key that never expires.
-
-### `PATCH /licenses/{id}/revoke` (admin)
-
-Revokes a license. The key stops validating immediately.
-
-### `PATCH /licenses/{id}/activate` (admin)
-
-Re-activates a previously revoked license.
-
-### `DELETE /licenses/{id}` (admin)
-
-Permanently deletes a license from the server. Returns `204 No Content`.
-
-### `POST /validate` (public)
-
-```json
-{ "key": "X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD" }
-```
-
-Returns:
-
-```json
-{ "valid": true, "expires_at": null }
-```
-
-Or when invalid:
-
-```json
-{ "valid": false, "reason": "expired" }
-```
-
-Possible reasons: `not_found`, `expired`, `revoked`.
-
-Each successful validation (when the key is found) records `last_validated_at` and increments `validation_count`.
-
-### `POST /registry-credentials` (public, optional)
-
-Available only when `OPENLICENSD_HARBOR_ENABLED=true`. When disabled, this route is not registered and returns `404`.
-
-Validates a license key and, if valid, creates a short-lived Harbor robot account with pull access to the configured projects.
-
-Request:
-
-```json
-{ "key": "X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD" }
-```
-
-Success response:
-
-```json
-{
-  "registry": "harbor.example.com",
-  "username": "robot$myproject+openlicensd-x4f9k-123",
-  "secret": "robot-secret",
-  "expires_at": 1767225600
-}
-```
-
-Use `username` and `secret` with `docker login <registry>`. `expires_at` is a Unix timestamp.
-
-Invalid license responses return `403` with `{ "error": "not_found" | "expired" | "revoked" }`.
-
-Harbor failures return `502` with `{ "error": "failed to issue registry credentials" }`.
-
-## Key format
-
-New keys are generated in a human-readable grouped format using Crockford Base32:
-
-```
-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
-```
-
-Example: `X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD`
-
-- 5 groups of 5 characters, separated by dashes
-- Charset: `0-9`, `A-Z` excluding ambiguous characters (`I`, `L`, `O`, `U`)
-- ~125 bits of entropy
-- Only the first group is stored as `key_prefix` for display; the full key is shown once at creation
-
-## Configuration
-
-| Variable | Description |
-|---|---|
-| `OPENLICENSD_ADDR` | HTTP listen address (default `:8080`) |
-| `OPENLICENSD_DATABASE_URL` | PostgreSQL connection URL |
-| `OPENLICENSD_ADMIN_USER` | Admin username |
-| `OPENLICENSD_ADMIN_PASSWORD_HASH` | Bcrypt hash of admin password |
-| `OPENLICENSD_JWT_SECRET` | Secret for signing JWT tokens |
-| `OPENLICENSD_HARBOR_ENABLED` | Enable Harbor registry credentials endpoint (default `false`) |
-| `OPENLICENSD_HARBOR_URL` | Harbor base URL (required when Harbor is enabled) |
-| `OPENLICENSD_HARBOR_ADMIN_USERNAME` | Harbor admin username for robot creation |
-| `OPENLICENSD_HARBOR_ADMIN_PASSWORD` | Harbor admin password for robot creation |
-| `OPENLICENSD_HARBOR_PROJECTS` | Comma-separated Harbor project namespaces to grant pull access |
-| `OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS` | Robot account lifetime in days (default `1`, minimum `1`) |
-| `OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX` | Prefix for generated robot account names (default `openlicensd`) |
-| `OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY` | Skip TLS verification for Harbor (default `false`) |
-| `OPENLICENSD_HARBOR_DEBUG` | Log Harbor API requests/responses and include error details in `502` responses (default `false`) |
+Harbor variables (`OPENLICENSD_HARBOR_*`) are documented in [docs/configuration.md](docs/configuration.md).
 
 Generate a password hash:
 
@@ -225,22 +139,90 @@ Generate a password hash:
 make hash-password PASSWORD=yourpassword
 ```
 
-## Project layout
+## 🔧 How It Works
 
+```mermaid
+flowchart LR
+  subgraph admin [Admin]
+    ui[Admin UI]
+  end
+
+  subgraph openlicensd [OpenLicensd]
+    api[API Server]
+    store[(PostgreSQL)]
+  end
+
+  subgraph clients [Clients]
+    app[Application]
+    docker[Docker CLI]
+  end
+
+  ui -->|JWT| api
+  app -->|POST /validate| api
+  docker -->|POST /registry-credentials| api
+  api --> store
 ```
-server/   Go API and embedded static handler
-ui/       Nuxt 3 (Vue) admin UI
-```
 
-## Releases
+1. Admins manage licenses through the embedded UI or the REST API.
+2. Client applications validate license keys via the public `/validate` endpoint.
+3. When Harbor integration is enabled, licensed clients can obtain short-lived registry credentials.
+4. License keys are stored as SHA-256 hashes; only the key prefix is retained for display.
 
-Tag a version to trigger a GitHub release with cross-platform binaries:
+See [docs/architecture.md](docs/architecture.md) for component details and data flows.
+
+## 🐳 Harbor Registry Credentials
+
+When `OPENLICENSD_HARBOR_ENABLED=true`, licensed clients can exchange a valid license key for short-lived Harbor robot account credentials with pull access to configured projects.
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+curl -s -X POST https://licenses.example.com/api/v1/registry-credentials \
+  -H "Content-Type: application/json" \
+  -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD"}'
 ```
 
-## License
+See [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md) for setup, configuration, and troubleshooting.
 
-Apache License 2.0. See [LICENSE](LICENSE).
+## 💻 Local Development
+
+Requires Go 1.26+, Node.js 24+, and Docker (for local PostgreSQL).
+
+Run `make help` to list all available targets:
+
+```bash
+make dev-db        # Start PostgreSQL
+make dev-server    # Run API server (loads .env)
+make dev-ui        # Run Nuxt dev server
+make build         # Build UI + binary
+make test          # Run Go tests
+make lint          # go vet + ESLint
+```
+
+See [AGENTS.md](AGENTS.md) for architecture details and AI assistant guidelines.
+
+## 🤝 Contributing
+
+Contributions are welcome! Issues and pull requests help make this project better for everyone.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow
+- Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+- See [AGENTS.md](AGENTS.md) if you're an AI assistant or want deeper architecture context
+
+## 🔒 Security
+
+If you discover a security vulnerability, please report it via a private GitHub security advisory. Do **not** open a public issue.
+
+See [SECURITY.md](SECURITY.md) for the full security policy.
+
+**Dependency maintenance:** Renovate opens pull requests for Go modules, npm packages, Docker base images, and GitHub Actions updates. Install the [Renovate GitHub App](https://github.com/apps/renovate) on this repository to enable it.
+
+**Vulnerability scanning:** A separate Vulnerability Scan workflow runs govulncheck weekly, on demand, and on pull requests (non-blocking) to detect known vulnerabilities in Go dependencies.
+
+## 📄 License
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
+Apache License 2.0 — see [LICENSE](LICENSE).
+
+---
+
+<sub>Made with ❤️ using Go, Vue, and PostgreSQL</sub>
