@@ -33,7 +33,9 @@ make dev-db
 cp .env.example .env
 ```
 
-3. In one terminal, start the API server:
+If you regenerate `OPENLICENSD_ADMIN_PASSWORD_HASH`, wrap the bcrypt value in single quotes in `.env` (e.g. `'$2a$10$...'`) so Docker Compose does not misinterpret `$` characters.
+
+3. In one terminal, start the API server (loads configuration from `.env`):
 
 ```bash
 make dev-server
@@ -154,6 +156,35 @@ Possible reasons: `not_found`, `expired`, `revoked`.
 
 Each successful validation (when the key is found) records `last_validated_at` and increments `validation_count`.
 
+### `POST /registry-credentials` (public, optional)
+
+Available only when `OPENLICENSD_HARBOR_ENABLED=true`. When disabled, this route is not registered and returns `404`.
+
+Validates a license key and, if valid, creates a short-lived Harbor robot account with pull access to the configured projects.
+
+Request:
+
+```json
+{ "key": "X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD" }
+```
+
+Success response:
+
+```json
+{
+  "registry": "harbor.example.com",
+  "username": "robot$myproject+openlicensd-x4f9k-123",
+  "secret": "robot-secret",
+  "expires_at": 1767225600
+}
+```
+
+Use `username` and `secret` with `docker login <registry>`. `expires_at` is a Unix timestamp.
+
+Invalid license responses return `403` with `{ "error": "not_found" | "expired" | "revoked" }`.
+
+Harbor failures return `502` with `{ "error": "failed to issue registry credentials" }`.
+
 ## Key format
 
 New keys are generated in a human-readable grouped format using Crockford Base32:
@@ -178,6 +209,15 @@ Example: `X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD`
 | `OPENLICENSD_ADMIN_USER` | Admin username |
 | `OPENLICENSD_ADMIN_PASSWORD_HASH` | Bcrypt hash of admin password |
 | `OPENLICENSD_JWT_SECRET` | Secret for signing JWT tokens |
+| `OPENLICENSD_HARBOR_ENABLED` | Enable Harbor registry credentials endpoint (default `false`) |
+| `OPENLICENSD_HARBOR_URL` | Harbor base URL (required when Harbor is enabled) |
+| `OPENLICENSD_HARBOR_ADMIN_USERNAME` | Harbor admin username for robot creation |
+| `OPENLICENSD_HARBOR_ADMIN_PASSWORD` | Harbor admin password for robot creation |
+| `OPENLICENSD_HARBOR_PROJECTS` | Comma-separated Harbor project namespaces to grant pull access |
+| `OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS` | Robot account lifetime in days (default `1`, minimum `1`) |
+| `OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX` | Prefix for generated robot account names (default `openlicensd`) |
+| `OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY` | Skip TLS verification for Harbor (default `false`) |
+| `OPENLICENSD_HARBOR_DEBUG` | Log Harbor API requests/responses and include error details in `502` responses (default `false`) |
 
 Generate a password hash:
 
