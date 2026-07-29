@@ -1,4 +1,4 @@
-# -- Number of openlicensd replicas
+# -- Number of OpenLicensd replicas
 replicaCount: 1
 
 image:
@@ -17,16 +17,16 @@ nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  # -- Create a dedicated ServiceAccount for openlicensd
+  # -- Create a dedicated ServiceAccount for OpenLicensd
   create: true
   # -- Annotations to add to the ServiceAccount
   annotations: {}
   # -- ServiceAccount name. Generated from the release fullname when empty and create is true
   name: ""
 
-# -- Annotations to add to openlicensd pods
+# -- Annotations to add to OpenLicensd pods
 podAnnotations: {}
-# -- Labels to add to openlicensd pods
+# -- Labels to add to OpenLicensd pods
 podLabels: {}
 
 # -- Pod-level security context
@@ -44,7 +44,7 @@ securityContext:
     drop:
       - ALL
 
-# -- CPU and memory resource requests and limits for the openlicensd container
+# -- CPU and memory resource requests and limits for the OpenLicensd container
 resources:
   limits:
     memory: 256Mi
@@ -139,7 +139,7 @@ ingress:
   # -- Ingress TLS configuration
   tls: []
 
-# -- Extra environment variables for the openlicensd container
+# -- Extra environment variables for the OpenLicensd container
 extraEnv: []
-# -- Extra command-line arguments passed to openlicensd
+# -- Extra command-line arguments passed to OpenLicensd
 extraArgs: []

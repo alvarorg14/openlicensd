@@ -1,4 +1,4 @@
-openlicensd has been deployed.
+OpenLicensd has been deployed.
 
 Get the application URL by running these commands:
 
