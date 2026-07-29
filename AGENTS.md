@@ -20,7 +20,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `server/cmd/openlicensd/` (main entry), `server/internal/` (core logic)
 - **Module**: `github.com/openlicensd/openlicensd/server`
-- **Go version**: 1.23+
+- **Go version**: 1.26+
 - **Key dependencies**: `go-chi/chi`, `golang-jwt/jwt`, `jackc/pgx`, `google/uuid`
 
 ### Frontend (Nuxt)
@@ -112,7 +112,7 @@ make release       # Local GoReleaser release
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.26+
 - Node.js 24+
 - Docker (for local PostgreSQL)
 - golangci-lint (CI uses v1.64.8)

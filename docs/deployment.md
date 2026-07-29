@@ -113,7 +113,7 @@ docker run -d \
   ghcr.io/alvarorg14/openlicensd:latest
 ```
 
-The production image is built from a multi-stage Dockerfile (Node 24 UI build → Go 1.23 compile → distroless non-root).
+The production image is built from a multi-stage Dockerfile (Node 24 UI build → Go 1.26 compile → distroless non-root).
 
 ## Binary
 

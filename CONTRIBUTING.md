@@ -5,7 +5,7 @@ Thank you for your interest in contributing!
 ## Getting started
 
 1. Fork the repository and clone it locally.
-2. Install Go 1.23+ and Node.js 24+.
+2. Install Go 1.26+ and Node.js 24+.
 3. Start local PostgreSQL: `make dev-db`
 4. Copy environment variables: `cp .env.example .env`
 5. Make your changes and add tests where appropriate.

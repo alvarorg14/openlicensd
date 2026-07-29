@@ -10,7 +10,7 @@ Choose one deployment path:
 |------|-------------|
 | **Helm** | Kubernetes cluster, [Helm 3](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/) |
 | **Docker** | [Docker](https://docs.docker.com/get-docker/), a PostgreSQL instance |
-| **Local dev** | Go 1.23+, Node.js 24+, Docker (for PostgreSQL) |
+| **Local dev** | Go 1.26+, Node.js 24+, Docker (for PostgreSQL) |
 
 ## Helm (production)
 

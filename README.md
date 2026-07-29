@@ -184,7 +184,7 @@ See [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md) f
 
 ## 💻 Local Development
 
-Requires Go 1.23+, Node.js 24+, and Docker (for local PostgreSQL).
+Requires Go 1.26+, Node.js 24+, and Docker (for local PostgreSQL).
 
 Run `make help` to list all available targets:
 
