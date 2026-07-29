@@ -1,0 +1,145 @@
+# -- Number of openlicensd replicas
+replicaCount: 1
+
+image:
+  # -- Container image repository
+  repository: ghcr.io/alvarorg14/openlicensd
+  # -- Image tag. Defaults to the chart appVersion when empty
+  tag: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Secrets for pulling images from private registries
+imagePullSecrets: []
+# -- Override the chart name used in labels and resource names
+nameOverride: ""
+# -- Override the full release name used for all resources
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a dedicated ServiceAccount for openlicensd
+  create: true
+  # -- Annotations to add to the ServiceAccount
+  annotations: {}
+  # -- ServiceAccount name. Generated from the release fullname when empty and create is true
+  name: ""
+
+# -- Annotations to add to openlicensd pods
+podAnnotations: {}
+# -- Labels to add to openlicensd pods
+podLabels: {}
+
+# -- Pod-level security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+# -- Container-level security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# -- CPU and memory resource requests and limits for the openlicensd container
+resources:
+  limits:
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 256Mi
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+# -- Tolerations for pod assignment
+tolerations: []
+# -- Affinity rules for pod assignment
+affinity: {}
+
+config:
+  # -- HTTP listen address (maps to OPENLICENSD_ADDR)
+  addr: ":8080"
+  # -- Admin username (maps to OPENLICENSD_ADMIN_USER)
+  adminUser: admin
+  harbor:
+    # -- Enable Harbor registry credentials endpoint
+    enabled: false
+    # -- Harbor base URL (maps to OPENLICENSD_HARBOR_URL)
+    url: ""
+    # -- Comma-separated Harbor project namespaces (maps to OPENLICENSD_HARBOR_PROJECTS)
+    projects: ""
+    # -- Robot account lifetime in days (maps to OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS)
+    robotDurationDays: 1
+    # -- Prefix for generated robot account names (maps to OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX)
+    robotNamePrefix: openlicensd
+    # -- Skip TLS verification for Harbor (maps to OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY)
+    insecureSkipVerify: false
+    # -- Log Harbor API requests/responses (maps to OPENLICENSD_HARBOR_DEBUG)
+    debug: false
+
+secret:
+  # -- Secret provisioning mode: `create`, `existing`, or `externalSecrets`
+  mode: create
+  # -- Secret name when mode is `create` or `externalSecrets`. Defaults to `<release>-openlicensd-secret`
+  name: ""
+  # -- Name of an existing Secret when mode is `existing`
+  existingSecret: ""
+  # -- Secret data when mode is `create`
+  data:
+    # -- PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL)
+    databaseUrl: ""
+    # -- Bcrypt hash of the admin password (maps to OPENLICENSD_ADMIN_PASSWORD_HASH)
+    adminPasswordHash: ""
+    # -- JWT signing secret (maps to OPENLICENSD_JWT_SECRET)
+    jwtSecret: ""
+    # -- Harbor admin username (maps to OPENLICENSD_HARBOR_ADMIN_USERNAME)
+    harborAdminUsername: ""
+    # -- Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD)
+    harborAdminPassword: ""
+  externalSecrets:
+    # -- How often the ExternalSecret refreshes the target Secret
+    refreshInterval: 1h
+    # -- Reference to a SecretStore or ClusterSecretStore
+    secretStoreRef:
+      name: ""
+      kind: SecretStore
+    # -- Remote secret references. Each entry maps a Kubernetes Secret key to a remote property.
+    # Example:
+    # remoteRefs:
+    #   - secretKey: OPENLICENSD_DATABASE_URL
+    #     remoteRef:
+    #       key: openlicensd/database
+    #       property: url
+    remoteRefs: []
+
+service:
+  # -- Kubernetes Service type
+  type: ClusterIP
+  # -- Service port exposed for the API and UI
+  port: 8080
+  # -- Annotations to add to the Service
+  annotations: {}
+
+ingress:
+  # -- Create an Ingress resource
+  enabled: false
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress host rules
+  hosts:
+    - host: openlicensd.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # -- Ingress TLS configuration
+  tls: []
+
+# -- Extra environment variables for the openlicensd container
+extraEnv: []
+# -- Extra command-line arguments passed to openlicensd
+extraArgs: []

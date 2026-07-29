@@ -1,0 +1,53 @@
+{{ template "chart.header" . }}
+{{ template "chart.description" . }}
+
+{{ template "chart.badgesSection" . }}
+
+## Installing
+
+Requires an external PostgreSQL database. The chart does not bundle a database.
+
+```bash
+helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
+  --version X.Y.Z \
+  --namespace openlicensd \
+  --create-namespace \
+  --set secret.data.databaseUrl='postgres://user:pass@host:5432/openlicensd?sslmode=disable' \
+  --set secret.data.adminPasswordHash='$2a$10$...' \
+  --set secret.data.jwtSecret='change-me'
+```
+
+Use an existing Secret:
+
+```bash
+helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
+  --namespace openlicensd \
+  --create-namespace \
+  --set secret.mode=existing \
+  --set secret.existingSecret=openlicensd-credentials
+```
+
+Use External Secrets Operator:
+
+```bash
+helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
+  --namespace openlicensd \
+  --create-namespace \
+  --set secret.mode=externalSecrets \
+  --set secret.externalSecrets.secretStoreRef.name=my-secret-store \
+  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_URL","remoteRef":{"key":"openlicensd/database","property":"url"}},{"secretKey":"OPENLICENSD_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}},{"secretKey":"OPENLICENSD_JWT_SECRET","remoteRef":{"key":"openlicensd/jwt","property":"secret"}}]'
+```
+
+For local development, install from the chart source:
+
+```bash
+helm install openlicensd ./charts/openlicensd \
+  --namespace openlicensd \
+  --create-namespace \
+  -f charts/openlicensd/ci/test-values.yaml
+```
+
+{{ template "chart.valuesHeader" . }}
+{{ template "chart.valuesTable" . }}
+
+{{ template "helm-docs.versionFooter" . }}

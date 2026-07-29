@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openlicensd.fullname" . }}
+  labels:
+    {{- include "openlicensd.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "openlicensd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "openlicensd.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "openlicensd.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: openlicensd
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.extraArgs }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: OPENLICENSD_ADDR
+              value: {{ .Values.config.addr | quote }}
+            - name: OPENLICENSD_ADMIN_USER
+              value: {{ .Values.config.adminUser | quote }}
+            - name: OPENLICENSD_HARBOR_ENABLED
+              value: {{ .Values.config.harbor.enabled | quote }}
+            {{- if .Values.config.harbor.enabled }}
+            - name: OPENLICENSD_HARBOR_URL
+              value: {{ required "config.harbor.url is required when config.harbor.enabled is true" .Values.config.harbor.url | quote }}
+            - name: OPENLICENSD_HARBOR_PROJECTS
+              value: {{ required "config.harbor.projects is required when config.harbor.enabled is true" .Values.config.harbor.projects | quote }}
+            - name: OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS
+              value: {{ .Values.config.harbor.robotDurationDays | quote }}
+            - name: OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX
+              value: {{ .Values.config.harbor.robotNamePrefix | quote }}
+            - name: OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY
+              value: {{ .Values.config.harbor.insecureSkipVerify | quote }}
+            - name: OPENLICENSD_HARBOR_DEBUG
+              value: {{ .Values.config.harbor.debug | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "openlicensd.secretName" . }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
