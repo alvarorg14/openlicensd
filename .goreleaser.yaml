@@ -4,7 +4,7 @@ project_name: openlicensd
 
 before:
   hooks:
-    - cd ui && npm ci && npm run generate
+    - sh -c "cd ui && npm ci && npm run generate"
 
 builds:
   - id: openlicensd
@@ -15,22 +15,49 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
-      - windows
     goarch:
       - amd64
       - arm64
+    flags:
+      - -trimpath
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
 archives:
-  - formats: [tar.gz]
-    format_overrides:
-      - goos: windows
-        formats: [zip]
+  - formats:
+      - tar.gz
 
 checksum:
   name_template: checksums.txt
 
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
 changelog:
-  sort: asc
+  disable: true
+
+release:
+  mode: keep-existing
+  prerelease: auto
+
+dockers_v2:
+  - images:
+      - ghcr.io/alvarorg14/openlicensd
+    tags:
+      - "{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    dockerfile: Dockerfile.goreleaser
+    labels:
+      org.opencontainers.image.title: openlicensd
+      org.opencontainers.image.description: Open source license server
+    annotations:
+      org.opencontainers.image.url: https://github.com/alvarorg14/openlicensd
+      org.opencontainers.image.source: https://github.com/alvarorg14/openlicensd
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.created: "{{ .Date }}"
