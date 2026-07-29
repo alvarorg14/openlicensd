@@ -8,6 +8,7 @@ on:
 
 jobs:
   server:
+    name: Server
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -25,9 +26,11 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: "1.23"
           cache-dependency-path: server/go.sum
@@ -54,11 +57,14 @@ jobs:
         run: go build -o /tmp/openlicensd ./cmd/openlicensd
 
   ui:
+    name: UI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
@@ -77,6 +83,7 @@ jobs:
         run: npm run generate
 
   goreleaser:
+    name: GoReleaser
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -116,3 +123,22 @@ jobs:
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  helm:
+    name: Helm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Lint chart
+        run: helm lint charts/openlicensd -f charts/openlicensd/ci/test-values.yaml
+
+      - name: Template chart
+        run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml > /dev/null
+
+      - name: Package chart
+        run: helm package charts/openlicensd
