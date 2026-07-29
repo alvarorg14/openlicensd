@@ -56,7 +56,7 @@ flowchart TB
 
 ### Admin UI
 
-The UI is a Nuxt 3 SPA built from `ui/`:
+The UI is a Nuxt 4 SPA built from `ui/`:
 
 ```
 ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
