@@ -1,9 +1,7 @@
-run:
-  timeout: 5m
-  modules:
-    - github.com/openlicensd/openlicensd/server
+version: "2"
 
 linters:
+  default: none
   enable:
     - errcheck
     - govet

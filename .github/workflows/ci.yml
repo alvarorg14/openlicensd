@@ -35,16 +35,14 @@ jobs:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
-
-      - name: Vet
-        working-directory: server
-        run: go vet ./...
+      - name: Cache lint tools
+        uses: actions/cache@v4
+        with:
+          path: bin
+          key: ${{ runner.os }}-lint-tools-${{ hashFiles('Makefile') }}
 
       - name: Lint
-        working-directory: server
-        run: golangci-lint run ./...
+        run: make lint-server
 
       - name: Test
         working-directory: server
@@ -75,8 +73,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        working-directory: ui
-        run: npm run lint
+        run: make lint-ui
 
       - name: Generate
         working-directory: ui
@@ -113,13 +110,15 @@ jobs:
       - name: Run GoReleaser check
         uses: goreleaser/goreleaser-action@v7
         with:
-          version: latest
+          # renovate: datasource=github-releases depName=goreleaser/goreleaser
+          version: v2.17.1
           args: check
 
       - name: Run GoReleaser snapshot
         uses: goreleaser/goreleaser-action@v7
         with:
-          version: latest
+          # renovate: datasource=github-releases depName=goreleaser/goreleaser
+          version: v2.17.1
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

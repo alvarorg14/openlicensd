@@ -144,7 +144,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 		c.logDebug("transport error method=%s url=%s err=%v", http.MethodPost, endpoint, err)
 		return nil, fmt.Errorf("create robot: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -189,7 +189,7 @@ func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) er
 		c.logDebug("transport error method=%s url=%s err=%v", http.MethodGet, endpoint, err)
 		return fmt.Errorf("list robots: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
