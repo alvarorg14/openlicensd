@@ -78,7 +78,22 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
-	products, err := s.store.ListProducts(r.Context())
+	params, err := parseListParams(r, productSorts)
+	if err != nil {
+		if writeListParamError(w, err) {
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid list parameters")
+		return
+	}
+
+	products, total, err := s.store.ListProducts(r.Context(), store.ListParams{
+		Search: params.Search,
+		Sort:   params.Sort,
+		Order:  params.Order,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list products")
 		return
@@ -89,7 +104,7 @@ func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, productToResponse(&p))
 	}
 
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
 func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {

@@ -96,6 +96,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 			r.Group(func(r chi.Router) {
 				r.Use(auth.RequireRole(store.RoleViewer, store.RoleOperator, store.RoleAdmin))
 
+				r.Get("/licenses/stats", s.handleLicenseStats)
 				r.Get("/licenses", s.handleListLicenses)
 				r.Get("/products", s.handleListProducts)
 				r.Get("/policies", s.handleListPolicies)

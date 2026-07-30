@@ -19,6 +19,7 @@ const (
 type Policy struct {
 	ID              uuid.UUID
 	ProductID       uuid.UUID
+	ProductName     string
 	Name            string
 	Description     *string
 	DurationDays    *int
@@ -29,58 +30,60 @@ type Policy struct {
 	UpdatedAt       time.Time
 }
 
-const policyColumns = `id, product_id, name, description, duration_days, expiration_basis, grace_period_days, archived_at, created_at, updated_at`
+const policyColumns = `pol.id, pol.product_id, p.name, pol.name, pol.description, pol.duration_days, pol.expiration_basis, pol.grace_period_days, pol.archived_at, pol.created_at, pol.updated_at`
+
+const policyFromJoin = `
+	FROM policies pol
+	JOIN products p ON p.id = pol.product_id
+`
 
 func (s *Store) CreatePolicy(ctx context.Context, productID uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int) (*Policy, error) {
 	const q = `
 		INSERT INTO policies (product_id, name, description, duration_days, expiration_basis, grace_period_days)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING ` + policyColumns
+		RETURNING id
+	`
 
-	row := s.pool.QueryRow(ctx, q, productID, name, description, durationDays, expirationBasis, gracePeriodDays)
-	p, err := scanPolicy(row)
-	if err != nil {
+	var id uuid.UUID
+	if err := s.pool.QueryRow(ctx, q, productID, name, description, durationDays, expirationBasis, gracePeriodDays).Scan(&id); err != nil {
 		return nil, mapInsertError(err)
 	}
-	return p, nil
+	return s.GetPolicy(ctx, id)
 }
 
-func (s *Store) ListPolicies(ctx context.Context, productID *uuid.UUID) ([]Policy, error) {
-	var (
-		q    string
-		args []any
-	)
-
-	if productID != nil {
-		q = `
-			SELECT ` + policyColumns + `
-			FROM policies
-			WHERE product_id = $1
-			ORDER BY created_at DESC
-		`
-		args = []any{*productID}
-	} else {
-		q = `
-			SELECT ` + policyColumns + `
-			FROM policies
-			ORDER BY created_at DESC
-		`
+func (s *Store) ListPolicies(ctx context.Context, params PolicyListParams) ([]Policy, int64, error) {
+	qb := newQueryBuilder()
+	if params.ProductID != nil {
+		qb.add("pol.product_id = $%d::uuid", *params.ProductID)
+	}
+	if params.Search != "" {
+		pattern := searchPattern(params.Search)
+		qb.add("(pol.name ILIKE $%d OR p.name ILIKE $%d)", pattern, pattern)
 	}
 
+	sortExpr := params.Sort
+	if sortExpr == "" {
+		sortExpr = "pol.created_at"
+	}
+	orderBy := buildOrderBy(sortExpr, params.Order, "pol.id")
+
+	q := `
+		SELECT ` + policyColumns + `, COUNT(*) OVER() AS total_count` + policyFromJoin + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
+
+	args := append(qb.args, params.Limit, params.Offset)
 	rows, err := s.pool.Query(ctx, q, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	return scanPolicies(rows)
+	return scanPoliciesWithTotal(rows)
 }
 
 func (s *Store) GetPolicy(ctx context.Context, id uuid.UUID) (*Policy, error) {
 	const q = `
-		SELECT ` + policyColumns + `
-		FROM policies
-		WHERE id = $1
+		SELECT ` + policyColumns + policyFromJoin + `
+		WHERE pol.id = $1
 	`
 
 	row := s.pool.QueryRow(ctx, q, id)
@@ -96,9 +99,8 @@ func (s *Store) GetPolicy(ctx context.Context, id uuid.UUID) (*Policy, error) {
 
 func (s *Store) GetPolicyForProduct(ctx context.Context, id, productID uuid.UUID) (*Policy, error) {
 	const q = `
-		SELECT ` + policyColumns + `
-		FROM policies
-		WHERE id = $1 AND product_id = $2
+		SELECT ` + policyColumns + policyFromJoin + `
+		WHERE pol.id = $1 AND pol.product_id = $2
 	`
 
 	row := s.pool.QueryRow(ctx, q, id, productID)
@@ -118,17 +120,18 @@ func (s *Store) UpdatePolicy(ctx context.Context, id uuid.UUID, name string, des
 		SET name = $2, description = $3, duration_days = $4, expiration_basis = $5,
 		    grace_period_days = $6, updated_at = NOW()
 		WHERE id = $1
-		RETURNING ` + policyColumns
+		RETURNING id
+	`
 
-	row := s.pool.QueryRow(ctx, q, id, name, description, durationDays, expirationBasis, gracePeriodDays)
-	p, err := scanPolicy(row)
+	var returnedID uuid.UUID
+	err := s.pool.QueryRow(ctx, q, id, name, description, durationDays, expirationBasis, gracePeriodDays).Scan(&returnedID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, mapInsertError(err)
 	}
-	return p, nil
+	return s.GetPolicy(ctx, returnedID)
 }
 
 func (s *Store) DeletePolicy(ctx context.Context, id uuid.UUID) (bool, error) {
@@ -148,7 +151,7 @@ func scanPolicy(row pgx.Row) (*Policy, error) {
 	var p Policy
 	var expirationBasis string
 	err := row.Scan(
-		&p.ID, &p.ProductID, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
+		&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
 		&p.GracePeriodDays, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -159,18 +162,27 @@ func scanPolicy(row pgx.Row) (*Policy, error) {
 }
 
 func scanPolicies(rows pgx.Rows) ([]Policy, error) {
-	var policies []Policy
+	policies, _, err := scanPoliciesWithTotal(rows)
+	return policies, err
+}
+
+func scanPoliciesWithTotal(rows pgx.Rows) ([]Policy, int64, error) {
+	var (
+		policies   []Policy
+		totalCount int64
+	)
 	for rows.Next() {
 		var p Policy
 		var expirationBasis string
 		if err := rows.Scan(
-			&p.ID, &p.ProductID, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
+			&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
 			&p.GracePeriodDays, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+			&totalCount,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		p.ExpirationBasis = ExpirationBasis(expirationBasis)
 		policies = append(policies, p)
 	}
-	return policies, rows.Err()
+	return policies, totalCount, rows.Err()
 }

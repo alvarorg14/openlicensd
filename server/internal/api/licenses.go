@@ -137,7 +137,52 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListLicenses(w http.ResponseWriter, r *http.Request) {
-	licenses, err := s.store.ListLicenses(r.Context())
+	params, err := parseListParams(r, licenseSorts)
+	if err != nil {
+		if writeListParamError(w, err) {
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid list parameters")
+		return
+	}
+
+	listParams := store.LicenseListParams{
+		ListParams: store.ListParams{
+			Search: params.Search,
+			Sort:   params.Sort,
+			Order:  params.Order,
+			Limit:  params.Limit,
+			Offset: params.Offset,
+		},
+	}
+
+	if status := r.URL.Query().Get("status"); status != "" {
+		switch status {
+		case "active", "expired", "revoked":
+			listParams.Status = status
+		default:
+			writeError(w, http.StatusBadRequest, "invalid status")
+			return
+		}
+	}
+
+	if raw := r.URL.Query().Get("product_id"); raw != "" {
+		if _, err := uuid.Parse(raw); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid product_id")
+			return
+		}
+		listParams.ProductID = &raw
+	}
+
+	if raw := r.URL.Query().Get("policy_id"); raw != "" {
+		if _, err := uuid.Parse(raw); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid policy_id")
+			return
+		}
+		listParams.PolicyID = &raw
+	}
+
+	licenses, total, err := s.store.ListLicenses(r.Context(), listParams)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list licenses")
 		return
@@ -148,7 +193,29 @@ func (s *Server) handleListLicenses(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, licenseToResponse(&lic, ""))
 	}
 
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
+}
+
+type licenseStatsResponse struct {
+	Total   int64 `json:"total"`
+	Active  int64 `json:"active"`
+	Expired int64 `json:"expired"`
+	Revoked int64 `json:"revoked"`
+}
+
+func (s *Server) handleLicenseStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := s.store.LicenseStats(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load license stats")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, licenseStatsResponse{
+		Total:   stats.Total,
+		Active:  stats.Active,
+		Expired: stats.Expired,
+		Revoked: stats.Revoked,
+	})
 }
 
 func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {

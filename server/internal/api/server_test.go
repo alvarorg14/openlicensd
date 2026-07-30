@@ -112,19 +112,25 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("list licenses after validate status=%d", listAfterValidate.Code)
 	}
 
-	var licenses []map[string]any
-	if err := json.Unmarshal(listAfterValidate.Body.Bytes(), &licenses); err != nil {
+	var listPage map[string]any
+	if err := json.Unmarshal(listAfterValidate.Body.Bytes(), &listPage); err != nil {
 		t.Fatalf("decode list response: %v", err)
+	}
+
+	licenses, ok := listPage["items"].([]any)
+	if !ok {
+		t.Fatalf("expected items array in list response, got %+v", listPage)
 	}
 
 	found := false
 	for _, lic := range licenses {
-		if lic["id"] == licenseID {
+		item := lic.(map[string]any)
+		if item["id"] == licenseID {
 			found = true
-			if count, ok := lic["validation_count"].(float64); !ok || count < 2 {
-				t.Fatalf("expected validation_count >= 2, got %+v", lic["validation_count"])
+			if count, ok := item["validation_count"].(float64); !ok || count < 2 {
+				t.Fatalf("expected validation_count >= 2, got %+v", item["validation_count"])
 			}
-			if lic["last_validated_at"] == nil {
+			if item["last_validated_at"] == nil {
 				t.Fatalf("expected last_validated_at to be set")
 			}
 		}
