@@ -36,7 +36,7 @@ jobs:
           cache-dependency-path: server/go.sum
 
       - name: Cache lint tools
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: bin
           key: ${{ runner.os }}-lint-tools-${{ hashFiles('Makefile') }}
