@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -112,8 +113,37 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 	handler := srv.Router(nil)
 	token := login(t, handler, "admin", "test-password")
 
+	productCode := fmt.Sprintf("registry-product-%d", time.Now().UnixNano())
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Registry Product",
+		"code": productCode,
+	}, token)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product response: %v", err)
+	}
+
+	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id": product["id"],
+		"name":       "Perpetual",
+	}, token)
+	if policyResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
+	}
+
+	var policy map[string]any
+	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy response: %v", err)
+	}
+
 	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
-		"label": "registry-credentials-test",
+		"label":      "registry-credentials-test",
+		"product_id": product["id"],
+		"policy_id":  policy["id"],
 	}, token)
 	if createResp.Code != http.StatusCreated {
 		t.Fatalf("create license status=%d body=%s", createResp.Code, createResp.Body.String())
