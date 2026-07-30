@@ -56,18 +56,33 @@
     <UCard
       class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 animate-fade-in-up stagger-2 overflow-hidden"
     >
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
+      <div class="flex flex-col gap-3 border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
         <UInput
           v-model="searchQuery"
           icon="i-lucide-search"
-          placeholder="Search by label, product, or key prefix..."
-          class="sm:flex-1 transition-app"
+          placeholder="Search by label or key prefix..."
+          class="transition-app"
         />
-        <USelect
-          v-model="statusFilter"
-          :items="statusFilterOptions"
-          class="sm:w-48"
-        />
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <USelect
+            v-model="statusFilter"
+            :items="statusFilterOptions"
+          />
+          <USelectMenu
+            v-model="productFilter"
+            :items="productFilterItems"
+            value-key="value"
+            label-key="label"
+            placeholder="All products"
+          />
+          <USelectMenu
+            v-model="policyFilter"
+            :items="policyFilterItems"
+            value-key="value"
+            label-key="label"
+            placeholder="All policies"
+          />
+        </div>
       </div>
 
       <div v-if="loading" class="space-y-3">
@@ -104,18 +119,31 @@
         :columns="columns"
         :data="filteredLicenses"
         :loading="false"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30"
+        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+        @select="(_e, row) => openDetails(row.original)"
       >
         <template #label-cell="{ row }">
-          <span class="font-medium text-slate-900 dark:text-white">{{ row.original.label }}</span>
+          <UTooltip :text="row.original.label">
+            <span class="block max-w-[16rem] truncate font-medium text-slate-900 dark:text-white">
+              {{ row.original.label }}
+            </span>
+          </UTooltip>
         </template>
 
         <template #product_name-cell="{ row }">
-          <span class="text-slate-700 dark:text-slate-300">{{ row.original.product_name }}</span>
+          <UTooltip :text="row.original.product_name">
+            <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+              {{ row.original.product_name }}
+            </span>
+          </UTooltip>
         </template>
 
         <template #policy_name-cell="{ row }">
-          <span class="text-slate-700 dark:text-slate-300">{{ row.original.policy_name }}</span>
+          <UTooltip :text="row.original.policy_name">
+            <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+              {{ row.original.policy_name }}
+            </span>
+          </UTooltip>
         </template>
 
         <template #key_prefix-cell="{ row }">
@@ -137,19 +165,6 @@
             />
             {{ statusLabel(row.original) }}
           </UBadge>
-        </template>
-
-        <template #last_validated_at-cell="{ row }">
-          <span v-if="!row.original.last_validated_at" class="text-slate-500">Never</span>
-          <span v-else class="text-slate-700 dark:text-slate-300">{{ formatDate(row.original.last_validated_at) }}</span>
-        </template>
-
-        <template #validation_count-cell="{ row }">
-          <span class="tabular-nums text-slate-700 dark:text-slate-300">{{ row.original.validation_count }}</span>
-        </template>
-
-        <template #created_at-cell="{ row }">
-          <span class="text-slate-700 dark:text-slate-300">{{ formatDate(row.original.created_at) }}</span>
         </template>
 
         <template #actions-cell="{ row }">
@@ -175,6 +190,28 @@
     />
     <LicenseKeyModal v-model:open="showKeyModal" :license-key="createdKey" :label="createdLabel" />
 
+    <DetailsModal
+      v-model:open="showDetails"
+      :title="detailsTitle"
+      icon="i-lucide-key"
+      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
+      icon-class="text-indigo-600 dark:text-indigo-400"
+      :items="detailsItems"
+    >
+      <template #top>
+        <div v-if="detailsLicense" class="flex items-center gap-2">
+          <span class="font-medium text-slate-900 dark:text-white">{{ detailsLicense.label }}</span>
+          <UBadge :color="statusColor(detailsLicense)" variant="subtle" class="gap-1.5">
+            <span
+              class="h-1.5 w-1.5 rounded-full shrink-0"
+              :class="statusDotClass(detailsLicense)"
+            />
+            {{ statusLabel(detailsLicense) }}
+          </UBadge>
+        </div>
+      </template>
+    </DetailsModal>
+
     <ConfirmModal
       v-model:open="showRevokeConfirm"
       title="Revoke license"
@@ -199,7 +236,7 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { License, LicenseStatus } from '~/types'
+import type { DetailItem, License, LicenseStatus } from '~/types'
 
 definePageMeta({
   middleware: 'auth'
@@ -218,16 +255,20 @@ const loadError = ref('')
 const showCreate = ref(false)
 const showEdit = ref(false)
 const showKeyModal = ref(false)
+const showDetails = ref(false)
 const showRevokeConfirm = ref(false)
 const showDeleteConfirm = ref(false)
 const createdKey = ref('')
 const createdLabel = ref('')
 const editingLicense = ref<License | null>(null)
+const detailsLicense = ref<License | null>(null)
 const confirmTarget = ref<License | null>(null)
 const actionId = ref<string | null>(null)
 const actionType = ref<'revoke' | 'activate' | 'delete' | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref<'all' | LicenseStatus>('all')
+const productFilter = ref<string | null>(null)
+const policyFilter = ref<string | null>(null)
 
 const statusFilterOptions = [
   { label: 'All statuses', value: 'all' },
@@ -243,13 +284,12 @@ const columns = [
   { accessorKey: 'key_prefix', header: 'Key prefix' },
   { accessorKey: 'expires_at', header: 'Expires' },
   { accessorKey: 'revoked', header: 'Status' },
-  { accessorKey: 'last_validated_at', header: 'Last validated' },
-  { accessorKey: 'validation_count', header: 'Validations' },
-  { accessorKey: 'created_at', header: 'Created' },
   { id: 'actions', header: '' }
 ]
 
 const formatDate = (value: string) => new Date(value).toLocaleString()
+
+const formatDateOrNever = (value: string | null) => (value ? formatDate(value) : 'Never')
 
 const getLicenseStatus = (license: License): LicenseStatus => {
   if (license.revoked) {
@@ -282,6 +322,49 @@ const statusDotClass = (license: License) => {
   return 'bg-emerald-500'
 }
 
+const productFilterItems = computed(() => {
+  const seen = new Map<string, string>()
+  for (const license of licenses.value) {
+    if (!seen.has(license.product_id)) {
+      seen.set(license.product_id, license.product_name)
+    }
+  }
+  return [
+    { label: 'All products', value: null },
+    ...[...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([id, name]) => ({ label: name, value: id }))
+  ]
+})
+
+const policyFilterItems = computed(() => {
+  const seen = new Map<string, string>()
+  for (const license of licenses.value) {
+    if (productFilter.value && license.product_id !== productFilter.value) {
+      continue
+    }
+    if (!seen.has(license.policy_id)) {
+      seen.set(license.policy_id, license.policy_name)
+    }
+  }
+  return [
+    { label: 'All policies', value: null },
+    ...[...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([id, name]) => ({ label: name, value: id }))
+  ]
+})
+
+watch(productFilter, () => {
+  if (!policyFilter.value) {
+    return
+  }
+  const stillValid = policyFilterItems.value.some((item) => item.value === policyFilter.value)
+  if (!stillValid) {
+    policyFilter.value = null
+  }
+})
+
 const stats = computed(() => {
   const counts = { total: licenses.value.length, active: 0, expired: 0, revoked: 0 }
   for (const license of licenses.value) {
@@ -300,6 +383,14 @@ const filteredLicenses = computed(() => {
       return false
     }
 
+    if (productFilter.value && license.product_id !== productFilter.value) {
+      return false
+    }
+
+    if (policyFilter.value && license.policy_id !== policyFilter.value) {
+      return false
+    }
+
     if (!query) {
       return true
     }
@@ -307,10 +398,27 @@ const filteredLicenses = computed(() => {
     return (
       license.label.toLowerCase().includes(query)
       || license.key_prefix.toLowerCase().includes(query)
-      || license.product_name.toLowerCase().includes(query)
-      || license.policy_name.toLowerCase().includes(query)
     )
   })
+})
+
+const detailsTitle = computed(() => detailsLicense.value?.label ?? 'License details')
+
+const detailsItems = computed((): DetailItem[] => {
+  const license = detailsLicense.value
+  if (!license) {
+    return []
+  }
+  return [
+    { label: 'Product', value: license.product_name },
+    { label: 'Policy', value: license.policy_name },
+    { label: 'Key prefix', value: license.key_prefix, mono: true },
+    { label: 'Expires', value: formatDateOrNever(license.expires_at) },
+    { label: 'Activated', value: formatDateOrNever(license.activated_at) },
+    { label: 'Last validated', value: formatDateOrNever(license.last_validated_at) },
+    { label: 'Validations', value: String(license.validation_count) },
+    { label: 'Created', value: formatDate(license.created_at) }
+  ]
 })
 
 const revokeConfirmDescription = computed(() => {
@@ -323,8 +431,18 @@ const deleteConfirmDescription = computed(() => {
   return `Are you sure you want to permanently delete "${label}"? This action cannot be undone.`
 })
 
+const openDetails = (license: License) => {
+  detailsLicense.value = license
+  showDetails.value = true
+}
+
 const getActionItems = (license: License): DropdownMenuItem[][] => {
   const items: DropdownMenuItem[] = [
+    {
+      label: 'View details',
+      icon: 'i-lucide-info',
+      onSelect: () => openDetails(license)
+    },
     {
       label: 'Edit',
       icon: 'i-lucide-pencil',
