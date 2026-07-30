@@ -48,12 +48,20 @@
 import { APP_NAME } from '~/constants/app'
 
 const route = useRoute()
+const { isAdmin } = useAuth()
 
-const navItems = [
+const baseNavItems = [
   { label: 'Licenses', to: '/licenses', icon: 'i-lucide-key' },
   { label: 'Products', to: '/products', icon: 'i-lucide-package' },
   { label: 'Policies', to: '/policies', icon: 'i-lucide-shield' }
 ]
+
+const navItems = computed(() => {
+  if (isAdmin.value) {
+    return [...baseNavItems, { label: 'Users', to: '/users', icon: 'i-lucide-users' }]
+  }
+  return baseNavItems
+})
 
 const isActive = (path: string) => route.path === path || route.path.startsWith(`${path}/`)
 </script>

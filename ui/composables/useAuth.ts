@@ -1,47 +1,72 @@
-import type { LoginResponse } from '~/types'
+import type { AuthUser, LoginResponse } from '~/types'
 
-const TOKEN_KEY = 'openlicensd_token'
+const CSRF_COOKIE = 'openlicensd_csrf'
+
+export const getCsrfToken = (): string | null => {
+  if (!import.meta.client) {
+    return null
+  }
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
 
 export const useAuth = () => {
-  const token = useState<string | null>('auth_token', () => {
-    if (import.meta.client) {
-      return localStorage.getItem(TOKEN_KEY)
-    }
-    return null
-  })
+  const user = useState<AuthUser | null>('auth_user', () => null)
+  const authReady = useState('auth_ready', () => false)
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => !!user.value)
+  const isAdmin = computed(() => user.value?.role === 'admin')
+  const canWrite = computed(() => user.value?.role === 'admin' || user.value?.role === 'operator')
 
-  const setToken = (value: string) => {
-    token.value = value
-    if (import.meta.client) {
-      localStorage.setItem(TOKEN_KEY, value)
+  const setUser = (value: AuthUser | null) => {
+    user.value = value
+  }
+
+  const fetchMe = async () => {
+    try {
+      const me = await $fetch<AuthUser>('/api/v1/auth/me', {
+        credentials: 'include'
+      })
+      setUser(me)
+      return me
+    } catch {
+      setUser(null)
+      return null
     }
   }
 
-  const clearToken = () => {
-    token.value = null
-    if (import.meta.client) {
-      localStorage.removeItem(TOKEN_KEY)
-    }
-  }
-
-  const login = async (username: string, password: string) => {
+  const login = async (email: string, password: string) => {
     const res = await $fetch<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
-      body: { username, password }
+      body: { email, password },
+      credentials: 'include'
     })
-    setToken(res.token)
+    setUser(res.user)
   }
 
-  const logout = () => {
-    clearToken()
-    navigateTo('/login')
+  const logout = async () => {
+    const csrf = getCsrfToken()
+    try {
+      await $fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrf ? { 'X-CSRF-Token': csrf } : {}
+      })
+    } catch {
+      // ignore — clear local state regardless
+    }
+    setUser(null)
+    await navigateTo('/login')
   }
 
   return {
-    token,
+    user,
+    authReady,
     isAuthenticated,
+    isAdmin,
+    canWrite,
+    setUser,
+    fetchMe,
     login,
     logout
   }

@@ -6,6 +6,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage and monitor your license keys</p>
       </div>
       <UButton
+        v-if="canWrite"
         color="primary"
         icon="i-lucide-plus"
         size="md"
@@ -105,7 +106,7 @@
             : 'Try adjusting your search or filter criteria.' }}
         </p>
         <UButton
-          v-if="licenses.length === 0"
+          v-if="licenses.length === 0 && canWrite"
           color="primary"
           icon="i-lucide-plus"
           @click="showCreate = true"
@@ -248,6 +249,7 @@ const {
   activateLicense,
   deleteLicense
 } = useApi()
+const { canWrite } = useAuth()
 
 const licenses = ref<License[]>([])
 const loading = ref(true)
@@ -442,13 +444,18 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
       label: 'View details',
       icon: 'i-lucide-info',
       onSelect: () => openDetails(license)
-    },
-    {
-      label: 'Edit',
-      icon: 'i-lucide-pencil',
-      onSelect: () => openEdit(license)
     }
   ]
+
+  if (!canWrite.value) {
+    return [items]
+  }
+
+  items.push({
+    label: 'Edit',
+    icon: 'i-lucide-pencil',
+    onSelect: () => openEdit(license)
+  })
 
   if (!license.revoked) {
     items.push({
