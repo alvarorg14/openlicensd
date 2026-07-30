@@ -19,6 +19,7 @@ const (
 )
 
 const AuthProviderLocal = "local"
+const AuthProviderOIDC = "oidc"
 
 type User struct {
 	ID                  uuid.UUID
@@ -106,6 +107,60 @@ func (s *Store) GetUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 			return nil, nil
 		}
 		return nil, err
+	}
+	return u, nil
+}
+
+func (s *Store) GetUserByExternalID(ctx context.Context, authProvider, externalID string) (*User, error) {
+	const q = `
+		SELECT ` + userColumns + `
+		FROM users
+		WHERE auth_provider = $1 AND external_id = $2
+	`
+
+	row := s.pool.QueryRow(ctx, q, authProvider, externalID)
+	u, err := scanUser(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
+func (s *Store) LinkUserToProvider(ctx context.Context, id uuid.UUID, authProvider, externalID string) (*User, error) {
+	const q = `
+		UPDATE users
+		SET auth_provider = $2, external_id = $3, updated_at = NOW()
+		WHERE id = $1
+		RETURNING ` + userColumns
+
+	row := s.pool.QueryRow(ctx, q, id, authProvider, externalID)
+	u, err := scanUser(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, mapInsertError(err)
+	}
+	return u, nil
+}
+
+func (s *Store) SyncUserProfile(ctx context.Context, id uuid.UUID, email, name string) (*User, error) {
+	const q = `
+		UPDATE users
+		SET email = $2, name = $3, updated_at = NOW()
+		WHERE id = $1
+		RETURNING ` + userColumns
+
+	row := s.pool.QueryRow(ctx, q, id, strings.ToLower(strings.TrimSpace(email)), name)
+	u, err := scanUser(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, mapInsertError(err)
 	}
 	return u, nil
 }

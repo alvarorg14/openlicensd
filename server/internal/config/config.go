@@ -19,6 +19,18 @@ type HarborConfig struct {
 	Debug              bool
 }
 
+type OIDCConfig struct {
+	Enabled         bool
+	IssuerURL       string
+	ClientID        string
+	ClientSecret    string
+	RedirectURL     string
+	Scopes          []string
+	DefaultRole     string
+	ProviderName    string
+	AdminEmails     []string
+}
+
 type BootstrapAdminConfig struct {
 	Email        string
 	Name         string
@@ -26,15 +38,19 @@ type BootstrapAdminConfig struct {
 }
 
 type Config struct {
-	Addr           string
-	DatabaseURL    string
-	BootstrapAdmin BootstrapAdminConfig
+	Addr            string
+	DatabaseURL     string
+	BootstrapAdmin  BootstrapAdminConfig
 	SessionTTLHours int
-	CookieSecure   bool
-	Harbor         HarborConfig
+	CookieSecure    bool
+	LocalLoginEnabled bool
+	Harbor          HarborConfig
+	OIDC            OIDCConfig
 }
 
 func Load() (*Config, error) {
+	localLoginEnabled := getBoolEnv("OPENLICENSD_LOCAL_LOGIN_ENABLED", true)
+
 	cfg := &Config{
 		Addr:        getEnv("OPENLICENSD_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("OPENLICENSD_DATABASE_URL"),
@@ -43,8 +59,9 @@ func Load() (*Config, error) {
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
 			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
 		},
-		SessionTTLHours: getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
-		CookieSecure:    getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
+		SessionTTLHours:   getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
+		CookieSecure:      getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
+		LocalLoginEnabled: localLoginEnabled,
 		Harbor: HarborConfig{
 			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
 			URL:                os.Getenv("OPENLICENSD_HARBOR_URL"),
@@ -55,6 +72,17 @@ func Load() (*Config, error) {
 			RobotNamePrefix:    getEnv("OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX", "openlicensd"),
 			InsecureSkipVerify: getBoolEnv("OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY", false),
 			Debug:              getBoolEnv("OPENLICENSD_HARBOR_DEBUG", false),
+		},
+		OIDC: OIDCConfig{
+			Enabled:           getBoolEnv("OPENLICENSD_OIDC_ENABLED", false),
+			IssuerURL:         os.Getenv("OPENLICENSD_OIDC_ISSUER_URL"),
+			ClientID:          os.Getenv("OPENLICENSD_OIDC_CLIENT_ID"),
+			ClientSecret:      os.Getenv("OPENLICENSD_OIDC_CLIENT_SECRET"),
+			RedirectURL:       os.Getenv("OPENLICENSD_OIDC_REDIRECT_URL"),
+			Scopes:            parseOIDCScopes(os.Getenv("OPENLICENSD_OIDC_SCOPES")),
+			DefaultRole:       getEnv("OPENLICENSD_OIDC_DEFAULT_ROLE", "viewer"),
+			ProviderName:      getEnv("OPENLICENSD_OIDC_PROVIDER_NAME", "SSO"),
+			AdminEmails:       parseLowerCSV(os.Getenv("OPENLICENSD_OIDC_ADMIN_EMAILS")),
 		},
 	}
 
@@ -68,8 +96,24 @@ func Load() (*Config, error) {
 	if err := cfg.Harbor.validate(); err != nil {
 		return nil, err
 	}
+	if err := cfg.OIDC.validate(); err != nil {
+		return nil, err
+	}
+	if !cfg.LocalLoginEnabled && !cfg.OIDC.Enabled {
+		return nil, fmt.Errorf("at least one login method must be enabled: set OPENLICENSD_LOCAL_LOGIN_ENABLED or OPENLICENSD_OIDC_ENABLED")
+	}
 
 	return cfg, nil
+}
+
+func (o OIDCConfig) IsAdminEmail(email string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(email))
+	for _, admin := range o.AdminEmails {
+		if admin == normalized {
+			return true
+		}
+	}
+	return false
 }
 
 func (h HarborConfig) validate() error {
@@ -97,6 +141,59 @@ func (h HarborConfig) validate() error {
 	}
 
 	return nil
+}
+
+func (o OIDCConfig) validate() error {
+	if !o.Enabled {
+		return nil
+	}
+
+	if o.IssuerURL == "" {
+		return fmt.Errorf("OPENLICENSD_OIDC_ISSUER_URL is required when OPENLICENSD_OIDC_ENABLED is true")
+	}
+	if o.ClientID == "" {
+		return fmt.Errorf("OPENLICENSD_OIDC_CLIENT_ID is required when OPENLICENSD_OIDC_ENABLED is true")
+	}
+	if o.ClientSecret == "" {
+		return fmt.Errorf("OPENLICENSD_OIDC_CLIENT_SECRET is required when OPENLICENSD_OIDC_ENABLED is true")
+	}
+	if o.RedirectURL == "" {
+		return fmt.Errorf("OPENLICENSD_OIDC_REDIRECT_URL is required when OPENLICENSD_OIDC_ENABLED is true")
+	}
+	if !isValidRole(o.DefaultRole) {
+		return fmt.Errorf("OPENLICENSD_OIDC_DEFAULT_ROLE must be admin, operator, or viewer")
+	}
+	if o.ProviderName == "" {
+		return fmt.Errorf("OPENLICENSD_OIDC_PROVIDER_NAME must not be empty")
+	}
+
+	return nil
+}
+
+func isValidRole(role string) bool {
+	switch role {
+	case "admin", "operator", "viewer":
+		return true
+	default:
+		return false
+	}
+}
+
+func parseOIDCScopes(value string) []string {
+	scopes := parseCSV(value)
+	if len(scopes) == 0 {
+		return []string{"openid", "profile", "email"}
+	}
+	return scopes
+}
+
+func parseLowerCSV(value string) []string {
+	parts := parseCSV(value)
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		out = append(out, strings.ToLower(part))
+	}
+	return out
 }
 
 func getEnv(key, fallback string) string {

@@ -335,8 +335,13 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleAuthProviders(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"local": true,
-		"oidc":  false,
-	})
+	resp := map[string]any{
+		"local": s.cfg.LocalLoginEnabled,
+		"oidc":  s.cfg.OIDC.Enabled,
+	}
+	if s.cfg.OIDC.Enabled {
+		resp["oidc_name"] = s.cfg.OIDC.ProviderName
+		resp["oidc_login_url"] = "/api/v1/auth/oidc/login"
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
