@@ -23,9 +23,9 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --version X.Y.Z \
   --namespace openlicensd \
   --create-namespace \
+  --set config.bootstrapAdmin.email=admin@example.com \
   --set secret.data.databaseUrl="postgres://user:pass@host:5432/openlicensd?sslmode=require" \
-  --set secret.data.adminPasswordHash="$(make hash-password PASSWORD=yourpassword)" \
-  --set secret.data.jwtSecret="$(openssl rand -hex 32)"
+  --set secret.data.bootstrapAdminPasswordHash="$(make hash-password PASSWORD=yourpassword)"
 ```
 
 Or install from the chart source:

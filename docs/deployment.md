@@ -15,9 +15,9 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --version X.Y.Z \
   --namespace openlicensd \
   --create-namespace \
+  --set config.bootstrapAdmin.email=admin@example.com \
   --set secret.data.databaseUrl="postgres://user:pass@host:5432/openlicensd?sslmode=require" \
-  --set secret.data.adminPasswordHash="$(make hash-password PASSWORD=yourpassword)" \
-  --set secret.data.jwtSecret="$(openssl rand -hex 32)"
+  --set secret.data.bootstrapAdminPasswordHash="$(make hash-password PASSWORD=yourpassword)"
 ```
 
 Or install from the chart source:
@@ -157,12 +157,13 @@ The Helm chart configures Kubernetes probes against these endpoints.
 
 ## Releases
 
-Tag a version to trigger a GitHub release with cross-platform binaries, Docker images, and Helm chart:
+Publish a GitHub release to trigger cross-platform binaries, Docker images, and Helm chart packaging:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+gh release create vX.Y.Z --generate-notes
 ```
+
+Replace `vX.Y.Z` with the version tag (for example `v0.1.0`). The release workflow runs on `release: published`, not on tag push alone.
 
 GoReleaser builds Linux amd64/arm64 binaries and pushes Docker images to `ghcr.io/alvarorg14/openlicensd`. The Helm chart is packaged and pushed to `oci://ghcr.io/alvarorg14/charts`.
 

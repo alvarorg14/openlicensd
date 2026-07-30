@@ -1,4 +1,4 @@
-# OpenLicensd
+# openlicensd
 
 Open source license server for creating and validating license keys
 
@@ -13,9 +13,9 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --version X.Y.Z \
   --namespace openlicensd \
   --create-namespace \
+  --set config.bootstrapAdmin.email=admin@example.com \
   --set secret.data.databaseUrl='postgres://user:pass@host:5432/openlicensd?sslmode=disable' \
-  --set secret.data.adminPasswordHash='$2a$10$...' \
-  --set secret.data.jwtSecret='change-me'
+  --set secret.data.bootstrapAdminPasswordHash='$2a$10$...'
 ```
 
 Use an existing Secret:
@@ -36,7 +36,7 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --create-namespace \
   --set secret.mode=externalSecrets \
   --set secret.externalSecrets.secretStoreRef.name=my-secret-store \
-  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_URL","remoteRef":{"key":"openlicensd/database","property":"url"}},{"secretKey":"OPENLICENSD_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}},{"secretKey":"OPENLICENSD_JWT_SECRET","remoteRef":{"key":"openlicensd/jwt","property":"secret"}}]'
+  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_URL","remoteRef":{"key":"openlicensd/database","property":"url"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
 ```
 
 For local development, install from the chart source:
@@ -49,12 +49,13 @@ helm install openlicensd ./charts/openlicensd \
 ```
 
 ## Values
-
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity rules for pod assignment |
 | config.addr | string | `":8080"` | HTTP listen address (maps to OPENLICENSD_ADDR) |
-| config.adminUser | string | `"admin"` | Admin username (maps to OPENLICENSD_ADMIN_USER) |
+| config.bootstrapAdmin.email | string | `""` | Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL) |
+| config.bootstrapAdmin.name | string | `"Administrator"` | Display name for the bootstrap admin (maps to OPENLICENSD_BOOTSTRAP_ADMIN_NAME) |
+| config.cookieSecure | bool | `true` | Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE) |
 | config.harbor.debug | bool | `false` | Log Harbor API requests/responses (maps to OPENLICENSD_HARBOR_DEBUG) |
 | config.harbor.enabled | bool | `false` | Enable Harbor registry credentials endpoint |
 | config.harbor.insecureSkipVerify | bool | `false` | Skip TLS verification for Harbor (maps to OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY) |
@@ -62,6 +63,16 @@ helm install openlicensd ./charts/openlicensd \
 | config.harbor.robotDurationDays | int | `1` | Robot account lifetime in days (maps to OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS) |
 | config.harbor.robotNamePrefix | string | `"openlicensd"` | Prefix for generated robot account names (maps to OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX) |
 | config.harbor.url | string | `""` | Harbor base URL (maps to OPENLICENSD_HARBOR_URL) |
+| config.localLoginEnabled | bool | `true` |  |
+| config.oidc.adminEmails | string | `""` | Comma-separated admin emails on first SSO login (maps to OPENLICENSD_OIDC_ADMIN_EMAILS) |
+| config.oidc.clientId | string | `""` | OAuth client ID (maps to OPENLICENSD_OIDC_CLIENT_ID) |
+| config.oidc.defaultRole | string | `"viewer"` | Default role for new SSO users (maps to OPENLICENSD_OIDC_DEFAULT_ROLE) |
+| config.oidc.enabled | bool | `false` | Enable OIDC SSO (maps to OPENLICENSD_OIDC_ENABLED) |
+| config.oidc.issuerUrl | string | `""` | OIDC issuer URL (maps to OPENLICENSD_OIDC_ISSUER_URL) |
+| config.oidc.providerName | string | `"SSO"` | SSO button label (maps to OPENLICENSD_OIDC_PROVIDER_NAME) |
+| config.oidc.redirectUrl | string | `""` | Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL) |
+| config.oidc.scopes | string | `"openid,profile,email"` | Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES) |
+| config.sessionTTLHours | int | `24` | Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS) |
 | extraArgs | list | `[]` | Extra command-line arguments passed to OpenLicensd |
 | extraEnv | list | `[]` | Extra environment variables for the OpenLicensd container |
 | fullnameOverride | string | `""` | Override the full release name used for all resources |
@@ -80,26 +91,26 @@ helm install openlicensd ./charts/openlicensd \
 | podLabels | object | `{}` | Labels to add to OpenLicensd pods |
 | podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532}` | Pod-level security context |
 | replicaCount | int | `1` | Number of OpenLicensd replicas |
-| resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | CPU and memory resource requests and limits for the OpenLicensd container |
-| secret.data.adminPasswordHash | string | `""` | Bcrypt hash of the admin password (maps to OPENLICENSD_ADMIN_PASSWORD_HASH) |
+| resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"256Mi"}}` | CPU and memory resource requests and limits for the OpenLicensd container |
+| secret.data | object | `{"bootstrapAdminPasswordHash":"","databaseUrl":"","harborAdminPassword":"","harborAdminUsername":"","oidcClientSecret":""}` | Secret data when mode is `create` |
+| secret.data.bootstrapAdminPasswordHash | string | `""` | Bcrypt hash for bootstrap admin password (maps to OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH) |
 | secret.data.databaseUrl | string | `""` | PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL) |
 | secret.data.harborAdminPassword | string | `""` | Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD) |
 | secret.data.harborAdminUsername | string | `""` | Harbor admin username (maps to OPENLICENSD_HARBOR_ADMIN_USERNAME) |
-| secret.data.jwtSecret | string | `""` | JWT signing secret (maps to OPENLICENSD_JWT_SECRET) |
+| secret.data.oidcClientSecret | string | `""` | OIDC client secret (maps to OPENLICENSD_OIDC_CLIENT_SECRET) |
 | secret.existingSecret | string | `""` | Name of an existing Secret when mode is `existing` |
 | secret.externalSecrets.refreshInterval | string | `"1h"` | How often the ExternalSecret refreshes the target Secret |
-| secret.externalSecrets.remoteRefs | list | `[]` | Remote secret references |
-| secret.externalSecrets.secretStoreRef.kind | string | `"SecretStore"` | Reference kind |
-| secret.externalSecrets.secretStoreRef.name | string | `""` | Reference to a SecretStore or ClusterSecretStore |
+| secret.externalSecrets.remoteRefs | list | `[]` | Remote secret references. Each entry maps a Kubernetes Secret key to a remote property. Example: remoteRefs:   - secretKey: OPENLICENSD_DATABASE_URL     remoteRef:       key: openlicensd/database       property: url |
+| secret.externalSecrets.secretStoreRef | object | `{"kind":"SecretStore","name":""}` | Reference to a SecretStore or ClusterSecretStore |
 | secret.mode | string | `"create"` | Secret provisioning mode: `create`, `existing`, or `externalSecrets` |
-| secret.name | string | `""` | Secret name when mode is `create` or `externalSecrets` |
+| secret.name | string | `""` | Secret name when mode is `create` or `externalSecrets`. Defaults to `<release>-openlicensd-secret` |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container-level security context |
 | service.annotations | object | `{}` | Annotations to add to the Service |
 | service.port | int | `8080` | Service port exposed for the API and UI |
 | service.type | string | `"ClusterIP"` | Kubernetes Service type |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount |
 | serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount for OpenLicensd |
-| serviceAccount.name | string | `""` | ServiceAccount name |
+| serviceAccount.name | string | `""` | ServiceAccount name. Generated from the release fullname when empty and create is true |
 | tolerations | list | `[]` | Tolerations for pod assignment |
 
 ----------------------------------------------
