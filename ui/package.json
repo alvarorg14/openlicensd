@@ -2,7 +2,7 @@
   "name": "openlicensd-ui",
   "private": true,
   "type": "module",
-  "packageManager": "npm@12.0.1",
+  "packageManager": "npm@12.0.2",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt generate",
