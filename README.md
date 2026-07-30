@@ -46,6 +46,7 @@
   - [⚙️ Configuration](#️-configuration)
   - [🔧 How It Works](#-how-it-works)
   - [🐳 Harbor Registry Credentials](#-harbor-registry-credentials)
+  - [🔐 OIDC SSO](#-oidc-sso)
   - [💻 Local Development](#-local-development)
   - [🤝 Contributing](#-contributing)
   - [🔒 Security](#-security)
@@ -65,6 +66,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - **Single binary** — API and admin UI in one deployable artifact
 - **Simple API** — public validation endpoint for client applications
 - **Harbor integration** — optional short-lived registry credentials for container image distribution
+- **OIDC SSO** — optional single sign-on via any standards-compliant identity provider
 - **Kubernetes-ready** — Helm chart with Ingress, External Secrets, and health probes
 
 ## ✨ Features
@@ -78,6 +80,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - Public validation endpoint with optional product scoping and grace period support
 - Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
+- Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - Single binary distribution with embedded UI
 - PostgreSQL storage with automatic migrations
 - Helm chart for Kubernetes deployment
@@ -145,7 +148,7 @@ See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies (`false` for local HTTP) |
 
-Harbor variables (`OPENLICENSD_HARBOR_*`) are documented in [docs/configuration.md](docs/configuration.md).
+Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
 
 Generate a password hash:
 
@@ -195,6 +198,18 @@ curl -s -X POST https://licenses.example.com/api/v1/registry-credentials \
 ```
 
 See [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md) for setup, configuration, and troubleshooting.
+
+## 🔐 OIDC SSO
+
+When `OPENLICENSD_OIDC_ENABLED=true`, admins can sign in through any standards-compliant OIDC identity provider (Google, Entra ID, Keycloak, Okta, GitLab, and others). Users are provisioned on first login; roles are managed locally in the admin UI.
+
+Register this redirect URI with your IdP:
+
+```
+https://<your-host>/api/v1/auth/oidc/callback
+```
+
+See [docs/oidc-sso.md](docs/oidc-sso.md) for setup, configuration, and troubleshooting.
 
 ## 💻 Local Development
 

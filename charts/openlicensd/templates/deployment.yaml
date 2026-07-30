@@ -46,6 +46,8 @@ spec:
               value: {{ .Values.config.sessionTTLHours | quote }}
             - name: OPENLICENSD_COOKIE_SECURE
               value: {{ .Values.config.cookieSecure | quote }}
+            - name: OPENLICENSD_LOCAL_LOGIN_ENABLED
+              value: {{ .Values.config.localLoginEnabled | quote }}
             - name: OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL
               value: {{ .Values.config.bootstrapAdmin.email | quote }}
             - name: OPENLICENSD_BOOTSTRAP_ADMIN_NAME
@@ -65,6 +67,24 @@ spec:
               value: {{ .Values.config.harbor.insecureSkipVerify | quote }}
             - name: OPENLICENSD_HARBOR_DEBUG
               value: {{ .Values.config.harbor.debug | quote }}
+            {{- end }}
+            - name: OPENLICENSD_OIDC_ENABLED
+              value: {{ .Values.config.oidc.enabled | quote }}
+            {{- if .Values.config.oidc.enabled }}
+            - name: OPENLICENSD_OIDC_ISSUER_URL
+              value: {{ required "config.oidc.issuerUrl is required when config.oidc.enabled is true" .Values.config.oidc.issuerUrl | quote }}
+            - name: OPENLICENSD_OIDC_CLIENT_ID
+              value: {{ required "config.oidc.clientId is required when config.oidc.enabled is true" .Values.config.oidc.clientId | quote }}
+            - name: OPENLICENSD_OIDC_REDIRECT_URL
+              value: {{ required "config.oidc.redirectUrl is required when config.oidc.enabled is true" .Values.config.oidc.redirectUrl | quote }}
+            - name: OPENLICENSD_OIDC_SCOPES
+              value: {{ .Values.config.oidc.scopes | quote }}
+            - name: OPENLICENSD_OIDC_DEFAULT_ROLE
+              value: {{ .Values.config.oidc.defaultRole | quote }}
+            - name: OPENLICENSD_OIDC_PROVIDER_NAME
+              value: {{ .Values.config.oidc.providerName | quote }}
+            - name: OPENLICENSD_OIDC_ADMIN_EMAILS
+              value: {{ .Values.config.oidc.adminEmails | quote }}
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}

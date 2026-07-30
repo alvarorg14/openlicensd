@@ -40,10 +40,11 @@ func setupTestEnv(t *testing.T) testEnv {
 	email := fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano())
 
 	cfg := &config.Config{
-		Addr:            ":8080",
-		DatabaseURL:     databaseURL,
-		SessionTTLHours: 24,
-		CookieSecure:    false,
+		Addr:              ":8080",
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
+		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{
 			Email:        email,
 			Name:         "Test Admin",
@@ -75,7 +76,7 @@ func setupTestEnv(t *testing.T) testEnv {
 		}
 	}
 
-	srv := api.New(cfg, st)
+	srv := api.New(ctx, cfg, st)
 
 	return testEnv{
 		Handler:  srv.Router(nil),

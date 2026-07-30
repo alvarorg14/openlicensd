@@ -28,10 +28,11 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		Addr:            ":8080",
+		Addr:              ":8080",
 		DatabaseURL:     databaseURL,
 		SessionTTLHours: 24,
 		CookieSecure:    false,
+		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{
 			Email:        fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano()),
 			Name:         "Test Admin",
@@ -53,7 +54,7 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 
-	srv := api.New(cfg, st)
+	srv := api.New(ctx, cfg, st)
 	handler := srv.Router(nil)
 
 	resp := doJSON(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
@@ -96,10 +97,11 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 	email := fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano())
 
 	cfg := &config.Config{
-		Addr:            ":8080",
+		Addr:              ":8080",
 		DatabaseURL:     databaseURL,
 		SessionTTLHours: 24,
 		CookieSecure:    false,
+		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{
 			Email:        email,
 			Name:         "Test Admin",
@@ -138,7 +140,7 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 		}
 	}
 
-	srv := api.New(cfg, st)
+	srv := api.New(ctx, cfg, st)
 	handler := srv.Router(nil)
 	cookies := login(t, handler, email, "test-password")
 

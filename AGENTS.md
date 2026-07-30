@@ -37,6 +37,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
+| `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
@@ -69,6 +70,12 @@ This document provides context and guidelines for AI coding assistants working o
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
+| `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
+| `OPENLICENSD_OIDC_ENABLED` | `false` | Enable OIDC SSO |
+| `OPENLICENSD_OIDC_ISSUER_URL` | — | OIDC issuer URL (required when enabled) |
+| `OPENLICENSD_OIDC_CLIENT_ID` | — | OAuth client ID (required when enabled) |
+| `OPENLICENSD_OIDC_CLIENT_SECRET` | — | OAuth client secret (required when enabled) |
+| `OPENLICENSD_OIDC_REDIRECT_URL` | — | OIDC callback URL (required when enabled) |
 | `OPENLICENSD_HARBOR_ENABLED` | `false` | Enable Harbor credentials endpoint |
 | `OPENLICENSD_HARBOR_URL` | — | Harbor base URL (required when enabled) |
 | `OPENLICENSD_HARBOR_ADMIN_USERNAME` | — | Harbor admin username |
@@ -89,8 +96,10 @@ This document provides context and guidelines for AI coding assistants working o
 | `server/internal/api/products.go` | Product handlers |
 | `server/internal/api/policies.go` | Policy handlers |
 | `server/internal/api/validate.go` | Validation and registry credentials handlers |
+| `server/internal/api/oidc.go` | OIDC login and callback handlers |
 | `server/internal/auth/auth.go` | Session auth, CSRF, role middleware |
 | `server/internal/harbor/harbor.go` | Harbor robot creation and cleanup |
+| `server/internal/oidc/oidc.go` | OIDC discovery, PKCE, ID token verification |
 | `server/internal/license/license.go` | Key generation and validation |
 | `server/internal/store/store.go` | PostgreSQL operations |
 | `server/internal/store/migrations/` | SQL migrations (run on startup) |
@@ -242,6 +251,6 @@ On GitHub release publish:
 
 - [README.md](README.md) — User-facing overview and reference
 - [QUICKSTART.md](QUICKSTART.md) — Get running in minutes
-- [docs/](docs/) — API spec, architecture, configuration, deployment, Harbor
+- [docs/](docs/) — API spec, architecture, configuration, deployment, OIDC SSO, Harbor
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributor workflow
 - [SECURITY.md](SECURITY.md) — Security policy and vulnerability reporting

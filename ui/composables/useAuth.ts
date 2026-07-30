@@ -1,4 +1,4 @@
-import type { AuthUser, LoginResponse } from '~/types'
+import type { AuthProviders, AuthUser, LoginResponse } from '~/types'
 
 const CSRF_COOKIE = 'openlicensd_csrf'
 
@@ -13,6 +13,7 @@ export const getCsrfToken = (): string | null => {
 export const useAuth = () => {
   const user = useState<AuthUser | null>('auth_user', () => null)
   const authReady = useState('auth_ready', () => false)
+  const providers = useState<AuthProviders | null>('auth_providers', () => null)
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
@@ -32,6 +33,17 @@ export const useAuth = () => {
     } catch {
       setUser(null)
       return null
+    }
+  }
+
+  const fetchProviders = async () => {
+    try {
+      const res = await $fetch<AuthProviders>('/api/v1/auth/providers')
+      providers.value = res
+      return res
+    } catch {
+      providers.value = { local: true, oidc: false }
+      return providers.value
     }
   }
 
@@ -62,11 +74,13 @@ export const useAuth = () => {
   return {
     user,
     authReady,
+    providers,
     isAuthenticated,
     isAdmin,
     canWrite,
     setUser,
     fetchMe,
+    fetchProviders,
     login,
     logout
   }

@@ -15,6 +15,23 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies |
+| `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
+
+### OIDC SSO (optional)
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_OIDC_ENABLED` | `false` | No | Enable OIDC SSO |
+| `OPENLICENSD_OIDC_ISSUER_URL` | — | Yes when enabled | OIDC issuer URL |
+| `OPENLICENSD_OIDC_CLIENT_ID` | — | Yes when enabled | OAuth client ID |
+| `OPENLICENSD_OIDC_CLIENT_SECRET` | — | Yes when enabled | OAuth client secret |
+| `OPENLICENSD_OIDC_REDIRECT_URL` | — | Yes when enabled | Callback URL registered with the IdP |
+| `OPENLICENSD_OIDC_SCOPES` | `openid,profile,email` | No | Comma-separated scopes |
+| `OPENLICENSD_OIDC_DEFAULT_ROLE` | `viewer` | No | Role for newly provisioned SSO users |
+| `OPENLICENSD_OIDC_PROVIDER_NAME` | `SSO` | No | SSO button label on the login page |
+| `OPENLICENSD_OIDC_ADMIN_EMAILS` | — | No | Comma-separated emails that receive `admin` on first SSO login |
+
+See [oidc-sso.md](oidc-sso.md) for provider setup walkthroughs and troubleshooting.
 
 ### Harbor (optional)
 
@@ -62,8 +79,17 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.addr` | `OPENLICENSD_ADDR` |
 | `config.sessionTTLHours` | `OPENLICENSD_SESSION_TTL_HOURS` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
+| `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
+| `config.oidc.enabled` | `OPENLICENSD_OIDC_ENABLED` |
+| `config.oidc.issuerUrl` | `OPENLICENSD_OIDC_ISSUER_URL` |
+| `config.oidc.clientId` | `OPENLICENSD_OIDC_CLIENT_ID` |
+| `config.oidc.redirectUrl` | `OPENLICENSD_OIDC_REDIRECT_URL` |
+| `config.oidc.scopes` | `OPENLICENSD_OIDC_SCOPES` |
+| `config.oidc.defaultRole` | `OPENLICENSD_OIDC_DEFAULT_ROLE` |
+| `config.oidc.providerName` | `OPENLICENSD_OIDC_PROVIDER_NAME` |
+| `config.oidc.adminEmails` | `OPENLICENSD_OIDC_ADMIN_EMAILS` |
 | `config.harbor.enabled` | `OPENLICENSD_HARBOR_ENABLED` |
 | `config.harbor.url` | `OPENLICENSD_HARBOR_URL` |
 | `config.harbor.projects` | `OPENLICENSD_HARBOR_PROJECTS` |
@@ -78,6 +104,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 |------------|---------------------|
 | `secret.data.databaseUrl` | `OPENLICENSD_DATABASE_URL` |
 | `secret.data.bootstrapAdminPasswordHash` | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` |
+| `secret.data.oidcClientSecret` | `OPENLICENSD_OIDC_CLIENT_SECRET` |
 | `secret.data.harborAdminUsername` | `OPENLICENSD_HARBOR_ADMIN_USERNAME` |
 | `secret.data.harborAdminPassword` | `OPENLICENSD_HARBOR_ADMIN_PASSWORD` |
 

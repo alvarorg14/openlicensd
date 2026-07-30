@@ -13,6 +13,7 @@ import (
 	"github.com/openlicensd/openlicensd/server/internal/auth"
 	"github.com/openlicensd/openlicensd/server/internal/config"
 	"github.com/openlicensd/openlicensd/server/internal/harbor"
+	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
@@ -21,9 +22,10 @@ type Server struct {
 	auth   *auth.Service
 	store  *store.Store
 	harbor *harbor.Client
+	oidc   *appoidc.Client
 }
 
-func New(cfg *config.Config, st *store.Store) *Server {
+func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 	sessionTTL := time.Duration(cfg.SessionTTLHours) * time.Hour
 	srv := &Server{
 		cfg:   cfg,
@@ -45,6 +47,20 @@ func New(cfg *config.Config, st *store.Store) *Server {
 		srv.harbor = client
 	}
 
+	if cfg.OIDC.Enabled {
+		client, err := appoidc.New(ctx, appoidc.Config{
+			IssuerURL:    cfg.OIDC.IssuerURL,
+			ClientID:     cfg.OIDC.ClientID,
+			ClientSecret: cfg.OIDC.ClientSecret,
+			RedirectURL:  cfg.OIDC.RedirectURL,
+			Scopes:       cfg.OIDC.Scopes,
+		})
+		if err != nil {
+			log.Fatalf("oidc client: %v", err)
+		}
+		srv.oidc = client
+	}
+
 	return srv
 }
 
@@ -61,6 +77,10 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/login", s.handleLogin)
 		r.Get("/auth/providers", s.handleAuthProviders)
+		if s.cfg.OIDC.Enabled {
+			r.Get("/auth/oidc/login", s.handleOIDCLogin)
+			r.Get("/auth/oidc/callback", s.handleOIDCCallback)
+		}
 		r.Post("/validate", s.handleValidate)
 		if s.cfg.Harbor.Enabled {
 			r.Post("/registry-credentials", s.handleRegistryCredentials)
@@ -131,6 +151,11 @@ type loginResponse struct {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.LocalLoginEnabled {
+		writeError(w, http.StatusForbidden, "local login is disabled")
+		return
+	}
+
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")

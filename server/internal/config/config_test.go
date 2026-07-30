@@ -108,6 +108,7 @@ func TestLoadHarborBoolParsing(t *testing.T) {
 
 func TestLoadSessionDefaults(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_COOKIE_SECURE", "")
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -121,5 +122,80 @@ func TestLoadSessionDefaults(t *testing.T) {
 	}
 	if cfg.BootstrapAdmin.Name != "Administrator" {
 		t.Fatalf("bootstrap name=%q", cfg.BootstrapAdmin.Name)
+	}
+}
+
+func TestLoadOIDCDisabledByDefault(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_OIDC_ENABLED", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.OIDC.Enabled {
+		t.Fatalf("expected oidc disabled by default")
+	}
+	if !cfg.LocalLoginEnabled {
+		t.Fatalf("expected local login enabled by default")
+	}
+}
+
+func TestLoadOIDCEnabledRequiresConfig(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_OIDC_ENABLED", "true")
+	t.Setenv("OPENLICENSD_OIDC_ISSUER_URL", "")
+	t.Setenv("OPENLICENSD_OIDC_CLIENT_ID", "")
+	t.Setenv("OPENLICENSD_OIDC_CLIENT_SECRET", "")
+	t.Setenv("OPENLICENSD_OIDC_REDIRECT_URL", "")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when oidc enabled without required config")
+	}
+}
+
+func TestLoadOIDCDefaultScopes(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_OIDC_ENABLED", "true")
+	t.Setenv("OPENLICENSD_OIDC_ISSUER_URL", "https://issuer.example.com")
+	t.Setenv("OPENLICENSD_OIDC_CLIENT_ID", "client-id")
+	t.Setenv("OPENLICENSD_OIDC_CLIENT_SECRET", "client-secret")
+	t.Setenv("OPENLICENSD_OIDC_REDIRECT_URL", "https://app.example.com/api/v1/auth/oidc/callback")
+	t.Setenv("OPENLICENSD_OIDC_SCOPES", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if len(cfg.OIDC.Scopes) != 3 || cfg.OIDC.Scopes[0] != "openid" {
+		t.Fatalf("scopes=%v", cfg.OIDC.Scopes)
+	}
+}
+
+func TestLoadLocalLoginDisabledWithoutOIDCFails(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOCAL_LOGIN_ENABLED", "false")
+	t.Setenv("OPENLICENSD_OIDC_ENABLED", "false")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when all login methods disabled")
+	}
+}
+
+func TestOIDCIsAdminEmail(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_OIDC_ADMIN_EMAILS", "Admin@Example.com")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if !cfg.OIDC.IsAdminEmail("admin@example.com") {
+		t.Fatalf("expected admin email match")
+	}
+	if cfg.OIDC.IsAdminEmail("other@example.com") {
+		t.Fatalf("unexpected admin email match")
 	}
 }

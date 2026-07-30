@@ -66,6 +66,7 @@ config:
   sessionTTLHours: 24
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
+  localLoginEnabled: true
   bootstrapAdmin:
     # -- Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL)
     email: ""
@@ -86,6 +87,23 @@ config:
     insecureSkipVerify: false
     # -- Log Harbor API requests/responses (maps to OPENLICENSD_HARBOR_DEBUG)
     debug: false
+  oidc:
+    # -- Enable OIDC SSO (maps to OPENLICENSD_OIDC_ENABLED)
+    enabled: false
+    # -- OIDC issuer URL (maps to OPENLICENSD_OIDC_ISSUER_URL)
+    issuerUrl: ""
+    # -- OAuth client ID (maps to OPENLICENSD_OIDC_CLIENT_ID)
+    clientId: ""
+    # -- Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL)
+    redirectUrl: ""
+    # -- Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES)
+    scopes: "openid,profile,email"
+    # -- Default role for new SSO users (maps to OPENLICENSD_OIDC_DEFAULT_ROLE)
+    defaultRole: viewer
+    # -- SSO button label (maps to OPENLICENSD_OIDC_PROVIDER_NAME)
+    providerName: SSO
+    # -- Comma-separated admin emails on first SSO login (maps to OPENLICENSD_OIDC_ADMIN_EMAILS)
+    adminEmails: ""
 
 secret:
   # -- Secret provisioning mode: `create`, `existing`, or `externalSecrets`
@@ -100,6 +118,8 @@ secret:
     databaseUrl: ""
     # -- Bcrypt hash for bootstrap admin password (maps to OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH)
     bootstrapAdminPasswordHash: ""
+    # -- OIDC client secret (maps to OPENLICENSD_OIDC_CLIENT_SECRET)
+    oidcClientSecret: ""
     # -- Harbor admin username (maps to OPENLICENSD_HARBOR_ADMIN_USERNAME)
     harborAdminUsername: ""
     # -- Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD)

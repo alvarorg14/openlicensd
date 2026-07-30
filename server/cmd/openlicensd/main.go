@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("bootstrap: %v", err)
 	}
 
-	srv := api.New(cfg, st)
+	srv := api.New(ctx, cfg, st)
 	staticHandler := static.MustHandler()
 	handler := srv.Router(staticHandler)
 
