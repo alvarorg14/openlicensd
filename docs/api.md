@@ -48,29 +48,49 @@ These endpoints do not require authentication:
 | `GET` | `/healthz` | Liveness probe |
 | `GET` | `/readyz` | Readiness probe (checks database) |
 
+## Example: create a product and policy
+
+```bash
+PRODUCT=$(curl -s -X POST http://localhost:8080/api/v1/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme Widget","code":"acme-widget"}')
+
+PRODUCT_ID=$(echo "$PRODUCT" | jq -r .id)
+
+POLICY=$(curl -s -X POST http://localhost:8080/api/v1/policies \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"product_id\":\"$PRODUCT_ID\",\"name\":\"30-day trial\",\"duration_days\":30,\"expiration_basis\":\"on_first_validation\"}")
+
+POLICY_ID=$(echo "$POLICY" | jq -r .id)
+```
+
 ## Example: create a license
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/licenses \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"label":"Acme Corp","expires_at":"2027-01-01T00:00:00Z"}'
+  -d "{\"label\":\"Acme Corp\",\"product_id\":\"$PRODUCT_ID\",\"policy_id\":\"$POLICY_ID\"}" | jq
 ```
 
 The response includes the raw `key` field **once**. Store it securely — it cannot be retrieved later.
+
+You can optionally override the policy-derived expiration with `expires_at`.
 
 ## Example: validate a license
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/validate \
   -H "Content-Type: application/json" \
-  -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD"}'
+  -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD","product":"acme-widget"}' | jq
 ```
 
 Valid response:
 
 ```json
-{ "valid": true, "expires_at": null }
+{ "valid": true, "product": "acme-widget", "policy": "30-day trial" }
 ```
 
 Invalid response (always HTTP 200):
@@ -79,7 +99,13 @@ Invalid response (always HTTP 200):
 { "valid": false, "reason": "expired", "expires_at": "2026-01-01T00:00:00Z" }
 ```
 
-Possible `reason` values: `not_found`, `expired`, `revoked`.
+Possible `reason` values: `not_found`, `expired`, `revoked`, `product_mismatch`.
+
+When a license is within the policy grace period after expiry:
+
+```json
+{ "valid": true, "in_grace_period": true, "expires_at": "2026-01-01T00:00:00Z" }
+```
 
 > **Note:** `/validate` always returns HTTP 200 with a `valid` boolean. The `/registry-credentials` endpoint returns HTTP 403 with an `error` field for invalid licenses instead.
 
@@ -98,7 +124,8 @@ Common status codes:
 | `400` | Invalid request body or parameters |
 | `401` | Missing or invalid JWT |
 | `403` | Invalid license (registry-credentials only) |
-| `404` | License not found |
+| `404` | Resource not found |
+| `409` | Resource is referenced by other records |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
 

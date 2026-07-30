@@ -64,11 +64,43 @@ ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
 
 In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`).
 
+The admin UI has a left sidebar with pages for **Licenses**, **Products**, and **Policies**.
+
 ## Data model
 
-### `licenses` table
+```mermaid
+erDiagram
+    products ||--o{ policies : has
+    products ||--o{ licenses : scopes
+    policies ||--o{ licenses : governs
+```
 
-Defined in `server/internal/store/migrations/`:
+### `products` table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `UUID` | Primary key |
+| `name` | `TEXT` | Display name |
+| `code` | `TEXT` | Unique machine identifier (sent by clients on validation) |
+| `description` | `TEXT` | Optional description |
+| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
+
+### `policies` table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `UUID` | Primary key |
+| `product_id` | `UUID` | FK to `products` |
+| `name` | `TEXT` | Policy name (unique per product) |
+| `description` | `TEXT` | Optional description |
+| `duration_days` | `INTEGER` | Null = perpetual |
+| `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation` |
+| `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds |
+| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
+
+### `licenses` table
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -76,13 +108,23 @@ Defined in `server/internal/store/migrations/`:
 | `label` | `TEXT` | Human-readable label |
 | `key_hash` | `TEXT` | SHA-256 hash of the full license key (unique) |
 | `key_prefix` | `TEXT` | First 5-character group (for display) |
-| `expires_at` | `TIMESTAMPTZ` | Optional expiration (null = never expires) |
+| `product_id` | `UUID` | FK to `products` (required) |
+| `policy_id` | `UUID` | FK to `policies` (required; composite FK ensures same product) |
+| `expires_at` | `TIMESTAMPTZ` | Optional expiration (derived from policy or overridden) |
+| `activated_at` | `TIMESTAMPTZ` | Set on first validation for `on_first_validation` policies |
 | `revoked` | `BOOLEAN` | Whether the license is revoked |
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
 | `validation_count` | `BIGINT` | Total validation count |
 
 Only the SHA-256 hash of the license key is stored. The full key is shown once at creation and cannot be recovered.
+
+### Expiry semantics
+
+- Policy rules are **snapshotted** onto the license at issuance; editing a policy does not change existing licenses.
+- `on_creation`: `expires_at` is set when the license is created.
+- `on_first_validation`: `expires_at` and `activated_at` are set on the first validation.
+- `grace_period_days` allows validation to succeed briefly after `expires_at` (response includes `in_grace_period: true`).
 
 ## License key format
 
@@ -111,15 +153,18 @@ sequenceDiagram
   participant Store
   participant PG as PostgreSQL
 
-  Client->>API: POST /api/v1/validate {key}
+  Client->>API: POST /api/v1/validate {key, product?}
   API->>License: HashKey(key)
   API->>Store: GetLicenseByKeyHash(hash)
-  Store->>PG: SELECT
+  Store->>PG: SELECT with product/policy join
   PG-->>Store: license row
   Store-->>API: license
+  opt on_first_validation and not yet activated
+    API->>Store: ActivateLicense(id, expires_at)
+  end
   API->>Store: RecordValidation(id)
-  API->>License: Validate(expires_at, revoked)
-  API-->>Client: 200 {valid, reason?}
+  API->>License: Validate(expires_at, grace, product)
+  API-->>Client: 200 {valid, product, policy, reason?}
 ```
 
 Validation always returns HTTP 200. When the key is found (even if expired or revoked), `last_validated_at` and `validation_count` are updated.
@@ -156,6 +201,14 @@ See [harbor-registry-credentials.md](harbor-registry-credentials.md) for full de
 | `POST` | `/api/v1/auth/login` | None | Returns JWT |
 | `POST` | `/api/v1/validate` | None | Public validation |
 | `POST` | `/api/v1/registry-credentials` | None | Only when Harbor enabled |
+| `POST` | `/api/v1/products` | JWT | Create product |
+| `GET` | `/api/v1/products` | JWT | List products |
+| `PATCH` | `/api/v1/products/{id}` | JWT | Update product |
+| `DELETE` | `/api/v1/products/{id}` | JWT | Delete product |
+| `POST` | `/api/v1/policies` | JWT | Create policy |
+| `GET` | `/api/v1/policies` | JWT | List policies (`?product_id=` filter) |
+| `PATCH` | `/api/v1/policies/{id}` | JWT | Update policy |
+| `DELETE` | `/api/v1/policies/{id}` | JWT | Delete policy |
 | `POST` | `/api/v1/licenses` | JWT | Create license |
 | `GET` | `/api/v1/licenses` | JWT | List licenses |
 | `PATCH` | `/api/v1/licenses/{id}` | JWT | Update license |

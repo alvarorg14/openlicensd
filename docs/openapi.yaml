@@ -28,6 +28,10 @@ tags:
     description: Liveness and readiness probes
   - name: Auth
     description: Admin authentication
+  - name: Products
+    description: Product management (admin only)
+  - name: Policies
+    description: Policy management (admin only)
   - name: Licenses
     description: License management (admin only)
   - name: Validation
@@ -93,6 +97,274 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
       security: []
+
+  /api/v1/products:
+    get:
+      tags: [Products]
+      summary: List products
+      operationId: listProducts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Products]
+      summary: Create a product
+      operationId: createProduct
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Product code already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/products/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ProductId"
+
+    patch:
+      tags: [Products]
+      summary: Update a product
+      operationId: updateProduct
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product ID or request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Product code already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Products]
+      summary: Delete a product
+      operationId: deleteProduct
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Product deleted
+        "400":
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Product is referenced by policies or licenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/policies:
+    get:
+      tags: [Policies]
+      summary: List policies
+      operationId: listPolicies
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: product_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter policies by product
+      responses:
+        "200":
+          description: List of policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Policy"
+        "400":
+          description: Invalid product_id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Policies]
+      summary: Create a policy
+      operationId: createPolicy
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePolicyRequest"
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Policy name already exists for product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/policies/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PolicyId"
+
+    patch:
+      tags: [Policies]
+      summary: Update a policy
+      operationId: updatePolicy
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePolicyRequest"
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "400":
+          description: Invalid policy ID or request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Policy name already exists for product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Policies]
+      summary: Delete a policy
+      operationId: deletePolicy
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Policy deleted
+        "400":
+          description: Invalid policy ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Policy is assigned to licenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /api/v1/licenses:
     get:
@@ -373,6 +645,22 @@ components:
       schema:
         type: string
         format: uuid
+    ProductId:
+      name: id
+      in: path
+      required: true
+      description: Product UUID
+      schema:
+        type: string
+        format: uuid
+    PolicyId:
+      name: id
+      in: path
+      required: true
+      description: Policy UUID
+      schema:
+        type: string
+        format: uuid
 
   responses:
     Unauthorized:
@@ -434,17 +722,140 @@ components:
 
     CreateLicenseRequest:
       type: object
-      required: [label]
+      required: [label, product_id, policy_id]
       properties:
         label:
           type: string
           description: Human-readable label for the license
           example: Acme Corp
+        product_id:
+          type: string
+          format: uuid
+        policy_id:
+          type: string
+          format: uuid
         expires_at:
           type: ["string", "null"]
           format: date-time
-          description: Expiration time in RFC3339. Omit or set to null for a key that never expires.
-          example: "2027-01-01T00:00:00Z"
+          description: Optional override of the policy-derived expiration time.
+
+    CreateProductRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+          example: Acme Widget Pro
+        code:
+          type: string
+          description: Stable machine identifier sent by clients during validation
+          example: acme-widget
+        description:
+          type: ["string", "null"]
+
+    UpdateProductRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    CreatePolicyRequest:
+      type: object
+      required: [product_id, name]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: 30-day trial
+        description:
+          type: ["string", "null"]
+        duration_days:
+          type: ["integer", "null"]
+          description: Null for perpetual policies
+        expiration_basis:
+          type: string
+          enum: [on_creation, on_first_validation]
+          default: on_creation
+        grace_period_days:
+          type: integer
+          default: 0
+
+    UpdatePolicyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        duration_days:
+          type: ["integer", "null"]
+        expiration_basis:
+          type: string
+          enum: [on_creation, on_first_validation]
+        grace_period_days:
+          type: integer
+
+    Product:
+      type: object
+      required: [id, name, code, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        archived_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Policy:
+      type: object
+      required: [id, product_id, name, expiration_basis, grace_period_days, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        duration_days:
+          type: ["integer", "null"]
+        expiration_basis:
+          type: string
+          enum: [on_creation, on_first_validation]
+        grace_period_days:
+          type: integer
+        archived_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 
     UpdateLicenseRequest:
       type: object
@@ -464,6 +875,11 @@ components:
         - id
         - label
         - key_prefix
+        - product_id
+        - product_code
+        - product_name
+        - policy_id
+        - policy_name
         - revoked
         - created_at
         - validation_count
@@ -477,7 +893,22 @@ components:
           type: string
           description: First group of the license key (for display only)
           example: X4F9K
+        product_id:
+          type: string
+          format: uuid
+        product_code:
+          type: string
+        product_name:
+          type: string
+        policy_id:
+          type: string
+          format: uuid
+        policy_name:
+          type: string
         expires_at:
+          type: ["string", "null"]
+          format: date-time
+        activated_at:
           type: ["string", "null"]
           format: date-time
         revoked:
@@ -511,6 +942,9 @@ components:
           type: string
           description: Full license key
           example: X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD
+        product:
+          type: string
+          description: Optional product code to enforce product scoping
 
     ValidationResult:
       type: object
@@ -524,8 +958,17 @@ components:
           description: Present when the key is expired
         reason:
           type: string
-          enum: [not_found, expired, revoked]
+          enum: [not_found, expired, revoked, product_mismatch]
           description: Present when valid is false
+        product:
+          type: string
+          description: Product code for the matched license
+        policy:
+          type: string
+          description: Policy name for the matched license
+        in_grace_period:
+          type: boolean
+          description: True when the license is past expiry but still within the policy grace period
 
     RegistryCredentials:
       type: object
