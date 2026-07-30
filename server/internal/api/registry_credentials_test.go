@@ -123,12 +123,19 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 	}
 	t.Cleanup(st.Close)
 
+	userCount, err := st.CountUsers(ctx)
+	if err != nil {
+		t.Fatalf("count users: %v", err)
+	}
+
 	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
 		t.Fatalf("bootstrap: %v", err)
 	}
 
-	if _, err := st.CreateUser(ctx, email, cfg.BootstrapAdmin.Name, &passwordHash, store.RoleAdmin, store.AuthProviderLocal, nil); err != nil {
-		t.Fatalf("create test admin: %v", err)
+	if userCount > 0 {
+		if _, err := st.CreateUser(ctx, email, cfg.BootstrapAdmin.Name, &passwordHash, store.RoleAdmin, store.AuthProviderLocal, nil); err != nil {
+			t.Fatalf("create test admin: %v", err)
+		}
 	}
 
 	srv := api.New(cfg, st)
