@@ -1,6 +1,19 @@
-.PHONY: help dev dev-db dev-server dev-ui ui server test lint hash-password build release
+.PHONY: help dev dev-db dev-server dev-ui ui server test lint lint-server lint-ui vuln hash-password build release
 
 .DEFAULT_GOAL := help
+
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION ?= v2.12.2
+# renovate: datasource=go depName=golang.org/x/vuln
+GOVULNCHECK_VERSION ?= v1.6.0
+
+TOOLS_BIN := $(CURDIR)/bin
+GOLANGCI_LINT := $(TOOLS_BIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
+
+$(GOLANGCI_LINT):
+	@mkdir -p $(TOOLS_BIN)
+	GOBIN=$(TOOLS_BIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@mv $(TOOLS_BIN)/golangci-lint $@
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -34,9 +47,17 @@ build: ui server ## Build UI and server binary
 test: ## Run Go tests
 	@set -a && [ -f .env ] && . ./.env; set +a && cd server && go test ./...
 
-lint: ## Run go vet and ESLint
+lint: lint-server lint-ui ## Run all linters
+
+lint-server: $(GOLANGCI_LINT) ## Run go vet and golangci-lint
 	cd server && go vet ./...
+	cd server && $(GOLANGCI_LINT) run ./...
+
+lint-ui: ## Run ESLint
 	cd ui && npm run lint
+
+vuln: ## Run govulncheck
+	cd server && go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 hash-password: ## Generate bcrypt password hash (PASSWORD=...)
 	@test -n "$(PASSWORD)" || (echo "Usage: make hash-password PASSWORD=yourpassword" && exit 1)

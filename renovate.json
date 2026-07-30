@@ -26,20 +26,25 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchDepNames": ["golangci/golangci-lint"],
+      "matchDepNames": [
+        "golangci/golangci-lint",
+        "goreleaser/goreleaser",
+        "golang.org/x/vuln"
+      ],
       "labels": ["ci"]
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
-      "matchStrings": [
-        "version: (?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
       ],
-      "depNameTemplate": "golangci/golangci-lint",
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z_]+ \\?= (?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+version: (?<currentValue>\\S+)"
+      ]
     }
   ]
 }
