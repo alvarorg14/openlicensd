@@ -1,5 +1,7 @@
 <template>
   <div class="min-h-screen app-bg font-sans antialiased">
-    <NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />
+    <NuxtLayout>
+      <NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />
+    </NuxtLayout>
   </div>
 </template>

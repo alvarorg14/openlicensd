@@ -14,6 +14,15 @@
           <UInput v-model="form.label" placeholder="e.g. Acme Corp production" />
         </UFormField>
 
+        <div v-if="license" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <UFormField label="Product">
+            <UInput :model-value="license.product_name" disabled />
+          </UFormField>
+          <UFormField label="Policy">
+            <UInput :model-value="license.policy_name" disabled />
+          </UFormField>
+        </div>
+
         <UFormField name="neverExpires">
           <UCheckbox v-model="form.neverExpires" label="Never expires" />
         </UFormField>
@@ -49,7 +58,7 @@ const emit = defineEmits<{
   updated: [license: License]
 }>()
 
-const { updateLicense } = useAuth()
+const { updateLicense } = useApi()
 
 const form = reactive({
   label: '',
