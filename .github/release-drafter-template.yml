@@ -39,9 +39,6 @@ categories:
   - title: 'Other Changes 🛠️'
 change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
-replacers:
-  - search: '/(\w+)-(\d+)/g'
-    replace: '[$1-$2](https://searchbroker.atlassian.net/browse/$1-$2)'
 
 template: |
   $CHANGES
