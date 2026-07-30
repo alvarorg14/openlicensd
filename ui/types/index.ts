@@ -56,6 +56,13 @@ export interface ValidateResponse {
 
 export type LicenseStatus = 'active' | 'expired' | 'revoked'
 
+export interface DetailItem {
+  label: string
+  value: string
+  mono?: boolean
+  multiline?: boolean
+}
+
 export interface CreateLicenseInput {
   label: string
   product_id: string

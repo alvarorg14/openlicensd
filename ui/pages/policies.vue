@@ -59,7 +59,8 @@
         v-else
         :columns="columns"
         :data="filteredPolicies"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30"
+        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+        @select="(_e, row) => openDetails(row.original)"
       >
         <template #name-cell="{ row }">
           <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
@@ -67,6 +68,18 @@
 
         <template #product_name-cell="{ row }">
           <span>{{ row.original.product_name }}</span>
+        </template>
+
+        <template #description-cell="{ row }">
+          <UTooltip
+            v-if="row.original.description"
+            :text="row.original.description"
+          >
+            <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
+              {{ row.original.description }}
+            </span>
+          </UTooltip>
+          <span v-else class="text-slate-500">—</span>
         </template>
 
         <template #duration-cell="{ row }">
@@ -97,6 +110,15 @@
 
     <PolicyFormModal v-model:open="showForm" :policy="editingPolicy" @saved="fetchPolicies" />
 
+    <DetailsModal
+      v-model:open="showDetails"
+      :title="detailsPolicy?.name ?? 'Policy details'"
+      icon="i-lucide-shield"
+      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
+      icon-class="text-indigo-600 dark:text-indigo-400"
+      :items="detailsItems"
+    />
+
     <ConfirmModal
       v-model:open="showDeleteConfirm"
       title="Delete policy"
@@ -111,7 +133,7 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { ExpirationBasis, Policy, Product } from '~/types'
+import type { DetailItem, ExpirationBasis, Policy, Product } from '~/types'
 
 type PolicyRow = Policy & { product_name: string }
 
@@ -128,7 +150,9 @@ const loadError = ref('')
 const searchQuery = ref('')
 const productFilter = ref<string | null>(null)
 const showForm = ref(false)
+const showDetails = ref(false)
 const editingPolicy = ref<Policy | null>(null)
+const detailsPolicy = ref<PolicyRow | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<Policy | null>(null)
 const actionId = ref<string | null>(null)
@@ -137,6 +161,7 @@ const deleting = ref(false)
 const columns = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'product_name', header: 'Product' },
+  { accessorKey: 'description', header: 'Description' },
   { accessorKey: 'duration', header: 'Duration' },
   { accessorKey: 'expiration_basis', header: 'Basis' },
   { accessorKey: 'grace_period_days', header: 'Grace (days)' },
@@ -174,6 +199,24 @@ const filteredPolicies = computed(() => {
   })
 })
 
+const detailsItems = computed((): DetailItem[] => {
+  const policy = detailsPolicy.value
+  if (!policy) {
+    return []
+  }
+  return [
+    { label: 'Name', value: policy.name },
+    { label: 'Product', value: policy.product_name },
+    { label: 'Description', value: policy.description || '—', multiline: true },
+    { label: 'Duration', value: formatDuration(policy) },
+    { label: 'Basis', value: formatBasis(policy.expiration_basis) },
+    { label: 'Grace period', value: `${policy.grace_period_days} days` },
+    { label: 'Created', value: formatDate(policy.created_at) }
+  ]
+})
+
+const formatDate = (value: string) => new Date(value).toLocaleString()
+
 const deleteConfirmDescription = computed(() => {
   const name = deleteTarget.value?.name ?? 'this policy'
   return `Are you sure you want to delete "${name}"? Policies assigned to licenses cannot be deleted.`
@@ -189,6 +232,11 @@ const openEdit = (policy: Policy) => {
   showForm.value = true
 }
 
+const openDetails = (policy: PolicyRow) => {
+  detailsPolicy.value = policy
+  showDetails.value = true
+}
+
 const openDelete = (policy: Policy) => {
   deleteTarget.value = policy
   showDeleteConfirm.value = true
@@ -196,6 +244,7 @@ const openDelete = (policy: Policy) => {
 
 const getActionItems = (policy: Policy): DropdownMenuItem[][] => [
   [
+    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(policy as PolicyRow) },
     { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(policy) }
   ],
   [

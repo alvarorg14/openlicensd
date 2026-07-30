@@ -51,7 +51,8 @@
         v-else
         :columns="columns"
         :data="filteredProducts"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30"
+        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+        @select="(_e, row) => openDetails(row.original)"
       >
         <template #name-cell="{ row }">
           <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
@@ -64,7 +65,15 @@
         </template>
 
         <template #description-cell="{ row }">
-          <span class="text-slate-600 dark:text-slate-400">{{ row.original.description || '—' }}</span>
+          <UTooltip
+            v-if="row.original.description"
+            :text="row.original.description"
+          >
+            <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
+              {{ row.original.description }}
+            </span>
+          </UTooltip>
+          <span v-else class="text-slate-500">—</span>
         </template>
 
         <template #created_at-cell="{ row }">
@@ -87,6 +96,15 @@
 
     <ProductFormModal v-model:open="showForm" :product="editingProduct" @saved="fetchProducts" />
 
+    <DetailsModal
+      v-model:open="showDetails"
+      :title="detailsProduct?.name ?? 'Product details'"
+      icon="i-lucide-package"
+      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
+      icon-class="text-indigo-600 dark:text-indigo-400"
+      :items="detailsItems"
+    />
+
     <ConfirmModal
       v-model:open="showDeleteConfirm"
       title="Delete product"
@@ -101,7 +119,7 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { Product } from '~/types'
+import type { DetailItem, Product } from '~/types'
 
 definePageMeta({
   middleware: 'auth'
@@ -114,7 +132,9 @@ const loading = ref(true)
 const loadError = ref('')
 const searchQuery = ref('')
 const showForm = ref(false)
+const showDetails = ref(false)
 const editingProduct = ref<Product | null>(null)
+const detailsProduct = ref<Product | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<Product | null>(null)
 const actionId = ref<string | null>(null)
@@ -141,6 +161,20 @@ const filteredProducts = computed(() => {
   )
 })
 
+const detailsItems = computed((): DetailItem[] => {
+  const product = detailsProduct.value
+  if (!product) {
+    return []
+  }
+  return [
+    { label: 'Name', value: product.name },
+    { label: 'Code', value: product.code, mono: true },
+    { label: 'Description', value: product.description || '—', multiline: true },
+    { label: 'Created', value: formatDate(product.created_at) },
+    { label: 'Updated', value: formatDate(product.updated_at) }
+  ]
+})
+
 const deleteConfirmDescription = computed(() => {
   const name = deleteTarget.value?.name ?? 'this product'
   return `Are you sure you want to delete "${name}"? Products with policies or licenses cannot be deleted.`
@@ -156,6 +190,11 @@ const openEdit = (product: Product) => {
   showForm.value = true
 }
 
+const openDetails = (product: Product) => {
+  detailsProduct.value = product
+  showDetails.value = true
+}
+
 const openDelete = (product: Product) => {
   deleteTarget.value = product
   showDeleteConfirm.value = true
@@ -163,6 +202,7 @@ const openDelete = (product: Product) => {
 
 const getActionItems = (product: Product): DropdownMenuItem[][] => [
   [
+    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(product) },
     { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(product) }
   ],
   [
