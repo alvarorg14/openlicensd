@@ -38,31 +38,46 @@ func (s *Store) CreateProduct(ctx context.Context, name, code string, descriptio
 	return p, nil
 }
 
-func (s *Store) ListProducts(ctx context.Context) ([]Product, error) {
-	const q = `
-		SELECT ` + productColumns + `
-		FROM products
-		ORDER BY created_at DESC
-	`
+func (s *Store) ListProducts(ctx context.Context, params ListParams) ([]Product, int64, error) {
+	qb := newQueryBuilder()
+	if params.Search != "" {
+		pattern := searchPattern(params.Search)
+		qb.add("(name ILIKE $%d OR code ILIKE $%d)", pattern, pattern)
+	}
 
-	rows, err := s.pool.Query(ctx, q)
+	sortExpr := params.Sort
+	if sortExpr == "" {
+		sortExpr = "created_at"
+	}
+	orderBy := buildOrderBy(sortExpr, params.Order, "id")
+
+	q := `
+		SELECT ` + productColumns + `, COUNT(*) OVER() AS total_count
+		FROM products` + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
+
+	args := append(qb.args, params.Limit, params.Offset)
+	rows, err := s.pool.Query(ctx, q, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var products []Product
+	var (
+		products   []Product
+		totalCount int64
+	)
 	for rows.Next() {
 		var p Product
 		if err := rows.Scan(
 			&p.ID, &p.Name, &p.Code, &p.Description, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+			&totalCount,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		products = append(products, p)
 	}
 
-	return products, rows.Err()
+	return products, totalCount, rows.Err()
 }
 
 func (s *Store) GetProduct(ctx context.Context, id uuid.UUID) (*Product, error) {

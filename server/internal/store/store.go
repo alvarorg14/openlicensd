@@ -112,19 +112,59 @@ func (s *Store) GetLicenseByID(ctx context.Context, id uuid.UUID) (*License, err
 	return scanLicense(row)
 }
 
-func (s *Store) ListLicenses(ctx context.Context) ([]License, error) {
-	const q = `
-		SELECT ` + licenseColumns + licenseFromJoin + `
-		ORDER BY l.created_at DESC
-	`
+func (s *Store) ListLicenses(ctx context.Context, params LicenseListParams) ([]License, int64, error) {
+	qb := newQueryBuilder()
+	if params.Search != "" {
+		pattern := searchPattern(params.Search)
+		qb.add("(l.label ILIKE $%d OR l.key_prefix ILIKE $%d)", pattern, pattern)
+	}
+	if params.ProductID != nil {
+		qb.add("l.product_id = $%d::uuid", *params.ProductID)
+	}
+	if params.PolicyID != nil {
+		qb.add("l.policy_id = $%d::uuid", *params.PolicyID)
+	}
+	switch params.Status {
+	case "revoked":
+		qb.addExpr("l.revoked = TRUE")
+	case "expired":
+		qb.addExpr("l.revoked = FALSE AND l.expires_at IS NOT NULL AND l.expires_at < NOW()")
+	case "active":
+		qb.addExpr("l.revoked = FALSE AND (l.expires_at IS NULL OR l.expires_at >= NOW())")
+	}
 
-	rows, err := s.pool.Query(ctx, q)
+	sortExpr := params.Sort
+	if sortExpr == "" {
+		sortExpr = "l.created_at"
+	}
+	orderBy := buildOrderBy(sortExpr, params.Order, "l.id")
+
+	q := `
+		SELECT ` + licenseColumns + `, COUNT(*) OVER() AS total_count` + licenseFromJoin + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
+
+	args := append(qb.args, params.Limit, params.Offset)
+	rows, err := s.pool.Query(ctx, q, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	return scanLicenses(rows)
+	return scanLicensesWithTotal(rows)
+}
+
+func (s *Store) LicenseStats(ctx context.Context) (LicenseStats, error) {
+	const q = `
+		SELECT
+			COUNT(*)::bigint AS total,
+			COUNT(*) FILTER (WHERE NOT revoked AND (expires_at IS NULL OR expires_at >= NOW()))::bigint AS active,
+			COUNT(*) FILTER (WHERE NOT revoked AND expires_at IS NOT NULL AND expires_at < NOW())::bigint AS expired,
+			COUNT(*) FILTER (WHERE revoked)::bigint AS revoked
+		FROM licenses
+	`
+
+	var stats LicenseStats
+	err := s.pool.QueryRow(ctx, q).Scan(&stats.Total, &stats.Active, &stats.Expired, &stats.Revoked)
+	return stats, err
 }
 
 func (s *Store) GetLicenseByKeyHash(ctx context.Context, keyHash string) (*License, error) {
@@ -235,8 +275,11 @@ func scanLicense(row pgx.Row) (*License, error) {
 	return &l, nil
 }
 
-func scanLicenses(rows pgx.Rows) ([]License, error) {
-	var licenses []License
+func scanLicensesWithTotal(rows pgx.Rows) ([]License, int64, error) {
+	var (
+		licenses   []License
+		totalCount int64
+	)
 	for rows.Next() {
 		var l License
 		var expirationBasis string
@@ -245,11 +288,12 @@ func scanLicenses(rows pgx.Rows) ([]License, error) {
 			&l.ExpiresAt, &l.ActivatedAt, &l.Revoked, &l.CreatedAt, &l.LastValidatedAt, &l.ValidationCount,
 			&l.ProductCode, &l.ProductName, &l.PolicyName, &l.GracePeriodDays, &expirationBasis, &l.DurationDays,
 			&l.CreatedBy, &l.CreatedByName, &l.CreatedByEmail,
+			&totalCount,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		l.ExpirationBasis = ExpirationBasis(expirationBasis)
 		licenses = append(licenses, l)
 	}
-	return licenses, rows.Err()
+	return licenses, totalCount, rows.Err()
 }

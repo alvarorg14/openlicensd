@@ -35,6 +35,7 @@ export interface Product {
 export interface Policy {
   id: string
   product_id: string
+  product_name: string
   name: string
   description: string | null
   duration_days: number | null
@@ -122,4 +123,37 @@ export interface CreateUserInput {
   name: string
   password: string
   role: UserRole
+}
+
+export interface Paginated<T> {
+  items: T[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
+
+export interface LicenseStats {
+  total: number
+  active: number
+  expired: number
+  revoked: number
+}
+
+export interface ListQueryParams {
+  page?: number
+  page_size?: number
+  search?: string
+  sort?: string
+  order?: 'asc' | 'desc'
+}
+
+export interface LicenseListQueryParams extends ListQueryParams {
+  status?: LicenseStatus
+  product_id?: string
+  policy_id?: string
+}
+
+export interface PolicyListQueryParams extends ListQueryParams {
+  product_id?: string
 }

@@ -4,10 +4,30 @@ import type {
   CreateProductInput,
   CreateUserInput,
   License,
+  LicenseListQueryParams,
+  LicenseStats,
+  ListQueryParams,
+  Paginated,
   Policy,
+  PolicyListQueryParams,
   Product,
   User
 } from '~/types'
+
+const buildQuery = (params?: Record<string, string | number | undefined | null>) => {
+  const searchParams = new URLSearchParams()
+  if (!params) {
+    return ''
+  }
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') {
+      continue
+    }
+    searchParams.set(key, String(value))
+  }
+  const query = searchParams.toString()
+  return query ? `?${query}` : ''
+}
 
 export const useApi = () => {
   const { setUser } = useAuth()
@@ -37,7 +57,10 @@ export const useApi = () => {
     }
   }
 
-  const listLicenses = () => authFetch<License[]>('/api/v1/licenses')
+  const listLicenses = (params?: LicenseListQueryParams) =>
+    authFetch<Paginated<License>>(`/api/v1/licenses${buildQuery(params as Record<string, string | number | undefined | null>)}`)
+
+  const getLicenseStats = () => authFetch<LicenseStats>('/api/v1/licenses/stats')
 
   const createLicense = (input: CreateLicenseInput) =>
     authFetch<License>('/api/v1/licenses', {
@@ -69,7 +92,8 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
-  const listProducts = () => authFetch<Product[]>('/api/v1/products')
+  const listProducts = (params?: ListQueryParams) =>
+    authFetch<Paginated<Product>>(`/api/v1/products${buildQuery(params as Record<string, string | number | undefined | null>)}`)
 
   const createProduct = (input: CreateProductInput) =>
     authFetch<Product>('/api/v1/products', {
@@ -88,10 +112,8 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
-  const listPolicies = (productId?: string) => {
-    const query = productId ? `?product_id=${productId}` : ''
-    return authFetch<Policy[]>(`/api/v1/policies${query}`)
-  }
+  const listPolicies = (params?: PolicyListQueryParams) =>
+    authFetch<Paginated<Policy>>(`/api/v1/policies${buildQuery(params as Record<string, string | number | undefined | null>)}`)
 
   const createPolicy = (input: CreatePolicyInput) =>
     authFetch<Policy>('/api/v1/policies', {
@@ -148,6 +170,7 @@ export const useApi = () => {
   return {
     authFetch,
     listLicenses,
+    getLicenseStats,
     createLicense,
     updateLicense,
     revokeLicense,

@@ -12,6 +12,7 @@ import (
 type policyResponse struct {
 	ID              uuid.UUID `json:"id"`
 	ProductID       uuid.UUID `json:"product_id"`
+	ProductName     string    `json:"product_name"`
 	Name            string    `json:"name"`
 	Description     *string   `json:"description"`
 	DurationDays    *int      `json:"duration_days"`
@@ -43,6 +44,7 @@ func policyToResponse(p *store.Policy) policyResponse {
 	resp := policyResponse{
 		ID:              p.ID,
 		ProductID:       p.ProductID,
+		ProductName:     p.ProductName,
 		Name:            p.Name,
 		Description:     p.Description,
 		DurationDays:    p.DurationDays,
@@ -119,17 +121,34 @@ func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListPolicies(w http.ResponseWriter, r *http.Request) {
-	var productID *uuid.UUID
+	params, err := parseListParams(r, policySorts)
+	if err != nil {
+		if writeListParamError(w, err) {
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid list parameters")
+		return
+	}
+
+	listParams := store.PolicyListParams{
+		ListParams: store.ListParams{
+			Search: params.Search,
+			Sort:   params.Sort,
+			Order:  params.Order,
+			Limit:  params.Limit,
+			Offset: params.Offset,
+		},
+	}
+
 	if raw := r.URL.Query().Get("product_id"); raw != "" {
-		id, err := uuid.Parse(raw)
-		if err != nil {
+		if _, err := uuid.Parse(raw); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid product_id")
 			return
 		}
-		productID = &id
+		listParams.ProductID = &raw
 	}
 
-	policies, err := s.store.ListPolicies(r.Context(), productID)
+	policies, total, err := s.store.ListPolicies(r.Context(), listParams)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list policies")
 		return
@@ -140,7 +159,7 @@ func (s *Server) handleListPolicies(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, policyToResponse(&p))
 	}
 
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
 func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {

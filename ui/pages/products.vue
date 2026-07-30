@@ -17,15 +17,16 @@
       </UButton>
     </div>
 
-    <UAlert v-if="loadError" color="error" variant="subtle" :title="loadError" class="animate-fade-in" />
+    <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
     <UCard class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 overflow-hidden">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
         <UInput
-          v-model="searchQuery"
+          :model-value="search"
           icon="i-lucide-search"
           placeholder="Search by name or code..."
           class="sm:flex-1"
+          @update:model-value="setSearch"
         />
       </div>
 
@@ -34,68 +35,80 @@
       </div>
 
       <div
-        v-else-if="filteredProducts.length === 0"
+        v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-          {{ products.length === 0 ? 'No products yet' : 'No matching products' }}
+          {{ total === 0 && !search ? 'No products yet' : 'No matching products' }}
         </h3>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Create a product before issuing licenses.
         </p>
-        <UButton v-if="products.length === 0 && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton v-if="total === 0 && !search && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
           Create product
         </UButton>
       </div>
 
-      <UTable
-        v-else
-        :columns="columns"
-        :data="filteredProducts"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
-        @select="(_e, row) => openDetails(row.original)"
-      >
-        <template #name-cell="{ row }">
-          <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
-        </template>
+      <template v-else>
+        <UTable
+          v-model:sorting="sorting"
+          :columns="columns"
+          :data="items"
+          :sorting-options="{ manualSorting: true }"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+          @select="(_e, row) => openDetails(row.original)"
+        >
+          <template #name-cell="{ row }">
+            <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
+          </template>
 
-        <template #code-cell="{ row }">
-          <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-            {{ row.original.code }}
-          </code>
-        </template>
+          <template #code-cell="{ row }">
+            <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+              {{ row.original.code }}
+            </code>
+          </template>
 
-        <template #description-cell="{ row }">
-          <UTooltip
-            v-if="row.original.description"
-            :text="row.original.description"
-          >
-            <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
-              {{ row.original.description }}
-            </span>
-          </UTooltip>
-          <span v-else class="text-slate-500">—</span>
-        </template>
+          <template #description-cell="{ row }">
+            <UTooltip
+              v-if="row.original.description"
+              :text="row.original.description"
+            >
+              <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
+                {{ row.original.description }}
+              </span>
+            </UTooltip>
+            <span v-else class="text-slate-500">—</span>
+          </template>
 
-        <template #created_at-cell="{ row }">
-          <span>{{ formatDate(row.original.created_at) }}</span>
-        </template>
+          <template #created_at-cell="{ row }">
+            <span>{{ formatDate(row.original.created_at) }}</span>
+          </template>
 
-        <template #actions-cell="{ row }">
-          <UDropdownMenu :items="getActionItems(row.original)">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-ellipsis-vertical"
-              size="sm"
-              :loading="actionId === row.original.id"
-            />
-          </UDropdownMenu>
-        </template>
-      </UTable>
+          <template #actions-cell="{ row }">
+            <UDropdownMenu :items="getActionItems(row.original)">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-ellipsis-vertical"
+                size="sm"
+                :loading="actionId === row.original.id"
+              />
+            </UDropdownMenu>
+          </template>
+        </UTable>
+
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-slate-200/80 dark:border-slate-800/80 mt-4">
+          <UPagination
+            :page="page"
+            :items-per-page="pageSize"
+            :total="total"
+            @update:page="setPage"
+          />
+        </div>
+      </template>
     </UCard>
 
-    <ProductFormModal v-model:open="showForm" :product="editingProduct" @saved="fetchProducts" />
+    <ProductFormModal v-model:open="showForm" :product="editingProduct" @saved="refresh" />
 
     <DetailsModal
       v-model:open="showDetails"
@@ -129,10 +142,23 @@ definePageMeta({
 const { listProducts, deleteProduct } = useApi()
 const { canWrite } = useAuth()
 
-const products = ref<Product[]>([])
-const loading = ref(true)
-const loadError = ref('')
-const searchQuery = ref('')
+const {
+  page,
+  pageSize,
+  search,
+  items,
+  total,
+  totalPages,
+  loading,
+  error,
+  sorting,
+  refresh,
+  setSearch,
+  setPage
+} = usePaginatedList<Product>({
+  fetcher: (params) => listProducts(params)
+})
+
 const showForm = ref(false)
 const showDetails = ref(false)
 const editingProduct = ref<Product | null>(null)
@@ -143,25 +169,14 @@ const actionId = ref<string | null>(null)
 const deleting = ref(false)
 
 const columns = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'code', header: 'Code' },
+  { accessorKey: 'name', header: 'Name', enableSorting: true },
+  { accessorKey: 'code', header: 'Code', enableSorting: true },
   { accessorKey: 'description', header: 'Description' },
-  { accessorKey: 'created_at', header: 'Created' },
+  { accessorKey: 'created_at', header: 'Created', enableSorting: true },
   { id: 'actions', header: '' }
 ]
 
 const formatDate = (value: string) => new Date(value).toLocaleString()
-
-const filteredProducts = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
-    return products.value
-  }
-  return products.value.filter((product) =>
-    product.name.toLowerCase().includes(query)
-    || product.code.toLowerCase().includes(query)
-  )
-})
 
 const detailsItems = computed((): DetailItem[] => {
   const product = detailsProduct.value
@@ -216,18 +231,6 @@ const getActionItems = (product: Product): DropdownMenuItem[][] => {
   return [items]
 }
 
-const fetchProducts = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    products.value = await listProducts()
-  } catch {
-    loadError.value = 'Failed to load products'
-  } finally {
-    loading.value = false
-  }
-}
-
 const confirmDelete = async () => {
   if (!deleteTarget.value) {
     return
@@ -237,15 +240,13 @@ const confirmDelete = async () => {
   try {
     await deleteProduct(deleteTarget.value.id)
     showDeleteConfirm.value = false
-    await fetchProducts()
+    await refresh()
   } catch {
-    loadError.value = 'Failed to delete product. It may still have policies or licenses.'
+    error.value = 'Failed to delete product. It may still have policies or licenses.'
   } finally {
     actionId.value = null
     deleting.value = false
     deleteTarget.value = null
   }
 }
-
-onMounted(fetchProducts)
 </script>

@@ -13,12 +13,15 @@
         <UFormField v-if="!policy" label="Product" name="product" required>
           <USelectMenu
             v-model="form.productId"
+            v-model:search-term="productSearchTerm"
             :items="productItems"
             value-key="value"
             label-key="label"
             placeholder="Select a product"
-            :loading="loadingProducts"
+            :loading="productSelect.loading"
+            searchable
             class="w-full"
+            @update:search-term="productSelect.onSearch"
           />
         </UFormField>
 
@@ -76,7 +79,9 @@ const emit = defineEmits<{
   saved: []
 }>()
 
-const { createPolicy, updatePolicy, listProducts } = useApi()
+const { createPolicy, updatePolicy } = useApi()
+const { createProductSelect } = useServerSelect()
+const productSelect = createProductSelect()
 
 const form = reactive({
   productId: null as string | null,
@@ -89,36 +94,22 @@ const form = reactive({
 })
 
 const loading = ref(false)
-const loadingProducts = ref(false)
 const error = ref('')
-const products = ref<{ label: string, value: string }[]>([])
+const productSearchTerm = ref('')
 
 const expirationBasisOptions = [
   { label: 'On creation', value: 'on_creation' },
   { label: 'On first validation', value: 'on_first_validation' }
 ]
 
-const productItems = computed(() => products.value)
-
-const fetchProducts = async () => {
-  loadingProducts.value = true
-  try {
-    const items = await listProducts()
-    products.value = items.map((product) => ({
-      label: product.name,
-      value: product.id
-    }))
-  } finally {
-    loadingProducts.value = false
-  }
-}
+const productItems = computed(() => productSelect.items)
 
 watch(open, async (value) => {
   if (!value) {
     return
   }
   if (!props.policy) {
-    await fetchProducts()
+    await productSelect.fetchItems('')
   }
   if (props.policy) {
     form.productId = props.policy.product_id

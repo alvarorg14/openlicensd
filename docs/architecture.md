@@ -226,15 +226,16 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `POST` | `/api/v1/validate` | None | Public validation |
 | `POST` | `/api/v1/registry-credentials` | None | Only when Harbor enabled |
 | `POST` | `/api/v1/products` | Session | Create product |
-| `GET` | `/api/v1/products` | Session | List products |
+| `GET` | `/api/v1/products` | Session | List products (paginated) |
 | `PATCH` | `/api/v1/products/{id}` | Session | Update product |
 | `DELETE` | `/api/v1/products/{id}` | Session | Delete product |
 | `POST` | `/api/v1/policies` | Session | Create policy |
-| `GET` | `/api/v1/policies` | Session | List policies (`?product_id=` filter) |
+| `GET` | `/api/v1/policies` | Session | List policies (paginated; `?product_id=` filter) |
 | `PATCH` | `/api/v1/policies/{id}` | Session | Update policy |
 | `DELETE` | `/api/v1/policies/{id}` | Session | Delete policy |
 | `POST` | `/api/v1/licenses` | Session | Create license |
-| `GET` | `/api/v1/licenses` | Session | List licenses |
+| `GET` | `/api/v1/licenses` | Session | List licenses (paginated) |
+| `GET` | `/api/v1/licenses/stats` | Session | License status counts |
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
