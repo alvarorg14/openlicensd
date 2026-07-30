@@ -49,6 +49,30 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
 
 Sessions expire after `OPENLICENSD_SESSION_TTL_HOURS` (default 24), with sliding renewal on activity.
 
+### 3. OIDC SSO (optional)
+
+When `OPENLICENSD_OIDC_ENABLED=true`, users can sign in via your identity provider:
+
+```bash
+# Discover enabled login methods
+curl -s http://localhost:8080/api/v1/auth/providers
+```
+
+Response when OIDC is enabled:
+
+```json
+{
+  "local": true,
+  "oidc": true,
+  "oidc_name": "SSO",
+  "oidc_login_url": "/api/v1/auth/oidc/login"
+}
+```
+
+Redirect the browser to `oidc_login_url` (or open `/api/v1/auth/oidc/login` directly). After successful authentication, the callback sets the same session cookies as local login.
+
+See [oidc-sso.md](oidc-sso.md) for full setup instructions.
+
 ## Roles
 
 | Role | Permissions |
@@ -66,6 +90,8 @@ These endpoints do not require authentication:
 | `POST` | `/api/v1/validate` | Validate a license key |
 | `POST` | `/api/v1/registry-credentials` | Issue Harbor credentials (when enabled) |
 | `GET` | `/api/v1/auth/providers` | List enabled login methods |
+| `GET` | `/api/v1/auth/oidc/login` | Start OIDC login (when enabled) |
+| `GET` | `/api/v1/auth/oidc/callback` | OIDC callback (when enabled) |
 | `GET` | `/healthz` | Liveness probe |
 | `GET` | `/readyz` | Readiness probe (checks database) |
 

@@ -97,6 +97,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          description: Local login is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: []
+
+  /api/v1/auth/providers:
+    get:
+      tags: [Auth]
+      summary: List enabled login methods
+      operationId: listAuthProviders
+      responses:
+        "200":
+          description: Enabled authentication providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProviders"
+      security: []
+
+  /api/v1/auth/oidc/login:
+    get:
+      tags: [Auth]
+      summary: Start OIDC login
+      description: Redirects to the configured identity provider. Only available when `OPENLICENSD_OIDC_ENABLED=true`.
+      operationId: oidcLogin
+      parameters:
+        - name: return_to
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Relative path to redirect after successful login (default `/licenses`)
+      responses:
+        "302":
+          description: Redirect to identity provider
+        "404":
+          description: OIDC is not enabled
+      security: []
+
+  /api/v1/auth/oidc/callback:
+    get:
+      tags: [Auth]
+      summary: OIDC callback
+      description: Handles the authorization code callback from the identity provider. Sets session cookies and redirects into the app.
+      operationId: oidcCallback
+      responses:
+        "302":
+          description: Redirect to app or login page on failure
+        "404":
+          description: OIDC is not enabled
       security: []
 
   /api/v1/products:
@@ -739,6 +792,23 @@ components:
         auth_provider:
           type: string
           example: local
+
+    AuthProviders:
+      type: object
+      required: [local, oidc]
+      properties:
+        local:
+          type: boolean
+          description: Whether email/password login is enabled
+        oidc:
+          type: boolean
+          description: Whether OIDC SSO is enabled
+        oidc_name:
+          type: string
+          description: SSO button label (present when oidc is true)
+        oidc_login_url:
+          type: string
+          description: URL to start OIDC login (present when oidc is true)
 
     CreateLicenseRequest:
       type: object

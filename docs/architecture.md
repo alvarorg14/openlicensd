@@ -44,6 +44,7 @@ flowchart TB
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
 | `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
+| `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE flow, ID token verification |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
@@ -192,13 +193,36 @@ sequenceDiagram
 
 See [harbor-registry-credentials.md](harbor-registry-credentials.md) for full details.
 
+### OIDC SSO
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant API as OpenLicensd API
+  participant IdP
+
+  Browser->>API: GET /api/v1/auth/oidc/login
+  API-->>Browser: 302 to IdP + state/nonce/PKCE cookies
+  Browser->>IdP: authorize
+  IdP-->>Browser: 302 back with code
+  Browser->>API: GET /api/v1/auth/oidc/callback
+  API->>IdP: exchange code, verify ID token
+  API->>API: find by external_id, else link by email, else create
+  API-->>Browser: session + CSRF cookies, 302 to app
+```
+
+OIDC authenticates users but does not authorize them: roles remain local and are managed in the Users UI. See [oidc-sso.md](oidc-sso.md) for provider setup.
+
 ## HTTP routing
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | `GET` | `/healthz` | None | Liveness |
 | `GET` | `/readyz` | None | Readiness (DB ping) |
-| `POST` | `/api/v1/auth/login` | None | Sets session cookies |
+| `POST` | `/api/v1/auth/login` | None | Sets session cookies (when local login enabled) |
+| `GET` | `/api/v1/auth/providers` | None | List enabled login methods |
+| `GET` | `/api/v1/auth/oidc/login` | None | Start OIDC login (when enabled) |
+| `GET` | `/api/v1/auth/oidc/callback` | None | OIDC callback (when enabled) |
 | `POST` | `/api/v1/validate` | None | Public validation |
 | `POST` | `/api/v1/registry-credentials` | None | Only when Harbor enabled |
 | `POST` | `/api/v1/products` | Session | Create product |
