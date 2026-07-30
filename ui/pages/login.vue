@@ -122,7 +122,7 @@ const showPassword = ref(false)
 
 onMounted(() => {
   if (isAuthenticated.value) {
-    router.replace('/')
+    router.replace('/licenses')
   }
 })
 
@@ -132,7 +132,7 @@ const onSubmit = async () => {
 
   try {
     await login(form.username, form.password)
-    await router.push('/')
+    await router.push('/licenses')
   } catch {
     error.value = 'Invalid username or password'
   } finally {

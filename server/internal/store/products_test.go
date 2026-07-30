@@ -1,0 +1,41 @@
+package store_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/openlicensd/openlicensd/server/internal/store"
+)
+
+func TestDeleteProductForeignKey(t *testing.T) {
+	databaseURL := "postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable"
+	ctx := context.Background()
+	st, err := store.New(ctx, databaseURL)
+	if err != nil {
+		t.Skip(err)
+	}
+	t.Cleanup(st.Close)
+
+	product, err := st.CreateProduct(ctx, "Delete FK Test", uuid.NewString(), nil)
+	if err != nil {
+		t.Fatalf("create product: %v", err)
+	}
+
+	_, err = st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0)
+	if err != nil {
+		t.Fatalf("create policy: %v", err)
+	}
+
+	_, err = st.DeleteProduct(ctx, product.ID)
+	if !errors.Is(err, store.ErrConflict) {
+		t.Fatalf("expected ErrConflict, got %T %v", err, err)
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		t.Fatalf("expected mapped conflict, not raw pg error code=%s", pgErr.Code)
+	}
+}

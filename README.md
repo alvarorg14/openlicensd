@@ -69,10 +69,13 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 
 ## ✨ Features
 
-- Admin UI to create, edit, list, revoke, activate, and delete license keys
-- Optional expiration dates (or never expires)
+- Admin UI with sidebar navigation for licenses, products, and policies
+- **Products** — scope licenses to an application (identified by a unique `code`)
+- **Policies** — per-product expiration rules (duration, basis, grace period)
+- License creation requires a product and policy; expiration is derived from the policy
+- Optional manual expiration override per license
 - Usage tracking (`last_validated_at` and `validation_count`)
-- Public validation endpoint for license key checks
+- Public validation endpoint with optional product scoping and grace period support
 - Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Single binary distribution with embedded UI
@@ -112,6 +115,14 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `POST` | `/api/v1/auth/login` | None | Admin login (returns JWT) |
 | `POST` | `/api/v1/validate` | None | Validate a license key |
 | `POST` | `/api/v1/registry-credentials` | None | Issue Harbor credentials (when enabled) |
+| `POST` | `/api/v1/products` | JWT | Create a product |
+| `GET` | `/api/v1/products` | JWT | List products |
+| `PATCH` | `/api/v1/products/{id}` | JWT | Update a product |
+| `DELETE` | `/api/v1/products/{id}` | JWT | Delete a product |
+| `POST` | `/api/v1/policies` | JWT | Create a policy |
+| `GET` | `/api/v1/policies` | JWT | List policies (`?product_id=` filter) |
+| `PATCH` | `/api/v1/policies/{id}` | JWT | Update a policy |
+| `DELETE` | `/api/v1/policies/{id}` | JWT | Delete a policy |
 | `POST` | `/api/v1/licenses` | JWT | Create a license |
 | `GET` | `/api/v1/licenses` | JWT | List licenses |
 | `PATCH` | `/api/v1/licenses/{id}` | JWT | Update a license |

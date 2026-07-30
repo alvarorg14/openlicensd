@@ -97,6 +97,12 @@ Open http://localhost:8080.
 make dev-db
 ```
 
+If you are upgrading from a version without products/policies, reset the local database:
+
+```bash
+make dev-db-reset
+```
+
 2. Copy environment variables:
 
 ```bash
@@ -132,13 +138,27 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -d '{"username":"admin","password":"admin"}' | jq -r .token)
 ```
 
+### Create a product and policy
+
+```bash
+PRODUCT_ID=$(curl -s -X POST http://localhost:8080/api/v1/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme Widget","code":"acme-widget"}' | jq -r .id)
+
+POLICY_ID=$(curl -s -X POST http://localhost:8080/api/v1/policies \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"product_id\":\"$PRODUCT_ID\",\"name\":\"Perpetual\"}" | jq -r .id)
+```
+
 ### Create a license
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/licenses \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"label":"Test License"}' | jq
+  -d "{\"label\":\"Test License\",\"product_id\":\"$PRODUCT_ID\",\"policy_id\":\"$POLICY_ID\"}" | jq
 ```
 
 Save the `key` from the response — it is shown only once.
@@ -148,7 +168,7 @@ Save the `key` from the response — it is shown only once.
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/validate \
   -H "Content-Type: application/json" \
-  -d '{"key":"YOUR-KEY-HERE"}' | jq
+  -d '{"key":"YOUR-KEY-HERE","product":"acme-widget"}' | jq
 ```
 
 ## Uninstall (Helm)

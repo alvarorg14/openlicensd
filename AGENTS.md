@@ -38,7 +38,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
-| `store` | `server/internal/store/` | PostgreSQL CRUD, validation recording, migrations |
+| `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
 
 ### Helm Chart
@@ -51,10 +51,11 @@ This document provides context and guidelines for AI coding assistants working o
 
 ```
 1. Admin logs in via UI or API → receives JWT (24h expiry)
-2. Admin creates license → server generates key, stores SHA-256 hash, returns raw key once
-3. Client validates key → POST /api/v1/validate → hash lookup → validation result
-4. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
-5. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
+2. Admin creates products and policies → defines expiration rules per product
+3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
+4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
+5. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
+6. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
 ```
 
 ## Configuration
@@ -81,7 +82,11 @@ This document provides context and guidelines for AI coding assistants working o
 | File | Purpose |
 |------|---------|
 | `server/cmd/openlicensd/main.go` | Entry point: config, store, HTTP server, graceful shutdown |
-| `server/internal/api/server.go` | All routes, handlers, and request/response structs |
+| `server/internal/api/server.go` | Router, login, health probes, shared helpers |
+| `server/internal/api/licenses.go` | License handlers |
+| `server/internal/api/products.go` | Product handlers |
+| `server/internal/api/policies.go` | Policy handlers |
+| `server/internal/api/validate.go` | Validation and registry credentials handlers |
 | `server/internal/auth/auth.go` | Login, JWT, middleware |
 | `server/internal/harbor/harbor.go` | Harbor robot creation and cleanup |
 | `server/internal/license/license.go` | Key generation and validation |
@@ -99,6 +104,7 @@ Use `make` targets as the canonical development commands:
 ```bash
 make help          # List all targets
 make dev-db        # Start PostgreSQL via Docker Compose
+make dev-db-reset  # Reset local PostgreSQL volume (required when schema changes)
 make dev-server    # Run Go API server (loads .env)
 make dev-ui        # Run Nuxt dev server
 make ui            # Build static UI into server/internal/static/dist
