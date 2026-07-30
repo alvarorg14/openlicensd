@@ -3,6 +3,7 @@ package store_test
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,7 +12,10 @@ import (
 )
 
 func TestDeleteProductForeignKey(t *testing.T) {
-	databaseURL := "postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable"
+	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("OPENLICENSD_DATABASE_URL not set")
+	}
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)
 	if err != nil {
