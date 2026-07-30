@@ -19,22 +19,32 @@ type HarborConfig struct {
 	Debug              bool
 }
 
+type BootstrapAdminConfig struct {
+	Email        string
+	Name         string
+	PasswordHash string
+}
+
 type Config struct {
-	Addr              string
-	DatabaseURL       string
-	AdminUser         string
-	AdminPasswordHash string
-	JWTSecret         string
-	Harbor            HarborConfig
+	Addr           string
+	DatabaseURL    string
+	BootstrapAdmin BootstrapAdminConfig
+	SessionTTLHours int
+	CookieSecure   bool
+	Harbor         HarborConfig
 }
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Addr:              getEnv("OPENLICENSD_ADDR", ":8080"),
-		DatabaseURL:       os.Getenv("OPENLICENSD_DATABASE_URL"),
-		AdminUser:         os.Getenv("OPENLICENSD_ADMIN_USER"),
-		AdminPasswordHash: os.Getenv("OPENLICENSD_ADMIN_PASSWORD_HASH"),
-		JWTSecret:         os.Getenv("OPENLICENSD_JWT_SECRET"),
+		Addr:        getEnv("OPENLICENSD_ADDR", ":8080"),
+		DatabaseURL: os.Getenv("OPENLICENSD_DATABASE_URL"),
+		BootstrapAdmin: BootstrapAdminConfig{
+			Email:        os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL"),
+			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
+			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
+		},
+		SessionTTLHours: getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
+		CookieSecure:    getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
 		Harbor: HarborConfig{
 			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
 			URL:                os.Getenv("OPENLICENSD_HARBOR_URL"),
@@ -51,14 +61,8 @@ func Load() (*Config, error) {
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("OPENLICENSD_DATABASE_URL is required")
 	}
-	if cfg.AdminUser == "" {
-		return nil, fmt.Errorf("OPENLICENSD_ADMIN_USER is required")
-	}
-	if cfg.AdminPasswordHash == "" {
-		return nil, fmt.Errorf("OPENLICENSD_ADMIN_PASSWORD_HASH is required")
-	}
-	if cfg.JWTSecret == "" {
-		return nil, fmt.Errorf("OPENLICENSD_JWT_SECRET is required")
+	if cfg.SessionTTLHours < 1 {
+		return nil, fmt.Errorf("OPENLICENSD_SESSION_TTL_HOURS must be at least 1")
 	}
 
 	if err := cfg.Harbor.validate(); err != nil {

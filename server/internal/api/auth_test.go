@@ -1,0 +1,71 @@
+package api_test
+
+import (
+	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
+	"github.com/openlicensd/openlicensd/server/internal/auth"
+)
+
+func TestRolePermissions(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+
+	viewerEmail := fmt.Sprintf("viewer-%d@example.com", time.Now().UnixNano())
+	createViewer := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    viewerEmail,
+		"name":     "Viewer User",
+		"password": "viewer-password",
+		"role":     "viewer",
+	}, adminCookies)
+	if createViewer.Code != http.StatusCreated {
+		t.Fatalf("create viewer status=%d body=%s", createViewer.Code, createViewer.Body.String())
+	}
+
+	viewerCookies := login(t, handler, viewerEmail, "viewer-password")
+
+	listResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses", nil, viewerCookies)
+	if listResp.Code != http.StatusOK {
+		t.Fatalf("viewer list licenses status=%d", listResp.Code)
+	}
+
+	writeResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Forbidden Product",
+		"code": "forbidden-product",
+	}, viewerCookies)
+	if writeResp.Code != http.StatusForbidden {
+		t.Fatalf("viewer create product status=%d want 403", writeResp.Code)
+	}
+
+	usersResp := doJSON(t, handler, http.MethodGet, "/api/v1/users", nil, viewerCookies)
+	if usersResp.Code != http.StatusForbidden {
+		t.Fatalf("viewer list users status=%d want 403", usersResp.Code)
+	}
+}
+
+func TestCSRFRequired(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	sessionOnly := []*http.Cookie{findCookie(cookies, auth.SessionCookieName)}
+	resp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "CSRF Test",
+		"code": "csrf-test",
+	}, sessionOnly)
+	if resp.Code != http.StatusUnauthorized {
+		t.Fatalf("missing csrf status=%d want 401", resp.Code)
+	}
+}
+
+func TestAuthProviders(t *testing.T) {
+	env := setupTestEnv(t)
+
+	resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/auth/providers", nil, nil)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("providers status=%d", resp.Code)
+	}
+}

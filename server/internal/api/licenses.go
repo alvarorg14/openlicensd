@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/openlicensd/openlicensd/server/internal/auth"
 	"github.com/openlicensd/openlicensd/server/internal/license"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
@@ -39,6 +40,9 @@ type licenseResponse struct {
 	CreatedAt        time.Time  `json:"created_at"`
 	LastValidatedAt  *time.Time `json:"last_validated_at"`
 	ValidationCount  int64      `json:"validation_count"`
+	CreatedBy        *uuid.UUID `json:"created_by,omitempty"`
+	CreatedByName    *string    `json:"created_by_name,omitempty"`
+	CreatedByEmail   *string    `json:"created_by_email,omitempty"`
 }
 
 func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
@@ -58,6 +62,9 @@ func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
 		CreatedAt:       lic.CreatedAt,
 		LastValidatedAt: lic.LastValidatedAt,
 		ValidationCount: lic.ValidationCount,
+		CreatedBy:       lic.CreatedBy,
+		CreatedByName:   lic.CreatedByName,
+		CreatedByEmail:  lic.CreatedByEmail,
 	}
 }
 
@@ -112,7 +119,12 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	expiresAt := resolveInitialExpiry(policy, req.ExpiresAt, time.Now())
 
-	lic, err := s.store.CreateLicense(r.Context(), req.Label, keyHash, keyPrefix, req.ProductID, req.PolicyID, expiresAt)
+	var createdBy *uuid.UUID
+	if principal, ok := auth.PrincipalFromContext(r.Context()); ok {
+		createdBy = &principal.UserID
+	}
+
+	lic, err := s.store.CreateLicense(r.Context(), req.Label, keyHash, keyPrefix, req.ProductID, req.PolicyID, expiresAt, createdBy)
 	if err != nil {
 		if writeStoreError(w, err, "") {
 			return

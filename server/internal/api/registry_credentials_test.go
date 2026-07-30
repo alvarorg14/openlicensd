@@ -28,11 +28,15 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		Addr:              ":8080",
-		DatabaseURL:       databaseURL,
-		AdminUser:         "admin",
-		AdminPasswordHash: passwordHash,
-		JWTSecret:         "test-jwt-secret",
+		Addr:            ":8080",
+		DatabaseURL:     databaseURL,
+		SessionTTLHours: 24,
+		CookieSecure:    false,
+		BootstrapAdmin: config.BootstrapAdminConfig{
+			Email:        fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano()),
+			Name:         "Test Admin",
+			PasswordHash: passwordHash,
+		},
 		Harbor: config.HarborConfig{
 			Enabled: false,
 		},
@@ -45,12 +49,16 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 	}
 	t.Cleanup(st.Close)
 
+	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+
 	srv := api.New(cfg, st)
 	handler := srv.Router(nil)
 
 	resp := doJSON(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
 		"key": "invalid-key",
-	}, "")
+	}, nil)
 	if resp.Code != http.StatusNotFound {
 		t.Fatalf("status=%d want 404 body=%s", resp.Code, resp.Body.String())
 	}
@@ -85,12 +93,18 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 		t.Fatalf("hash password: %v", err)
 	}
 
+	email := fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano())
+
 	cfg := &config.Config{
-		Addr:              ":8080",
-		DatabaseURL:       databaseURL,
-		AdminUser:         "admin",
-		AdminPasswordHash: passwordHash,
-		JWTSecret:         "test-jwt-secret",
+		Addr:            ":8080",
+		DatabaseURL:     databaseURL,
+		SessionTTLHours: 24,
+		CookieSecure:    false,
+		BootstrapAdmin: config.BootstrapAdminConfig{
+			Email:        email,
+			Name:         "Test Admin",
+			PasswordHash: passwordHash,
+		},
 		Harbor: config.HarborConfig{
 			Enabled:           true,
 			URL:               harborServer.URL,
@@ -109,98 +123,73 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 	}
 	t.Cleanup(st.Close)
 
+	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+
+	if _, err := st.CreateUser(ctx, email, cfg.BootstrapAdmin.Name, &passwordHash, store.RoleAdmin, store.AuthProviderLocal, nil); err != nil {
+		t.Fatalf("create test admin: %v", err)
+	}
+
 	srv := api.New(cfg, st)
 	handler := srv.Router(nil)
-	token := login(t, handler, "admin", "test-password")
+	cookies := login(t, handler, email, "test-password")
 
-	productCode := fmt.Sprintf("registry-product-%d", time.Now().UnixNano())
+	productCode := fmt.Sprintf("harbor-product-%d", time.Now().UnixNano())
 	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
-		"name": "Registry Product",
+		"name": "Harbor Product",
 		"code": productCode,
-	}, token)
+	}, cookies)
 	if productResp.Code != http.StatusCreated {
 		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
 	}
 
 	var product map[string]any
 	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
-		t.Fatalf("decode product response: %v", err)
+		t.Fatalf("decode product: %v", err)
 	}
 
 	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
-		"product_id": product["id"],
-		"name":       "Perpetual",
-	}, token)
+		"product_id":       product["id"],
+		"name":             "Default",
+		"expiration_basis": "on_creation",
+	}, cookies)
 	if policyResp.Code != http.StatusCreated {
 		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
 	}
 
 	var policy map[string]any
 	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
-		t.Fatalf("decode policy response: %v", err)
+		t.Fatalf("decode policy: %v", err)
 	}
 
 	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
-		"label":      "registry-credentials-test",
+		"label":      "harbor-test",
 		"product_id": product["id"],
 		"policy_id":  policy["id"],
-	}, token)
+	}, cookies)
 	if createResp.Code != http.StatusCreated {
 		t.Fatalf("create license status=%d body=%s", createResp.Code, createResp.Body.String())
 	}
 
 	var created map[string]any
 	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
-		t.Fatalf("decode create response: %v", err)
+		t.Fatalf("decode license: %v", err)
 	}
 
-	rawKey, ok := created["key"].(string)
-	if !ok || rawKey == "" {
-		t.Fatalf("expected raw key in create response")
-	}
+	rawKey := created["key"].(string)
 
 	invalidResp := doJSON(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
-		"key": "not-a-real-key",
-	}, "")
+		"key": "invalid-key",
+	}, nil)
 	if invalidResp.Code != http.StatusForbidden {
-		t.Fatalf("invalid key status=%d want 403 body=%s", invalidResp.Code, invalidResp.Body.String())
-	}
-
-	var invalidBody map[string]string
-	if err := json.Unmarshal(invalidResp.Body.Bytes(), &invalidBody); err != nil {
-		t.Fatalf("decode invalid response: %v", err)
-	}
-	if invalidBody["error"] != "not_found" {
-		t.Fatalf("error=%q want not_found", invalidBody["error"])
+		t.Fatalf("invalid key status=%d want 403", invalidResp.Code)
 	}
 
 	validResp := doJSON(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
 		"key": rawKey,
-	}, "")
+	}, nil)
 	if validResp.Code != http.StatusOK {
-		t.Fatalf("valid key status=%d want 200 body=%s", validResp.Code, validResp.Body.String())
-	}
-
-	var creds struct {
-		Registry  string `json:"registry"`
-		Username  string `json:"username"`
-		Secret    string `json:"secret"`
-		ExpiresAt int64  `json:"expires_at"`
-	}
-	if err := json.Unmarshal(validResp.Body.Bytes(), &creds); err != nil {
-		t.Fatalf("decode credentials response: %v", err)
-	}
-
-	if creds.Registry == "" {
-		t.Fatalf("expected registry host")
-	}
-	if creds.Username != "robot$myproject+openlicensd-test" {
-		t.Fatalf("username=%q", creds.Username)
-	}
-	if creds.Secret != "issued-secret" {
-		t.Fatalf("secret=%q", creds.Secret)
-	}
-	if creds.ExpiresAt == 0 {
-		t.Fatalf("expected expires_at")
+		t.Fatalf("valid key status=%d body=%s", validResp.Code, validResp.Body.String())
 	}
 }

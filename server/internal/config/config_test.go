@@ -8,9 +8,6 @@ import (
 
 func TestLoadHarborDisabledByDefault(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-	t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-	t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-	t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "")
 
 	cfg, err := config.Load()
@@ -24,9 +21,6 @@ func TestLoadHarborDisabledByDefault(t *testing.T) {
 
 func TestLoadHarborEnabledRequiresConfig(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-	t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-	t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-	t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "")
@@ -41,9 +35,6 @@ func TestLoadHarborEnabledRequiresConfig(t *testing.T) {
 
 func TestLoadHarborEnabledParsesProjects(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-	t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-	t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-	t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -70,9 +61,6 @@ func TestLoadHarborEnabledParsesProjects(t *testing.T) {
 
 func TestLoadHarborEnabledInvalidDuration(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-	t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-	t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-	t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -89,9 +77,6 @@ func TestLoadHarborEnabledInvalidDuration(t *testing.T) {
 func TestLoadHarborBoolParsing(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-		t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-		t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-		t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 		t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 		t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 		t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -109,9 +94,6 @@ func TestLoadHarborBoolParsing(t *testing.T) {
 
 	t.Run("false", func(t *testing.T) {
 		t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
-		t.Setenv("OPENLICENSD_ADMIN_USER", "admin")
-		t.Setenv("OPENLICENSD_ADMIN_PASSWORD_HASH", "hash")
-		t.Setenv("OPENLICENSD_JWT_SECRET", "secret")
 		t.Setenv("OPENLICENSD_HARBOR_ENABLED", "false")
 
 		cfg, err := config.Load()
@@ -122,4 +104,22 @@ func TestLoadHarborBoolParsing(t *testing.T) {
 			t.Fatalf("enabled=true want false")
 		}
 	})
+}
+
+func TestLoadSessionDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.SessionTTLHours != 24 {
+		t.Fatalf("session ttl=%d want 24", cfg.SessionTTLHours)
+	}
+	if !cfg.CookieSecure {
+		t.Fatalf("cookie secure=false want true")
+	}
+	if cfg.BootstrapAdmin.Name != "Administrator" {
+		t.Fatalf("bootstrap name=%q", cfg.BootstrapAdmin.Name)
+	}
 }
