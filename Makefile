@@ -11,6 +11,10 @@ dev: dev-db ## Start PostgreSQL and print dev instructions
 dev-db: ## Start local PostgreSQL via Docker Compose
 	COMPOSE_ENV_FILES=/dev/null docker compose up -d postgres
 
+dev-db-reset: ## Reset local PostgreSQL volume and start fresh
+	COMPOSE_ENV_FILES=/dev/null docker compose down -v
+	$(MAKE) dev-db
+
 dev-server: dev-db ## Run the API server (loads .env)
 	@test -f .env || (echo "Missing .env. Copy from .env.example: cp .env.example .env" && exit 1)
 	@test -f server/internal/static/dist/index.html || (echo "Missing embedded UI placeholder. Run: git checkout -- server/internal/static/dist/index.html (or make ui for a full build)" && exit 1)
