@@ -27,7 +27,8 @@ Response:
     "email": "admin@example.com",
     "name": "Administrator",
     "role": "admin",
-    "auth_provider": "local"
+    "auth_provider": "local",
+    "has_password": true
   }
 }
 ```
@@ -71,7 +72,22 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
 
 Sessions expire after `OPENLICENSD_SESSION_TTL_HOURS` (default 24), with sliding renewal on activity.
 
-### 3. OIDC SSO (optional)
+### 4. Change your password
+
+Available for accounts with a local password (`has_password: true`). OIDC-only accounts cannot use this endpoint.
+
+```bash
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
+
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/auth/password \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"current_password":"admin","password":"new-secure-password"}'
+```
+
+Returns `204 No Content` on success. Other sessions for the same user are revoked; the current session remains valid.
+
+### 5. OIDC SSO (optional)
 
 When `OPENLICENSD_OIDC_ENABLED=true`, users can sign in via your identity provider:
 
@@ -116,6 +132,12 @@ These endpoints do not require authentication:
 | `GET` | `/api/v1/auth/oidc/callback` | OIDC callback (when enabled) |
 | `GET` | `/healthz` | Liveness probe |
 | `GET` | `/readyz` | Readiness probe (checks database) |
+
+## Authenticated endpoints (session required)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/auth/password` | Change own password (local accounts only) |
 
 ## Example: create a product and policy
 

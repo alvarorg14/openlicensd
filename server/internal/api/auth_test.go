@@ -69,3 +69,60 @@ func TestAuthProviders(t *testing.T) {
 		t.Fatalf("providers status=%d", resp.Code)
 	}
 }
+
+func TestChangeOwnPassword(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+
+	cookies := login(t, handler, env.Email, env.Password)
+	otherCookies := login(t, handler, env.Email, env.Password)
+
+	wrongResp := doJSON(t, handler, http.MethodPost, "/api/v1/auth/password", map[string]string{
+		"current_password": env.Password,
+		"password":         "short",
+	}, cookies)
+	if wrongResp.Code != http.StatusBadRequest {
+		t.Fatalf("short password status=%d want 400 body=%s", wrongResp.Code, wrongResp.Body.String())
+	}
+
+	wrongResp = doJSON(t, handler, http.MethodPost, "/api/v1/auth/password", map[string]string{
+		"current_password": "wrong-password",
+		"password":         "new-password-123",
+	}, cookies)
+	if wrongResp.Code != http.StatusBadRequest {
+		t.Fatalf("wrong current password status=%d want 400 body=%s", wrongResp.Code, wrongResp.Body.String())
+	}
+
+	newPassword := "new-password-123"
+	changeResp := doJSON(t, handler, http.MethodPost, "/api/v1/auth/password", map[string]string{
+		"current_password": env.Password,
+		"password":         newPassword,
+	}, cookies)
+	if changeResp.Code != http.StatusNoContent {
+		t.Fatalf("change password status=%d want 204 body=%s", changeResp.Code, changeResp.Body.String())
+	}
+
+	meResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, cookies)
+	if meResp.Code != http.StatusOK {
+		t.Fatalf("current session after password change status=%d want 200", meResp.Code)
+	}
+
+	otherMeResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, otherCookies)
+	if otherMeResp.Code != http.StatusUnauthorized {
+		t.Fatalf("other session after password change status=%d want 401", otherMeResp.Code)
+	}
+
+	oldLoginResp := doJSON(t, handler, http.MethodPost, "/api/v1/auth/login", map[string]string{
+		"email":    env.Email,
+		"password": env.Password,
+	}, nil)
+	if oldLoginResp.Code != http.StatusUnauthorized {
+		t.Fatalf("old password login status=%d want 401", oldLoginResp.Code)
+	}
+
+	newCookies := login(t, handler, env.Email, newPassword)
+	newMeResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, newCookies)
+	if newMeResp.Code != http.StatusOK {
+		t.Fatalf("new password login status=%d want 200", newMeResp.Code)
+	}
+}

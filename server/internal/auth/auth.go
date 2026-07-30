@@ -41,6 +41,7 @@ type Principal struct {
 	Role         store.Role
 	AuthProvider string
 	SessionID    uuid.UUID
+	HasPassword  bool
 }
 
 type Service struct {
@@ -203,6 +204,7 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 		Role:         user.Role,
 		AuthProvider: user.AuthProvider,
 		SessionID:    sess.ID,
+		HasPassword:  user.PasswordHash != nil,
 	}, nil
 }
 
@@ -290,6 +292,10 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hash), nil
+}
+
+func VerifyPassword(hash, password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
 func generateToken() (string, error) {

@@ -28,6 +28,8 @@
       </UBadge>
     </template>
   </UDropdownMenu>
+
+  <ChangePasswordModal v-model:open="showChangePassword" />
 </template>
 
 <script setup lang="ts">
@@ -43,6 +45,7 @@ withDefaults(defineProps<{
 
 const { user, logout } = useAuth()
 const colorMode = useColorMode()
+const showChangePassword = ref(false)
 
 const initials = computed(() => {
   if (!user.value?.name) {
@@ -72,6 +75,13 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       avatar: { text: initials.value },
       disabled: true
     }],
+    ...(user.value.has_password
+      ? [[{
+          label: 'Change password',
+          icon: 'i-lucide-key-round',
+          onSelect: () => { showChangePassword.value = true }
+        }]]
+      : []),
     [{
       label: 'Theme',
       icon: 'i-lucide-sun-moon',

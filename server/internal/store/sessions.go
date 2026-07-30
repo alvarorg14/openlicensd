@@ -94,6 +94,17 @@ func (s *Store) RevokeAllUserSessions(ctx context.Context, userID uuid.UUID) err
 	return err
 }
 
+func (s *Store) RevokeUserSessionsExcept(ctx context.Context, userID, keepID uuid.UUID) error {
+	const q = `
+		UPDATE sessions
+		SET revoked_at = NOW()
+		WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL
+	`
+
+	_, err := s.pool.Exec(ctx, q, userID, keepID)
+	return err
+}
+
 func (s *Store) DeleteExpiredSessions(ctx context.Context) error {
 	const q = `
 		DELETE FROM sessions

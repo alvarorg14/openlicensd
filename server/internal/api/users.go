@@ -40,6 +40,13 @@ type setPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+type changePasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	Password        string `json:"password"`
+}
+
+const minPasswordLength = 8
+
 func userToResponse(u *store.User) userResponse {
 	resp := userResponse{
 		ID:           u.ID,
@@ -291,6 +298,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		"name":          principal.Name,
 		"role":          principal.Role,
 		"auth_provider": principal.AuthProvider,
+		"has_password":  principal.HasPassword,
 	})
 }
 
@@ -310,13 +318,39 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var req setPasswordRequest
+	var req changePasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if req.CurrentPassword == "" {
+		writeError(w, http.StatusBadRequest, "current password is required")
+		return
+	}
 	if req.Password == "" {
 		writeError(w, http.StatusBadRequest, "password is required")
+		return
+	}
+	if len(req.Password) < minPasswordLength {
+		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
+		return
+	}
+
+	user, err := s.store.GetUserByID(r.Context(), principal.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load user")
+		return
+	}
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if user.PasswordHash == nil {
+		writeError(w, http.StatusBadRequest, "password change is not available for this account")
+		return
+	}
+	if !auth.VerifyPassword(*user.PasswordHash, req.CurrentPassword) {
+		writeError(w, http.StatusBadRequest, "current password is incorrect")
 		return
 	}
 
@@ -328,6 +362,11 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 
 	if err := s.store.SetUserPassword(r.Context(), principal.UserID, hash); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to set password")
+		return
+	}
+
+	if err := s.store.RevokeUserSessionsExcept(r.Context(), principal.UserID, principal.SessionID); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to revoke sessions")
 		return
 	}
 

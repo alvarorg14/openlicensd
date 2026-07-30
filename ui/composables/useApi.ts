@@ -167,6 +167,12 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
+  const changeOwnPassword = (currentPassword: string, password: string) =>
+    authFetch('/api/v1/auth/password', {
+      method: 'POST',
+      body: { current_password: currentPassword, password }
+    })
+
   return {
     authFetch,
     listLicenses,
@@ -190,6 +196,7 @@ export const useApi = () => {
     setUserPassword,
     disableUser,
     enableUser,
-    deleteUser
+    deleteUser,
+    changeOwnPassword
   }
 }
