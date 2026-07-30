@@ -125,7 +125,10 @@ make ui            # Build static UI into server/internal/static/dist
 make server        # Build binary to bin/openlicensd
 make build         # ui + server
 make test          # Go tests (loads .env if present)
-make lint          # go vet + ESLint
+make lint          # go vet + golangci-lint + ESLint (same as CI)
+make lint-server   # go vet + golangci-lint
+make lint-ui       # ESLint
+make vuln          # govulncheck
 make hash-password # Bcrypt hash CLI
 make release       # Local GoReleaser release
 ```
@@ -135,7 +138,7 @@ make release       # Local GoReleaser release
 - Go 1.26+
 - Node.js 24+
 - Docker (for local PostgreSQL)
-- golangci-lint (CI uses v1.64.8)
+- golangci-lint v2.12.2 (installed automatically by `make lint-server`)
 - Helm 3 (for chart validation)
 
 ## Testing Conventions
@@ -154,8 +157,8 @@ Triggers on push/PR to `main`:
 
 | Job | Command |
 |-----|---------|
-| Server | `go vet`, `golangci-lint`, `go test`, `go build` |
-| UI | `npm ci`, `npm run lint`, `npm run generate` |
+| Server | `make lint-server`, `go test`, `go build` |
+| UI | `npm ci`, `make lint-ui`, `npm run generate` |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
@@ -193,9 +196,9 @@ On GitHub release publish:
 
 ### 1. Linting (MANDATORY)
 
-- Run `make lint` — must pass
-- Server: `go vet` + `golangci-lint`
-- UI: ESLint via `npm run lint`
+- Run `make lint` — must pass (runs `lint-server` + `lint-ui`, same as CI)
+- Server: `make lint-server` (`go vet` + `golangci-lint`)
+- UI: `make lint-ui` (ESLint)
 
 ### 2. Build (MANDATORY)
 

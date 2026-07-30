@@ -224,7 +224,7 @@ make dev-server    # Run API server (loads .env)
 make dev-ui        # Run Nuxt dev server
 make build         # Build UI + binary
 make test          # Run Go tests
-make lint          # go vet + ESLint
+make lint          # go vet + golangci-lint + ESLint (same as CI)
 ```
 
 See [AGENTS.md](AGENTS.md) for architecture details and AI assistant guidelines.

@@ -37,7 +37,7 @@ make build
 # Run Go tests
 make test
 
-# Lint (go vet + ESLint)
+# Lint (go vet + golangci-lint + ESLint)
 make lint
 
 # Generate admin password hash
