@@ -41,11 +41,12 @@
           </template>
 
           <UForm :state="form" class="space-y-5" @submit="onSubmit">
-            <UFormField label="Username" name="username" required>
+            <UFormField label="Email" name="email" required>
               <UInput
-                v-model="form.username"
-                autocomplete="username"
-                placeholder="Enter your username"
+                v-model="form.email"
+                type="email"
+                autocomplete="email"
+                placeholder="Enter your email"
                 size="lg"
                 :disabled="loading"
                 class="transition-app"
@@ -89,7 +90,7 @@
               block
               size="lg"
               :loading="loading"
-              :disabled="!form.username.trim() || !form.password"
+              :disabled="!form.email.trim() || !form.password"
               class="transition-app"
             >
               Sign in
@@ -112,7 +113,7 @@ const { login, isAuthenticated } = useAuth()
 const router = useRouter()
 
 const form = reactive({
-  username: '',
+  email: '',
   password: ''
 })
 
@@ -131,10 +132,10 @@ const onSubmit = async () => {
   error.value = ''
 
   try {
-    await login(form.username, form.password)
+    await login(form.email, form.password)
     await router.push('/licenses')
   } catch {
-    error.value = 'Invalid username or password'
+    error.value = 'Invalid email or password'
   } finally {
     loading.value = false
   }

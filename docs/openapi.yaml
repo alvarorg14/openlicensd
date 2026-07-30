@@ -4,7 +4,8 @@ info:
   description: |
     HTTP API for OpenLicensd — an open source license server for creating and validating license keys.
 
-    Admin endpoints require a JWT obtained from `POST /api/v1/auth/login`.
+    Admin endpoints require a session cookie obtained from `POST /api/v1/auth/login`.
+    Unsafe methods also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
     Public endpoints (`/validate`, `/registry-credentials`) do not require authentication.
 
     The `/api/v1/registry-credentials` endpoint is only available when
@@ -104,7 +105,7 @@ paths:
       summary: List products
       operationId: listProducts
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "200":
           description: List of products
@@ -124,7 +125,7 @@ paths:
       summary: Create a product
       operationId: createProduct
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -164,7 +165,7 @@ paths:
       summary: Update a product
       operationId: updateProduct
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -202,7 +203,7 @@ paths:
       summary: Delete a product
       operationId: deleteProduct
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "204":
           description: Product deleted
@@ -231,7 +232,7 @@ paths:
       summary: List policies
       operationId: listPolicies
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       parameters:
         - name: product_id
           in: query
@@ -265,7 +266,7 @@ paths:
       summary: Create a policy
       operationId: createPolicy
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -305,7 +306,7 @@ paths:
       summary: Update a policy
       operationId: updatePolicy
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -343,7 +344,7 @@ paths:
       summary: Delete a policy
       operationId: deletePolicy
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "204":
           description: Policy deleted
@@ -372,7 +373,7 @@ paths:
       summary: List licenses
       operationId: listLicenses
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "200":
           description: List of licenses (raw keys are never returned)
@@ -395,7 +396,7 @@ paths:
         Only the key prefix is stored for display; the full key cannot be retrieved later.
       operationId: createLicense
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -429,7 +430,7 @@ paths:
       summary: Update a license
       operationId: updateLicense
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       requestBody:
         required: true
         content:
@@ -461,7 +462,7 @@ paths:
       summary: Delete a license
       operationId: deleteLicense
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "204":
           description: License deleted
@@ -487,7 +488,7 @@ paths:
       description: Revoked licenses fail validation immediately.
       operationId: revokeLicense
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "200":
           description: License revoked
@@ -516,7 +517,7 @@ paths:
       summary: Activate a revoked license
       operationId: activateLicense
       security:
-        - bearerAuth: []
+        - sessionAuth: []
       responses:
         "200":
           description: License activated
@@ -628,13 +629,14 @@ paths:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: openlicensd_session
       description: |
-        JWT obtained from `POST /api/v1/auth/login`.
-        Signed with HS256 using `OPENLICENSD_JWT_SECRET`. Expires after 24 hours.
+        Session cookie obtained from `POST /api/v1/auth/login`.
+        Unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header
+        set to the value of the `openlicensd_csrf` cookie.
 
   parameters:
     LicenseId:
@@ -702,23 +704,41 @@ components:
 
     LoginRequest:
       type: object
-      required: [username, password]
+      required: [email, password]
       properties:
-        username:
+        email:
           type: string
-          example: admin
+          format: email
+          example: admin@example.com
         password:
           type: string
           format: password
-          example: admin
 
     LoginResponse:
       type: object
-      required: [token]
+      required: [user]
       properties:
-        token:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    AuthUser:
+      type: object
+      required: [id, email, name, role, auth_provider]
+      properties:
+        id:
           type: string
-          description: JWT bearer token
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, operator, viewer]
+        auth_provider:
+          type: string
+          example: local
 
     CreateLicenseRequest:
       type: object

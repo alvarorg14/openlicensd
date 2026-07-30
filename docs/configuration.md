@@ -10,9 +10,11 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 |----------|---------|----------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | No | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | — | **Yes** | PostgreSQL connection URL |
-| `OPENLICENSD_ADMIN_USER` | — | **Yes** | Admin username |
-| `OPENLICENSD_ADMIN_PASSWORD_HASH` | — | **Yes** | Bcrypt hash of admin password |
-| `OPENLICENSD_JWT_SECRET` | — | **Yes** | Secret for signing JWT tokens |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Yes on empty DB | Email for the first admin user |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | No | Display name for bootstrap admin |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
+| `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
+| `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies |
 
 ### Harbor (optional)
 
@@ -32,44 +34,36 @@ See [harbor-registry-credentials.md](harbor-registry-credentials.md) for Harbor 
 
 ## Generating secrets
 
-### Admin password hash
+### Bootstrap admin password hash
 
 ```bash
 make hash-password PASSWORD=your-secure-password
 ```
 
-Set the output as `OPENLICENSD_ADMIN_PASSWORD_HASH`.
+Set the output as `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH`.
 
-> **Docker Compose:** Wrap bcrypt hashes in single quotes in `.env` (e.g. `'$2a$10$...'`) so `$` characters are not interpreted as variable interpolation.
-
-### JWT secret
-
-Generate a random secret:
-
-```bash
-openssl rand -hex 32
-```
-
-## Local development
-
-Copy the example environment file:
+### Local development
 
 ```bash
 cp .env.example .env
+# Edit .env — set OPENLICENSD_COOKIE_SECURE=false for HTTP dev
+make dev-db-reset   # required after schema changes
+make dev-server
 ```
 
-The defaults use a local PostgreSQL instance started by `make dev-db` with username/password `admin`.
+The defaults use a local PostgreSQL instance started by `make dev-db`.
 
 ## Helm values mapping
 
-The Helm chart in `charts/openlicensd/` maps values to environment variables.
-
-### Non-secret config (`config`)
+### `config` → environment variables
 
 | Helm value | Environment variable |
 |------------|---------------------|
 | `config.addr` | `OPENLICENSD_ADDR` |
-| `config.adminUser` | `OPENLICENSD_ADMIN_USER` |
+| `config.sessionTTLHours` | `OPENLICENSD_SESSION_TTL_HOURS` |
+| `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
+| `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
+| `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.harbor.enabled` | `OPENLICENSD_HARBOR_ENABLED` |
 | `config.harbor.url` | `OPENLICENSD_HARBOR_URL` |
 | `config.harbor.projects` | `OPENLICENSD_HARBOR_PROJECTS` |
@@ -78,43 +72,25 @@ The Helm chart in `charts/openlicensd/` maps values to environment variables.
 | `config.harbor.insecureSkipVerify` | `OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY` |
 | `config.harbor.debug` | `OPENLICENSD_HARBOR_DEBUG` |
 
-### Secrets (`secret`)
+### `secret.data` → environment variables
 
 | Helm value | Environment variable |
 |------------|---------------------|
 | `secret.data.databaseUrl` | `OPENLICENSD_DATABASE_URL` |
-| `secret.data.adminPasswordHash` | `OPENLICENSD_ADMIN_PASSWORD_HASH` |
-| `secret.data.jwtSecret` | `OPENLICENSD_JWT_SECRET` |
+| `secret.data.bootstrapAdminPasswordHash` | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` |
 | `secret.data.harborAdminUsername` | `OPENLICENSD_HARBOR_ADMIN_USERNAME` |
 | `secret.data.harborAdminPassword` | `OPENLICENSD_HARBOR_ADMIN_PASSWORD` |
 
-### Secret provisioning modes
+## Secret provisioning modes
 
-| Mode | Description |
-|------|-------------|
-| `create` | Chart creates a Kubernetes Secret from `secret.data` values |
-| `existing` | Reference an existing Secret via `secret.existingSecret` |
-| `externalSecrets` | Use External Secrets Operator via `secret.externalSecrets` |
+### `create` (default)
 
-Example with External Secrets:
+Helm creates a Secret from `secret.data.*` values.
 
-```yaml
-secret:
-  mode: externalSecrets
-  externalSecrets:
-    refreshInterval: 1h
-    secretStoreRef:
-      name: my-secret-store
-      kind: ClusterSecretStore
-    remoteRefs:
-      - secretKey: OPENLICENSD_DATABASE_URL
-        remoteRef:
-          key: openlicensd/database
-          property: url
-```
+### `existing`
 
-## Related
+Set `secret.mode: existing` and `secret.existingSecret` to reference a pre-created Secret.
 
-- [deployment.md](deployment.md) — Helm install and upgrade
-- [harbor-registry-credentials.md](harbor-registry-credentials.md) — Harbor configuration
-- [.env.example](../.env.example) — local development template
+### `externalSecrets`
+
+Set `secret.mode: externalSecrets` and configure `secret.externalSecrets.remoteRefs` to sync from an external secrets manager.

@@ -6,6 +6,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Define expiration rules per product</p>
       </div>
       <UButton
+        v-if="canWrite"
         color="primary"
         icon="i-lucide-plus"
         size="md"
@@ -50,7 +51,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Create a policy to define how licenses expire.
         </p>
-        <UButton v-if="policies.length === 0" color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton v-if="policies.length === 0 && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
           Create policy
         </UButton>
       </div>
@@ -142,6 +143,7 @@ definePageMeta({
 })
 
 const { listPolicies, listProducts, deletePolicy } = useApi()
+const { canWrite } = useAuth()
 
 const policies = ref<PolicyRow[]>([])
 const products = ref<Product[]>([])
@@ -242,15 +244,19 @@ const openDelete = (policy: Policy) => {
   showDeleteConfirm.value = true
 }
 
-const getActionItems = (policy: Policy): DropdownMenuItem[][] => [
-  [
-    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(policy as PolicyRow) },
-    { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(policy) }
-  ],
-  [
-    { label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => openDelete(policy) }
+const getActionItems = (policy: Policy): DropdownMenuItem[][] => {
+  const items: DropdownMenuItem[] = [
+    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(policy as PolicyRow) }
   ]
-]
+  if (canWrite.value) {
+    items.push({ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(policy) })
+    return [
+      items,
+      [{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => openDelete(policy) }]
+    ]
+  }
+  return [items]
+}
 
 const fetchPolicies = async () => {
   loading.value = true

@@ -6,6 +6,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage the products your licenses belong to</p>
       </div>
       <UButton
+        v-if="canWrite"
         color="primary"
         icon="i-lucide-plus"
         size="md"
@@ -42,7 +43,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Create a product before issuing licenses.
         </p>
-        <UButton v-if="products.length === 0" color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton v-if="products.length === 0 && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
           Create product
         </UButton>
       </div>
@@ -126,6 +127,7 @@ definePageMeta({
 })
 
 const { listProducts, deleteProduct } = useApi()
+const { canWrite } = useAuth()
 
 const products = ref<Product[]>([])
 const loading = ref(true)
@@ -200,15 +202,19 @@ const openDelete = (product: Product) => {
   showDeleteConfirm.value = true
 }
 
-const getActionItems = (product: Product): DropdownMenuItem[][] => [
-  [
-    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(product) },
-    { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(product) }
-  ],
-  [
-    { label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => openDelete(product) }
+const getActionItems = (product: Product): DropdownMenuItem[][] => {
+  const items: DropdownMenuItem[] = [
+    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(product) }
   ]
-]
+  if (canWrite.value) {
+    items.push({ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(product) })
+    return [
+      items,
+      [{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => openDelete(product) }]
+    ]
+  }
+  return [items]
+}
 
 const fetchProducts = async () => {
   loading.value = true

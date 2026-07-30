@@ -24,9 +24,10 @@ type Server struct {
 }
 
 func New(cfg *config.Config, st *store.Store) *Server {
+	sessionTTL := time.Duration(cfg.SessionTTLHours) * time.Hour
 	srv := &Server{
 		cfg:   cfg,
-		auth:  auth.NewService(cfg.AdminUser, cfg.AdminPasswordHash, cfg.JWTSecret),
+		auth:  auth.NewService(st, sessionTTL, cfg.CookieSecure),
 		store: st,
 	}
 
@@ -59,6 +60,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/login", s.handleLogin)
+		r.Get("/auth/providers", s.handleAuthProviders)
 		r.Post("/validate", s.handleValidate)
 		if s.cfg.Harbor.Enabled {
 			r.Post("/registry-credentials", s.handleRegistryCredentials)
@@ -66,22 +68,48 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.auth.Middleware)
-			r.Post("/licenses", s.handleCreateLicense)
-			r.Get("/licenses", s.handleListLicenses)
-			r.Patch("/licenses/{id}", s.handleUpdateLicense)
-			r.Delete("/licenses/{id}", s.handleDeleteLicense)
-			r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
-			r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
 
-			r.Post("/products", s.handleCreateProduct)
-			r.Get("/products", s.handleListProducts)
-			r.Patch("/products/{id}", s.handleUpdateProduct)
-			r.Delete("/products/{id}", s.handleDeleteProduct)
+			r.Get("/auth/me", s.handleMe)
+			r.Post("/auth/logout", s.handleLogout)
+			r.Post("/auth/password", s.handleChangeOwnPassword)
 
-			r.Post("/policies", s.handleCreatePolicy)
-			r.Get("/policies", s.handleListPolicies)
-			r.Patch("/policies/{id}", s.handleUpdatePolicy)
-			r.Delete("/policies/{id}", s.handleDeletePolicy)
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireRole(store.RoleViewer, store.RoleOperator, store.RoleAdmin))
+
+				r.Get("/licenses", s.handleListLicenses)
+				r.Get("/products", s.handleListProducts)
+				r.Get("/policies", s.handleListPolicies)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireRole(store.RoleOperator, store.RoleAdmin))
+
+				r.Post("/licenses", s.handleCreateLicense)
+				r.Patch("/licenses/{id}", s.handleUpdateLicense)
+				r.Delete("/licenses/{id}", s.handleDeleteLicense)
+				r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
+				r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
+
+				r.Post("/products", s.handleCreateProduct)
+				r.Patch("/products/{id}", s.handleUpdateProduct)
+				r.Delete("/products/{id}", s.handleDeleteProduct)
+
+				r.Post("/policies", s.handleCreatePolicy)
+				r.Patch("/policies/{id}", s.handleUpdatePolicy)
+				r.Delete("/policies/{id}", s.handleDeletePolicy)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireRole(store.RoleAdmin))
+
+				r.Post("/users", s.handleCreateUser)
+				r.Get("/users", s.handleListUsers)
+				r.Patch("/users/{id}", s.handleUpdateUser)
+				r.Patch("/users/{id}/password", s.handleSetUserPassword)
+				r.Patch("/users/{id}/disable", s.handleDisableUser)
+				r.Patch("/users/{id}/enable", s.handleEnableUser)
+				r.Delete("/users/{id}", s.handleDeleteUser)
+			})
 		})
 	})
 
@@ -94,12 +122,12 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 }
 
 type loginRequest struct {
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type loginResponse struct {
-	Token string `json:"token"`
+	User map[string]any `json:"user"`
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -109,13 +137,29 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := s.auth.Login(req.Username, req.Password)
+	userAgent := r.UserAgent()
+	clientIP := r.RemoteAddr
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		clientIP = forwarded
+	}
+
+	user, tokens, err := s.auth.Login(r.Context(), req.Email, req.Password, userAgent, clientIP)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, loginResponse{Token: token})
+	s.auth.SetSessionCookies(w, tokens)
+
+	writeJSON(w, http.StatusOK, loginResponse{
+		User: map[string]any{
+			"id":            user.ID,
+			"email":         user.Email,
+			"name":          user.Name,
+			"role":          user.Role,
+			"auth_provider": user.AuthProvider,
+		},
+	})
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {

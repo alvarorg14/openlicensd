@@ -8,34 +8,54 @@ All API endpoints are served from the root of the server (default `http://localh
 
 ## Authentication
 
-Admin endpoints require a JWT bearer token.
+Admin endpoints require a session cookie (`openlicensd_session`). Unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
 
 ### 1. Login
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/auth/login \
+curl -s -c cookies.txt -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}'
+  -d '{"email":"admin@example.com","password":"admin"}'
 ```
 
 Response:
 
 ```json
-{ "token": "eyJhbGciOiJIUzI1NiIs..." }
+{
+  "user": {
+    "id": "...",
+    "email": "admin@example.com",
+    "name": "Administrator",
+    "role": "admin",
+    "auth_provider": "local"
+  }
+}
 ```
 
-### 2. Use the token
+The response also sets `openlicensd_session` and `openlicensd_csrf` cookies.
 
-Pass the token in the `Authorization` header for all admin requests:
+### 2. Authenticated requests
 
 ```bash
-TOKEN="eyJhbGciOiJIUzI1NiIs..."
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 
-curl -s http://localhost:8080/api/v1/licenses \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -b cookies.txt http://localhost:8080/api/v1/licenses
+
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"name":"Acme Widget","code":"acme-widget"}'
 ```
 
-Tokens are signed with HS256 using `OPENLICENSD_JWT_SECRET` and expire after 24 hours.
+Sessions expire after `OPENLICENSD_SESSION_TTL_HOURS` (default 24), with sliding renewal on activity.
+
+## Roles
+
+| Role | Permissions |
+|------|-------------|
+| `admin` | Full access including user management |
+| `operator` | Create/update/delete licenses, products, policies |
+| `viewer` | Read-only access |
 
 ## Public endpoints
 
@@ -45,22 +65,25 @@ These endpoints do not require authentication:
 |--------|------|-------------|
 | `POST` | `/api/v1/validate` | Validate a license key |
 | `POST` | `/api/v1/registry-credentials` | Issue Harbor credentials (when enabled) |
+| `GET` | `/api/v1/auth/providers` | List enabled login methods |
 | `GET` | `/healthz` | Liveness probe |
 | `GET` | `/readyz` | Readiness probe (checks database) |
 
 ## Example: create a product and policy
 
 ```bash
-PRODUCT=$(curl -s -X POST http://localhost:8080/api/v1/products \
-  -H "Authorization: Bearer $TOKEN" \
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
+
+PRODUCT=$(curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d '{"name":"Acme Widget","code":"acme-widget"}')
 
 PRODUCT_ID=$(echo "$PRODUCT" | jq -r .id)
 
-POLICY=$(curl -s -X POST http://localhost:8080/api/v1/policies \
-  -H "Authorization: Bearer $TOKEN" \
+POLICY=$(curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/policies \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d "{\"product_id\":\"$PRODUCT_ID\",\"name\":\"30-day trial\",\"duration_days\":30,\"expiration_basis\":\"on_first_validation\"}")
 
 POLICY_ID=$(echo "$POLICY" | jq -r .id)
@@ -69,9 +92,9 @@ POLICY_ID=$(echo "$POLICY" | jq -r .id)
 ## Example: create a license
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/licenses \
-  -H "Authorization: Bearer $TOKEN" \
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/licenses \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d "{\"label\":\"Acme Corp\",\"product_id\":\"$PRODUCT_ID\",\"policy_id\":\"$POLICY_ID\"}" | jq
 ```
 
@@ -122,8 +145,8 @@ Common status codes:
 | Code | Meaning |
 |------|---------|
 | `400` | Invalid request body or parameters |
-| `401` | Missing or invalid JWT |
-| `403` | Invalid license (registry-credentials only) |
+| `401` | Missing or invalid session |
+| `403` | Forbidden (insufficient role or invalid license for registry-credentials) |
 | `404` | Resource not found |
 | `409` | Resource is referenced by other records |
 | `502` | Harbor API failure (registry-credentials only) |

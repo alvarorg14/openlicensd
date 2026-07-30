@@ -55,9 +55,9 @@ docker run -d \
   --name openlicensd \
   -p 8080:8080 \
   -e OPENLICENSD_DATABASE_URL="postgres://user:pass@host:5432/openlicensd?sslmode=disable" \
-  -e OPENLICENSD_ADMIN_USER=admin \
-  -e OPENLICENSD_ADMIN_PASSWORD_HASH='$2a$10$...' \
-  -e OPENLICENSD_JWT_SECRET="$(openssl rand -hex 32)" \
+  -e OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com \
+  -e OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH='$2a$10$...' \
+  -e OPENLICENSD_COOKIE_SECURE=true \
   ghcr.io/alvarorg14/openlicensd:latest
 ```
 
@@ -80,9 +80,9 @@ make build
 
 ```bash
 export OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/openlicensd?sslmode=disable
-export OPENLICENSD_ADMIN_USER=admin
-export OPENLICENSD_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
-export OPENLICENSD_JWT_SECRET=$(openssl rand -hex 32)
+export OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+export OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
+export OPENLICENSD_COOKIE_SECURE=false
 
 ./bin/openlicensd
 ```
@@ -109,7 +109,7 @@ make dev-db-reset
 cp .env.example .env
 ```
 
-If you regenerate `OPENLICENSD_ADMIN_PASSWORD_HASH`, wrap the bcrypt value in single quotes in `.env` (e.g. `'$2a$10$...'`) so Docker Compose does not misinterpret `$` characters.
+If you regenerate `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH`, wrap the bcrypt value in single quotes in `.env` (e.g. `'$2a$10$...'`) so Docker Compose does not misinterpret `$` characters.
 
 3. In one terminal, start the API server:
 
@@ -125,7 +125,7 @@ make dev-ui
 
 Open http://localhost:3000 and sign in with:
 
-- Username: `admin`
+- Email: `admin@example.com`
 - Password: `admin`
 
 ## Try the API
@@ -133,31 +133,33 @@ Open http://localhost:3000 and sign in with:
 ### Login
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+curl -s -c cookies.txt -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+  -d '{"email":"admin@example.com","password":"admin"}'
+
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 ```
 
 ### Create a product and policy
 
 ```bash
-PRODUCT_ID=$(curl -s -X POST http://localhost:8080/api/v1/products \
-  -H "Authorization: Bearer $TOKEN" \
+PRODUCT_ID=$(curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d '{"name":"Acme Widget","code":"acme-widget"}' | jq -r .id)
 
-POLICY_ID=$(curl -s -X POST http://localhost:8080/api/v1/policies \
-  -H "Authorization: Bearer $TOKEN" \
+POLICY_ID=$(curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/policies \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d "{\"product_id\":\"$PRODUCT_ID\",\"name\":\"Perpetual\"}" | jq -r .id)
 ```
 
 ### Create a license
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/licenses \
-  -H "Authorization: Bearer $TOKEN" \
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/licenses \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
   -d "{\"label\":\"Test License\",\"product_id\":\"$PRODUCT_ID\",\"policy_id\":\"$POLICY_ID\"}" | jq
 ```
 

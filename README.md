@@ -112,23 +112,25 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/api/v1/auth/login` | None | Admin login (returns JWT) |
+| `POST` | `/api/v1/auth/login` | None | Admin login (sets session cookies) |
 | `POST` | `/api/v1/validate` | None | Validate a license key |
 | `POST` | `/api/v1/registry-credentials` | None | Issue Harbor credentials (when enabled) |
-| `POST` | `/api/v1/products` | JWT | Create a product |
-| `GET` | `/api/v1/products` | JWT | List products |
-| `PATCH` | `/api/v1/products/{id}` | JWT | Update a product |
-| `DELETE` | `/api/v1/products/{id}` | JWT | Delete a product |
-| `POST` | `/api/v1/policies` | JWT | Create a policy |
-| `GET` | `/api/v1/policies` | JWT | List policies (`?product_id=` filter) |
-| `PATCH` | `/api/v1/policies/{id}` | JWT | Update a policy |
-| `DELETE` | `/api/v1/policies/{id}` | JWT | Delete a policy |
-| `POST` | `/api/v1/licenses` | JWT | Create a license |
-| `GET` | `/api/v1/licenses` | JWT | List licenses |
-| `PATCH` | `/api/v1/licenses/{id}` | JWT | Update a license |
-| `DELETE` | `/api/v1/licenses/{id}` | JWT | Delete a license |
-| `PATCH` | `/api/v1/licenses/{id}/revoke` | JWT | Revoke a license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | JWT | Re-activate a license |
+| `POST` | `/api/v1/products` | Session | Create a product |
+| `GET` | `/api/v1/products` | Session | List products |
+| `PATCH` | `/api/v1/products/{id}` | Session | Update a product |
+| `DELETE` | `/api/v1/products/{id}` | Session | Delete a product |
+| `POST` | `/api/v1/policies` | Session | Create a policy |
+| `GET` | `/api/v1/policies` | Session | List policies (`?product_id=` filter) |
+| `PATCH` | `/api/v1/policies/{id}` | Session | Update a policy |
+| `DELETE` | `/api/v1/policies/{id}` | Session | Delete a policy |
+| `POST` | `/api/v1/licenses` | Session | Create a license |
+| `GET` | `/api/v1/licenses` | Session | List licenses |
+| `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
+| `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
+| `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
+| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate a license |
+| `GET` | `/api/v1/users` | Session (admin) | List users |
+| `POST` | `/api/v1/users` | Session (admin) | Create a user |
 
 See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 
@@ -138,9 +140,10 @@ See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | *(required)* | PostgreSQL connection URL |
-| `OPENLICENSD_ADMIN_USER` | *(required)* | Admin username |
-| `OPENLICENSD_ADMIN_PASSWORD_HASH` | *(required)* | Bcrypt hash of admin password |
-| `OPENLICENSD_JWT_SECRET` | *(required)* | Secret for signing JWT tokens |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Email for first admin (required on empty database) |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
+| `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies (`false` for local HTTP) |
 
 Harbor variables (`OPENLICENSD_HARBOR_*`) are documented in [docs/configuration.md](docs/configuration.md).
 
@@ -168,7 +171,7 @@ flowchart LR
     docker[Docker CLI]
   end
 
-  ui -->|JWT| api
+  ui -->|session cookie| api
   app -->|POST /validate| api
   docker -->|POST /registry-credentials| api
   api --> store

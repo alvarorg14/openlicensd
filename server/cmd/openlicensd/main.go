@@ -30,6 +30,10 @@ func main() {
 	}
 	defer st.Close()
 
+	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
+		log.Fatalf("bootstrap: %v", err)
+	}
+
 	srv := api.New(cfg, st)
 	staticHandler := static.MustHandler()
 	handler := srv.Router(staticHandler)

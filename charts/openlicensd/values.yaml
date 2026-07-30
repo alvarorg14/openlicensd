@@ -62,8 +62,15 @@ affinity: {}
 config:
   # -- HTTP listen address (maps to OPENLICENSD_ADDR)
   addr: ":8080"
-  # -- Admin username (maps to OPENLICENSD_ADMIN_USER)
-  adminUser: admin
+  # -- Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS)
+  sessionTTLHours: 24
+  # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
+  cookieSecure: true
+  bootstrapAdmin:
+    # -- Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL)
+    email: ""
+    # -- Display name for the bootstrap admin (maps to OPENLICENSD_BOOTSTRAP_ADMIN_NAME)
+    name: Administrator
   harbor:
     # -- Enable Harbor registry credentials endpoint
     enabled: false
@@ -91,10 +98,8 @@ secret:
   data:
     # -- PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL)
     databaseUrl: ""
-    # -- Bcrypt hash of the admin password (maps to OPENLICENSD_ADMIN_PASSWORD_HASH)
-    adminPasswordHash: ""
-    # -- JWT signing secret (maps to OPENLICENSD_JWT_SECRET)
-    jwtSecret: ""
+    # -- Bcrypt hash for bootstrap admin password (maps to OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH)
+    bootstrapAdminPasswordHash: ""
     # -- Harbor admin username (maps to OPENLICENSD_HARBOR_ADMIN_USERNAME)
     harborAdminUsername: ""
     # -- Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD)

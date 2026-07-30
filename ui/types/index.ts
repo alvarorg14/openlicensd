@@ -1,5 +1,27 @@
 export type ExpirationBasis = 'on_creation' | 'on_first_validation'
 
+export type UserRole = 'admin' | 'operator' | 'viewer'
+
+export interface AuthUser {
+  id: string
+  email: string
+  name: string
+  role: UserRole
+  auth_provider: string
+}
+
+export interface User {
+  id: string
+  email: string
+  name: string
+  role: UserRole
+  auth_provider: string
+  disabled_at?: string | null
+  last_login_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -39,10 +61,13 @@ export interface License {
   created_at: string
   last_validated_at: string | null
   validation_count: number
+  created_by?: string | null
+  created_by_name?: string | null
+  created_by_email?: string | null
 }
 
 export interface LoginResponse {
-  token: string
+  user: AuthUser
 }
 
 export interface ValidateResponse {
@@ -83,4 +108,11 @@ export interface CreatePolicyInput {
   duration_days?: number | null
   expiration_basis?: ExpirationBasis
   grace_period_days?: number
+}
+
+export interface CreateUserInput {
+  email: string
+  name: string
+  password: string
+  role: UserRole
 }
