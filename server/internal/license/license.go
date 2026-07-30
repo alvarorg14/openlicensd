@@ -43,20 +43,55 @@ func HashKey(raw string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-type ValidationResult struct {
-	Valid     bool       `json:"valid"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-	Reason    string     `json:"reason,omitempty"`
+func ComputeExpiry(durationDays *int, from time.Time) *time.Time {
+	if durationDays == nil {
+		return nil
+	}
+	expires := from.Add(time.Duration(*durationDays) * 24 * time.Hour)
+	return &expires
 }
 
-func Validate(expiresAt *time.Time, revoked bool, now time.Time) ValidationResult {
+type ValidationResult struct {
+	Valid          bool       `json:"valid"`
+	ExpiresAt      *time.Time `json:"expires_at,omitempty"`
+	Reason         string     `json:"reason,omitempty"`
+	Product        string     `json:"product,omitempty"`
+	Policy         string     `json:"policy,omitempty"`
+	InGracePeriod  bool       `json:"in_grace_period,omitempty"`
+}
+
+func Validate(expiresAt *time.Time, gracePeriodDays int, revoked bool, requestedProduct, licenseProduct string, now time.Time) ValidationResult {
+	result := ValidationResult{
+		ExpiresAt: expiresAt,
+		Product:   licenseProduct,
+	}
+
+	if requestedProduct != "" && requestedProduct != licenseProduct {
+		result.Valid = false
+		result.Reason = "product_mismatch"
+		return result
+	}
+
 	if revoked {
-		return ValidationResult{Valid: false, Reason: "revoked"}
+		result.Valid = false
+		result.Reason = "revoked"
+		return result
 	}
 
-	if expiresAt != nil && now.After(*expiresAt) {
-		return ValidationResult{Valid: false, ExpiresAt: expiresAt, Reason: "expired"}
+	if expiresAt != nil {
+		graceEnd := expiresAt.Add(time.Duration(gracePeriodDays) * 24 * time.Hour)
+		if now.After(graceEnd) {
+			result.Valid = false
+			result.Reason = "expired"
+			return result
+		}
+		if now.After(*expiresAt) {
+			result.Valid = true
+			result.InGracePeriod = true
+			return result
+		}
 	}
 
-	return ValidationResult{Valid: true, ExpiresAt: expiresAt}
+	result.Valid = true
+	return result
 }
