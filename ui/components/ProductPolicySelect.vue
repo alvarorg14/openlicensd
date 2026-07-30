@@ -3,65 +3,55 @@
     <UFormField label="Product" name="product" required>
       <USelectMenu
         v-model="selectedProduct"
-        :items="productItems"
+        v-model:search-term="productSearchTerm"
+        :items="productSelect.items"
         value-key="value"
         label-key="label"
         placeholder="Select a product"
-        :loading="loadingProducts"
+        :loading="productSelect.loading"
+        searchable
         class="w-full"
+        @update:search-term="productSelect.onSearch"
       />
     </UFormField>
 
     <UFormField label="Policy" name="policy" required>
       <USelectMenu
         v-model="selectedPolicy"
-        :items="policyItems"
+        v-model:search-term="policySearchTerm"
+        :items="policySelect.items"
         value-key="value"
         label-key="label"
         placeholder="Select a policy"
-        :loading="loadingPolicies"
+        :loading="policySelect.loading"
         :disabled="!selectedProduct"
+        searchable
         class="w-full"
+        @update:search-term="policySelect.onSearch"
       />
     </UFormField>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Policy, Product } from '~/types'
-
 const productId = defineModel<string | null>('productId', { required: true })
 const policyId = defineModel<string | null>('policyId', { required: true })
 
-const { listProducts, listPolicies } = useApi()
+const { createProductSelect, createPolicySelect } = useServerSelect()
+const productSelect = createProductSelect()
+const policySelect = createPolicySelect(productId)
 
-const products = ref<Product[]>([])
-const policies = ref<Policy[]>([])
-const loadingProducts = ref(false)
-const loadingPolicies = ref(false)
-
-const productItems = computed(() =>
-  products.value.map((product) => ({
-    label: product.name,
-    value: product.id
-  }))
-)
-
-const policyItems = computed(() =>
-  policies.value.map((policy) => ({
-    label: policy.name,
-    value: policy.id
-  }))
-)
+const productSearchTerm = ref('')
+const policySearchTerm = ref('')
 
 const selectedProduct = computed({
   get: () => productId.value,
   set: (value: string | null) => {
     productId.value = value
     policyId.value = null
-    policies.value = []
+    policySelect.clearItems()
     if (value) {
-      fetchPolicies(value)
+      policySelect.fetchItems('')
     }
   }
 })
@@ -73,29 +63,9 @@ const selectedPolicy = computed({
   }
 })
 
-const fetchProducts = async () => {
-  loadingProducts.value = true
-  try {
-    products.value = await listProducts()
-  } finally {
-    loadingProducts.value = false
-  }
-}
-
-const fetchPolicies = async (id: string) => {
-  loadingPolicies.value = true
-  try {
-    policies.value = await listPolicies(id)
-  } finally {
-    loadingPolicies.value = false
-  }
-}
-
 watch(productId, async (value) => {
-  if (value && policies.value.length === 0) {
-    await fetchPolicies(value)
+  if (value && policySelect.items.length === 0) {
+    await policySelect.fetchItems('')
   }
 })
-
-onMounted(fetchProducts)
 </script>

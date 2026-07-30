@@ -86,8 +86,8 @@ watch(() => form.policyId, async (policyId) => {
   if (!policyId || !form.productId) {
     return
   }
-  const policies = await listPolicies(form.productId)
-  selectedPolicy.value = policies.find((policy) => policy.id === policyId) ?? null
+  const policies = await listPolicies({ product_id: form.productId, page_size: 100 })
+  selectedPolicy.value = policies.items.find((policy) => policy.id === policyId) ?? null
 })
 
 watch(open, (value) => {

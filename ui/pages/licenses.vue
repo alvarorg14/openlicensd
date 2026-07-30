@@ -52,17 +52,18 @@
       />
     </div>
 
-    <UAlert v-if="loadError" color="error" variant="subtle" :title="loadError" class="animate-fade-in" />
+    <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
     <UCard
       class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 animate-fade-in-up stagger-2 overflow-hidden"
     >
       <div class="flex flex-col gap-3 border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
         <UInput
-          v-model="searchQuery"
+          :model-value="search"
           icon="i-lucide-search"
           placeholder="Search by label or key prefix..."
           class="transition-app"
+          @update:model-value="setSearch"
         />
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <USelect
@@ -71,17 +72,25 @@
           />
           <USelectMenu
             v-model="productFilter"
+            v-model:search-term="productSearchTerm"
             :items="productFilterItems"
             value-key="value"
             label-key="label"
             placeholder="All products"
+            searchable
+            :loading="productSelect.loading"
+            @update:search-term="productSelect.onSearch"
           />
           <USelectMenu
             v-model="policyFilter"
+            v-model:search-term="policySearchTerm"
             :items="policyFilterItems"
             value-key="value"
             label-key="label"
             placeholder="All policies"
+            searchable
+            :loading="policySelect.loading"
+            @update:search-term="policySelect.onSearch"
           />
         </div>
       </div>
@@ -91,22 +100,22 @@
       </div>
 
       <div
-        v-else-if="filteredLicenses.length === 0"
+        v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in"
       >
         <div class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
           <UIcon name="i-lucide-key" class="h-7 w-7 text-slate-400" />
         </div>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-          {{ licenses.length === 0 ? 'No licenses yet' : 'No matching licenses' }}
+          {{ total === 0 && !hasFilters ? 'No licenses yet' : 'No matching licenses' }}
         </h3>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-          {{ licenses.length === 0
+          {{ total === 0 && !hasFilters
             ? 'Create your first license key to get started.'
             : 'Try adjusting your search or filter criteria.' }}
         </p>
         <UButton
-          v-if="licenses.length === 0 && canWrite"
+          v-if="total === 0 && !hasFilters && canWrite"
           color="primary"
           icon="i-lucide-plus"
           @click="showCreate = true"
@@ -115,72 +124,83 @@
         </UButton>
       </div>
 
-      <UTable
-        v-else
-        :columns="columns"
-        :data="filteredLicenses"
-        :loading="false"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
-        @select="(_e, row) => openDetails(row.original)"
-      >
-        <template #label-cell="{ row }">
-          <UTooltip :text="row.original.label">
-            <span class="block max-w-[16rem] truncate font-medium text-slate-900 dark:text-white">
-              {{ row.original.label }}
-            </span>
-          </UTooltip>
-        </template>
+      <template v-else>
+        <UTable
+          v-model:sorting="sorting"
+          :columns="columns"
+          :data="items"
+          :sorting-options="{ manualSorting: true }"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+          @select="(_e, row) => openDetails(row.original)"
+        >
+          <template #label-cell="{ row }">
+            <UTooltip :text="row.original.label">
+              <span class="block max-w-[16rem] truncate font-medium text-slate-900 dark:text-white">
+                {{ row.original.label }}
+              </span>
+            </UTooltip>
+          </template>
 
-        <template #product_name-cell="{ row }">
-          <UTooltip :text="row.original.product_name">
-            <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
-              {{ row.original.product_name }}
-            </span>
-          </UTooltip>
-        </template>
+          <template #product_name-cell="{ row }">
+            <UTooltip :text="row.original.product_name">
+              <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+                {{ row.original.product_name }}
+              </span>
+            </UTooltip>
+          </template>
 
-        <template #policy_name-cell="{ row }">
-          <UTooltip :text="row.original.policy_name">
-            <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
-              {{ row.original.policy_name }}
-            </span>
-          </UTooltip>
-        </template>
+          <template #policy_name-cell="{ row }">
+            <UTooltip :text="row.original.policy_name">
+              <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+                {{ row.original.policy_name }}
+              </span>
+            </UTooltip>
+          </template>
 
-        <template #key_prefix-cell="{ row }">
-          <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
-            {{ row.original.key_prefix }}
-          </code>
-        </template>
+          <template #key_prefix-cell="{ row }">
+            <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
+              {{ row.original.key_prefix }}
+            </code>
+          </template>
 
-        <template #expires_at-cell="{ row }">
-          <span v-if="!row.original.expires_at" class="text-slate-500">Never</span>
-          <span v-else class="text-slate-700 dark:text-slate-300">{{ formatDate(row.original.expires_at) }}</span>
-        </template>
+          <template #expires_at-cell="{ row }">
+            <span v-if="!row.original.expires_at" class="text-slate-500">Never</span>
+            <span v-else class="text-slate-700 dark:text-slate-300">{{ formatDate(row.original.expires_at) }}</span>
+          </template>
 
-        <template #revoked-cell="{ row }">
-          <UBadge :color="statusColor(row.original)" variant="subtle" class="gap-1.5">
-            <span
-              class="h-1.5 w-1.5 rounded-full shrink-0"
-              :class="statusDotClass(row.original)"
-            />
-            {{ statusLabel(row.original) }}
-          </UBadge>
-        </template>
+          <template #revoked-cell="{ row }">
+            <UBadge :color="statusColor(row.original)" variant="subtle" class="gap-1.5">
+              <span
+                class="h-1.5 w-1.5 rounded-full shrink-0"
+                :class="statusDotClass(row.original)"
+              />
+              {{ statusLabel(row.original) }}
+            </UBadge>
+          </template>
 
-        <template #actions-cell="{ row }">
-          <UDropdownMenu :items="getActionItems(row.original)">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-ellipsis-vertical"
-              size="sm"
-              :loading="actionId === row.original.id"
-              class="transition-app"
-            />
-          </UDropdownMenu>
-        </template>
-      </UTable>
+          <template #actions-cell="{ row }">
+            <UDropdownMenu :items="getActionItems(row.original)">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-ellipsis-vertical"
+                size="sm"
+                :loading="actionId === row.original.id"
+                class="transition-app"
+              />
+            </UDropdownMenu>
+          </template>
+        </UTable>
+
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-slate-200/80 dark:border-slate-800/80 mt-4">
+          <UPagination
+            :page="page"
+            :items-per-page="pageSize"
+            :total="total"
+            @update:page="setPage"
+          />
+        </div>
+      </template>
     </UCard>
 
     <CreateLicenseModal v-model:open="showCreate" @created="onCreated" />
@@ -237,7 +257,7 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { DetailItem, License, LicenseStatus } from '~/types'
+import type { DetailItem, License, LicenseStats, LicenseStatus } from '~/types'
 
 definePageMeta({
   middleware: 'auth'
@@ -245,15 +265,42 @@ definePageMeta({
 
 const {
   listLicenses,
+  getLicenseStats,
   revokeLicense,
   activateLicense,
   deleteLicense
 } = useApi()
 const { canWrite } = useAuth()
 
-const licenses = ref<License[]>([])
-const loading = ref(true)
-const loadError = ref('')
+const statusFilter = ref<'all' | LicenseStatus>('all')
+const productFilter = ref<string | null>(null)
+const policyFilter = ref<string | null>(null)
+const productSearchTerm = ref('')
+const policySearchTerm = ref('')
+
+const { createProductSelect, createPolicySelect } = useServerSelect()
+const productSelect = createProductSelect()
+const policySelect = createPolicySelect(productFilter)
+
+const {
+  page,
+  pageSize,
+  search,
+  items,
+  total,
+  totalPages,
+  loading,
+  error,
+  sorting,
+  refresh,
+  setSearch,
+  setPage,
+  setFilter
+} = usePaginatedList<License, { status?: LicenseStatus, product_id?: string, policy_id?: string }>({
+  fetcher: (params) => listLicenses(params)
+})
+
+const stats = ref<LicenseStats>({ total: 0, active: 0, expired: 0, revoked: 0 })
 const showCreate = ref(false)
 const showEdit = ref(false)
 const showKeyModal = ref(false)
@@ -267,10 +314,6 @@ const detailsLicense = ref<License | null>(null)
 const confirmTarget = ref<License | null>(null)
 const actionId = ref<string | null>(null)
 const actionType = ref<'revoke' | 'activate' | 'delete' | null>(null)
-const searchQuery = ref('')
-const statusFilter = ref<'all' | LicenseStatus>('all')
-const productFilter = ref<string | null>(null)
-const policyFilter = ref<string | null>(null)
 
 const statusFilterOptions = [
   { label: 'All statuses', value: 'all' },
@@ -280,14 +323,46 @@ const statusFilterOptions = [
 ]
 
 const columns = [
-  { accessorKey: 'label', header: 'Label' },
-  { accessorKey: 'product_name', header: 'Product' },
-  { accessorKey: 'policy_name', header: 'Policy' },
+  { accessorKey: 'label', header: 'Label', enableSorting: true },
+  { accessorKey: 'product_name', header: 'Product', enableSorting: true },
+  { accessorKey: 'policy_name', header: 'Policy', enableSorting: true },
   { accessorKey: 'key_prefix', header: 'Key prefix' },
-  { accessorKey: 'expires_at', header: 'Expires' },
+  { accessorKey: 'expires_at', header: 'Expires', enableSorting: true },
   { accessorKey: 'revoked', header: 'Status' },
   { id: 'actions', header: '' }
 ]
+
+const productFilterItems = computed(() => [
+  { label: 'All products', value: null },
+  ...productSelect.items
+])
+
+const policyFilterItems = computed(() => [
+  { label: 'All policies', value: null },
+  ...policySelect.items
+])
+
+const hasFilters = computed(() =>
+  Boolean(search.value || statusFilter.value !== 'all' || productFilter.value || policyFilter.value)
+)
+
+watch(statusFilter, (value) => {
+  setFilter('status', value === 'all' ? undefined : value)
+})
+
+watch(productFilter, (value) => {
+  setFilter('product_id', value ?? undefined)
+  policyFilter.value = null
+  setFilter('policy_id', undefined)
+  policySelect.clearItems()
+  if (value) {
+    policySelect.fetchItems('')
+  }
+})
+
+watch(policyFilter, (value) => {
+  setFilter('policy_id', value ?? undefined)
+})
 
 const formatDate = (value: string) => new Date(value).toLocaleString()
 
@@ -324,86 +399,6 @@ const statusDotClass = (license: License) => {
   return 'bg-emerald-500'
 }
 
-const productFilterItems = computed(() => {
-  const seen = new Map<string, string>()
-  for (const license of licenses.value) {
-    if (!seen.has(license.product_id)) {
-      seen.set(license.product_id, license.product_name)
-    }
-  }
-  return [
-    { label: 'All products', value: null },
-    ...[...seen.entries()]
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([id, name]) => ({ label: name, value: id }))
-  ]
-})
-
-const policyFilterItems = computed(() => {
-  const seen = new Map<string, string>()
-  for (const license of licenses.value) {
-    if (productFilter.value && license.product_id !== productFilter.value) {
-      continue
-    }
-    if (!seen.has(license.policy_id)) {
-      seen.set(license.policy_id, license.policy_name)
-    }
-  }
-  return [
-    { label: 'All policies', value: null },
-    ...[...seen.entries()]
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([id, name]) => ({ label: name, value: id }))
-  ]
-})
-
-watch(productFilter, () => {
-  if (!policyFilter.value) {
-    return
-  }
-  const stillValid = policyFilterItems.value.some((item) => item.value === policyFilter.value)
-  if (!stillValid) {
-    policyFilter.value = null
-  }
-})
-
-const stats = computed(() => {
-  const counts = { total: licenses.value.length, active: 0, expired: 0, revoked: 0 }
-  for (const license of licenses.value) {
-    const status = getLicenseStatus(license)
-    counts[status]++
-  }
-  return counts
-})
-
-const filteredLicenses = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-
-  return licenses.value.filter((license) => {
-    const status = getLicenseStatus(license)
-    if (statusFilter.value !== 'all' && status !== statusFilter.value) {
-      return false
-    }
-
-    if (productFilter.value && license.product_id !== productFilter.value) {
-      return false
-    }
-
-    if (policyFilter.value && license.policy_id !== policyFilter.value) {
-      return false
-    }
-
-    if (!query) {
-      return true
-    }
-
-    return (
-      license.label.toLowerCase().includes(query)
-      || license.key_prefix.toLowerCase().includes(query)
-    )
-  })
-})
-
 const detailsTitle = computed(() => detailsLicense.value?.label ?? 'License details')
 
 const detailsItems = computed((): DetailItem[] => {
@@ -433,13 +428,21 @@ const deleteConfirmDescription = computed(() => {
   return `Are you sure you want to permanently delete "${label}"? This action cannot be undone.`
 })
 
+const fetchStats = async () => {
+  try {
+    stats.value = await getLicenseStats()
+  } catch {
+    // Stats are supplementary; list error handling covers primary failure.
+  }
+}
+
 const openDetails = (license: License) => {
   detailsLicense.value = license
   showDetails.value = true
 }
 
 const getActionItems = (license: License): DropdownMenuItem[][] => {
-  const items: DropdownMenuItem[] = [
+  const menuItems: DropdownMenuItem[] = [
     {
       label: 'View details',
       icon: 'i-lucide-info',
@@ -448,24 +451,24 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
   ]
 
   if (!canWrite.value) {
-    return [items]
+    return [menuItems]
   }
 
-  items.push({
+  menuItems.push({
     label: 'Edit',
     icon: 'i-lucide-pencil',
     onSelect: () => openEdit(license)
   })
 
   if (!license.revoked) {
-    items.push({
+    menuItems.push({
       label: 'Revoke',
       icon: 'i-lucide-ban',
       color: 'error',
       onSelect: () => openRevokeConfirm(license)
     })
   } else {
-    items.push({
+    menuItems.push({
       label: 'Activate',
       icon: 'i-lucide-check',
       color: 'success',
@@ -474,7 +477,7 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
   }
 
   return [
-    items,
+    menuItems,
     [
       {
         label: 'Delete',
@@ -486,27 +489,19 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
   ]
 }
 
-const fetchLicenses = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    licenses.value = await listLicenses()
-  } catch {
-    loadError.value = 'Failed to load licenses'
-  } finally {
-    loading.value = false
-  }
+const reload = async () => {
+  await Promise.all([refresh(), fetchStats()])
 }
 
 const onCreated = (license: License) => {
   createdKey.value = license.key || ''
   createdLabel.value = license.label
   showKeyModal.value = true
-  fetchLicenses()
+  reload()
 }
 
 const onUpdated = () => {
-  fetchLicenses()
+  reload()
 }
 
 const openEdit = (license: License) => {
@@ -534,9 +529,9 @@ const confirmRevoke = async () => {
   try {
     await revokeLicense(confirmTarget.value.id)
     showRevokeConfirm.value = false
-    await fetchLicenses()
+    await reload()
   } catch {
-    loadError.value = 'Failed to revoke license'
+    error.value = 'Failed to revoke license'
   } finally {
     actionId.value = null
     actionType.value = null
@@ -554,9 +549,9 @@ const confirmDelete = async () => {
   try {
     await deleteLicense(confirmTarget.value.id)
     showDeleteConfirm.value = false
-    await fetchLicenses()
+    await reload()
   } catch {
-    loadError.value = 'Failed to delete license'
+    error.value = 'Failed to delete license'
   } finally {
     actionId.value = null
     actionType.value = null
@@ -569,14 +564,14 @@ const activate = async (id: string) => {
   actionType.value = 'activate'
   try {
     await activateLicense(id)
-    await fetchLicenses()
+    await reload()
   } catch {
-    loadError.value = 'Failed to activate license'
+    error.value = 'Failed to activate license'
   } finally {
     actionId.value = null
     actionType.value = null
   }
 }
 
-onMounted(fetchLicenses)
+onMounted(fetchStats)
 </script>

@@ -17,23 +17,28 @@
       </UButton>
     </div>
 
-    <UAlert v-if="loadError" color="error" variant="subtle" :title="loadError" class="animate-fade-in" />
+    <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
     <UCard class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 overflow-hidden">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
         <UInput
-          v-model="searchQuery"
+          :model-value="search"
           icon="i-lucide-search"
           placeholder="Search by name or product..."
           class="sm:flex-1"
+          @update:model-value="setSearch"
         />
         <USelectMenu
           v-model="productFilter"
+          v-model:search-term="productSearchTerm"
           :items="productFilterItems"
           value-key="value"
           label-key="label"
           placeholder="All products"
+          searchable
           class="sm:w-56"
+          :loading="productSelect.loading"
+          @update:search-term="productSelect.onSearch"
         />
       </div>
 
@@ -42,74 +47,86 @@
       </div>
 
       <div
-        v-else-if="filteredPolicies.length === 0"
+        v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-          {{ policies.length === 0 ? 'No policies yet' : 'No matching policies' }}
+          {{ total === 0 && !search && !productFilter ? 'No policies yet' : 'No matching policies' }}
         </h3>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Create a policy to define how licenses expire.
         </p>
-        <UButton v-if="policies.length === 0 && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton v-if="total === 0 && !search && !productFilter && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
           Create policy
         </UButton>
       </div>
 
-      <UTable
-        v-else
-        :columns="columns"
-        :data="filteredPolicies"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
-        @select="(_e, row) => openDetails(row.original)"
-      >
-        <template #name-cell="{ row }">
-          <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
-        </template>
+      <template v-else>
+        <UTable
+          v-model:sorting="sorting"
+          :columns="columns"
+          :data="items"
+          :sorting-options="{ manualSorting: true }"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+          @select="(_e, row) => openDetails(row.original)"
+        >
+          <template #name-cell="{ row }">
+            <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
+          </template>
 
-        <template #product_name-cell="{ row }">
-          <span>{{ row.original.product_name }}</span>
-        </template>
+          <template #product_name-cell="{ row }">
+            <span>{{ row.original.product_name }}</span>
+          </template>
 
-        <template #description-cell="{ row }">
-          <UTooltip
-            v-if="row.original.description"
-            :text="row.original.description"
-          >
-            <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
-              {{ row.original.description }}
-            </span>
-          </UTooltip>
-          <span v-else class="text-slate-500">—</span>
-        </template>
+          <template #description-cell="{ row }">
+            <UTooltip
+              v-if="row.original.description"
+              :text="row.original.description"
+            >
+              <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
+                {{ row.original.description }}
+              </span>
+            </UTooltip>
+            <span v-else class="text-slate-500">—</span>
+          </template>
 
-        <template #duration-cell="{ row }">
-          <span>{{ formatDuration(row.original) }}</span>
-        </template>
+          <template #duration-cell="{ row }">
+            <span>{{ formatDuration(row.original) }}</span>
+          </template>
 
-        <template #expiration_basis-cell="{ row }">
-          <span>{{ formatBasis(row.original.expiration_basis) }}</span>
-        </template>
+          <template #expiration_basis-cell="{ row }">
+            <span>{{ formatBasis(row.original.expiration_basis) }}</span>
+          </template>
 
-        <template #grace_period_days-cell="{ row }">
-          <span>{{ row.original.grace_period_days }}</span>
-        </template>
+          <template #grace_period_days-cell="{ row }">
+            <span>{{ row.original.grace_period_days }}</span>
+          </template>
 
-        <template #actions-cell="{ row }">
-          <UDropdownMenu :items="getActionItems(row.original)">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-ellipsis-vertical"
-              size="sm"
-              :loading="actionId === row.original.id"
-            />
-          </UDropdownMenu>
-        </template>
-      </UTable>
+          <template #actions-cell="{ row }">
+            <UDropdownMenu :items="getActionItems(row.original)">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-ellipsis-vertical"
+                size="sm"
+                :loading="actionId === row.original.id"
+              />
+            </UDropdownMenu>
+          </template>
+        </UTable>
+
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-slate-200/80 dark:border-slate-800/80 mt-4">
+          <UPagination
+            :page="page"
+            :items-per-page="pageSize"
+            :total="total"
+            @update:page="setPage"
+          />
+        </div>
+      </template>
     </UCard>
 
-    <PolicyFormModal v-model:open="showForm" :policy="editingPolicy" @saved="fetchPolicies" />
+    <PolicyFormModal v-model:open="showForm" :policy="editingPolicy" @saved="refresh" />
 
     <DetailsModal
       v-model:open="showDetails"
@@ -134,46 +151,64 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { DetailItem, ExpirationBasis, Policy, Product } from '~/types'
-
-type PolicyRow = Policy & { product_name: string }
+import type { DetailItem, ExpirationBasis, Policy } from '~/types'
 
 definePageMeta({
   middleware: 'auth'
 })
 
-const { listPolicies, listProducts, deletePolicy } = useApi()
+const { listPolicies, deletePolicy } = useApi()
 const { canWrite } = useAuth()
+const { createProductSelect } = useServerSelect()
+const productSelect = createProductSelect()
 
-const policies = ref<PolicyRow[]>([])
-const products = ref<Product[]>([])
-const loading = ref(true)
-const loadError = ref('')
-const searchQuery = ref('')
+const {
+  page,
+  pageSize,
+  search,
+  items,
+  total,
+  totalPages,
+  loading,
+  error,
+  sorting,
+  refresh,
+  setSearch,
+  setPage,
+  setFilter
+} = usePaginatedList<Policy, { product_id?: string }>({
+  fetcher: (params) => listPolicies(params)
+})
+
 const productFilter = ref<string | null>(null)
+const productSearchTerm = ref('')
 const showForm = ref(false)
 const showDetails = ref(false)
 const editingPolicy = ref<Policy | null>(null)
-const detailsPolicy = ref<PolicyRow | null>(null)
+const detailsPolicy = ref<Policy | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<Policy | null>(null)
 const actionId = ref<string | null>(null)
 const deleting = ref(false)
 
+const productFilterItems = computed(() => [
+  { label: 'All products', value: null },
+  ...productSelect.items
+])
+
 const columns = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'product_name', header: 'Product' },
+  { accessorKey: 'name', header: 'Name', enableSorting: true },
+  { accessorKey: 'product_name', header: 'Product', enableSorting: true },
   { accessorKey: 'description', header: 'Description' },
   { accessorKey: 'duration', header: 'Duration' },
   { accessorKey: 'expiration_basis', header: 'Basis' },
-  { accessorKey: 'grace_period_days', header: 'Grace (days)' },
+  { accessorKey: 'grace_period_days', header: 'Grace (days)', enableSorting: true },
   { id: 'actions', header: '' }
 ]
 
-const productFilterItems = computed(() => [
-  { label: 'All products', value: null },
-  ...products.value.map((product) => ({ label: product.name, value: product.id }))
-])
+watch(productFilter, (value) => {
+  setFilter('product_id', value ?? undefined)
+})
 
 const formatBasis = (basis: ExpirationBasis) =>
   basis === 'on_first_validation' ? 'First validation' : 'Creation'
@@ -184,22 +219,6 @@ const formatDuration = (policy: Policy) => {
   }
   return `${policy.duration_days} days`
 }
-
-const filteredPolicies = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  return policies.value.filter((policy) => {
-    if (productFilter.value && policy.product_id !== productFilter.value) {
-      return false
-    }
-    if (!query) {
-      return true
-    }
-    return (
-      policy.name.toLowerCase().includes(query)
-      || policy.product_name.toLowerCase().includes(query)
-    )
-  })
-})
 
 const detailsItems = computed((): DetailItem[] => {
   const policy = detailsPolicy.value
@@ -234,7 +253,7 @@ const openEdit = (policy: Policy) => {
   showForm.value = true
 }
 
-const openDetails = (policy: PolicyRow) => {
+const openDetails = (policy: Policy) => {
   detailsPolicy.value = policy
   showDetails.value = true
 }
@@ -245,38 +264,17 @@ const openDelete = (policy: Policy) => {
 }
 
 const getActionItems = (policy: Policy): DropdownMenuItem[][] => {
-  const items: DropdownMenuItem[] = [
-    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(policy as PolicyRow) }
+  const menuItems: DropdownMenuItem[] = [
+    { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(policy) }
   ]
   if (canWrite.value) {
-    items.push({ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(policy) })
+    menuItems.push({ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(policy) })
     return [
-      items,
+      menuItems,
       [{ label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => openDelete(policy) }]
     ]
   }
-  return [items]
-}
-
-const fetchPolicies = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    const [policyList, productList] = await Promise.all([
-      listPolicies(),
-      listProducts()
-    ])
-    products.value = productList
-    const productMap = new Map(productList.map((product) => [product.id, product.name]))
-    policies.value = policyList.map((policy) => ({
-      ...policy,
-      product_name: productMap.get(policy.product_id) ?? 'Unknown'
-    }))
-  } catch {
-    loadError.value = 'Failed to load policies'
-  } finally {
-    loading.value = false
-  }
+  return [menuItems]
 }
 
 const confirmDelete = async () => {
@@ -288,15 +286,13 @@ const confirmDelete = async () => {
   try {
     await deletePolicy(deleteTarget.value.id)
     showDeleteConfirm.value = false
-    await fetchPolicies()
+    await refresh()
   } catch {
-    loadError.value = 'Failed to delete policy. It may still be assigned to licenses.'
+    error.value = 'Failed to delete policy. It may still be assigned to licenses.'
   } finally {
     actionId.value = null
     deleting.value = false
     deleteTarget.value = null
   }
 }
-
-onMounted(fetchPolicies)
 </script>
