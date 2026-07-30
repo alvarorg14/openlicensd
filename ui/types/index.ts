@@ -8,6 +8,7 @@ export interface AuthUser {
   name: string
   role: UserRole
   auth_provider: string
+  has_password: boolean
 }
 
 export interface User {

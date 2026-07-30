@@ -152,6 +152,40 @@ paths:
           description: OIDC is not enabled
       security: []
 
+  /api/v1/auth/password:
+    post:
+      tags: [Auth]
+      summary: Change own password
+      description: |
+        Changes the password for the currently authenticated user. Requires the current
+        password. Only available for accounts with a local password (`has_password: true`).
+        On success, all other sessions for the user are revoked; the current session
+        remains valid.
+      operationId: changeOwnPassword
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Password changed successfully
+        "400":
+          description: Invalid request (wrong current password, password too short, or account has no local password)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/v1/products:
     get:
       tags: [Products]
@@ -882,7 +916,7 @@ components:
 
     AuthUser:
       type: object
-      required: [id, email, name, role, auth_provider]
+      required: [id, email, name, role, auth_provider, has_password]
       properties:
         id:
           type: string
@@ -898,6 +932,22 @@ components:
         auth_provider:
           type: string
           example: local
+        has_password:
+          type: boolean
+          description: Whether the account has a local password (false for OIDC-only accounts)
+
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, password]
+      properties:
+        current_password:
+          type: string
+          format: password
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: New password (minimum 8 characters)
 
     AuthProviders:
       type: object

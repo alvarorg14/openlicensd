@@ -184,6 +184,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			"name":          user.Name,
 			"role":          user.Role,
 			"auth_provider": user.AuthProvider,
+			"has_password":  user.PasswordHash != nil,
 		},
 	})
 }
