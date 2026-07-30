@@ -161,11 +161,6 @@ func scanPolicy(row pgx.Row) (*Policy, error) {
 	return &p, nil
 }
 
-func scanPolicies(rows pgx.Rows) ([]Policy, error) {
-	policies, _, err := scanPoliciesWithTotal(rows)
-	return policies, err
-}
-
 func scanPoliciesWithTotal(rows pgx.Rows) ([]Policy, int64, error) {
 	var (
 		policies   []Policy

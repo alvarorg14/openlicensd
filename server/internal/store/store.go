@@ -275,11 +275,6 @@ func scanLicense(row pgx.Row) (*License, error) {
 	return &l, nil
 }
 
-func scanLicenses(rows pgx.Rows) ([]License, error) {
-	licenses, _, err := scanLicensesWithTotal(rows)
-	return licenses, err
-}
-
 func scanLicensesWithTotal(rows pgx.Rows) ([]License, int64, error) {
 	var (
 		licenses   []License
