@@ -41,6 +41,28 @@ CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 
 curl -s -b cookies.txt http://localhost:8080/api/v1/licenses
 
+# Paginated list with search, filters, and sorting
+curl -s -b cookies.txt "http://localhost:8080/api/v1/licenses?page=1&page_size=25&status=active&sort=created_at&order=desc"
+
+# License status counts (unfiltered)
+curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/stats
+```
+
+List endpoints for licenses, products, and policies return a paginated envelope:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "page_size": 25,
+  "total": 0,
+  "total_pages": 0
+}
+```
+
+Common query parameters: `page` (default 1), `page_size` (default 25, max 100), `search`, `sort`, `order` (`asc` or `desc`). Licenses additionally support `status` (`active`, `expired`, `revoked`), `product_id`, and `policy_id`. Policies support `product_id`.
+
+```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \

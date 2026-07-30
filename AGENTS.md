@@ -55,8 +55,9 @@ This document provides context and guidelines for AI coding assistants working o
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
-5. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
-6. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
+5. Admin lists resources → GET /api/v1/licenses|products|policies with server-side pagination, search, filters, and sorting
+6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
+7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
 ```
 
 ## Configuration
@@ -92,6 +93,7 @@ This document provides context and guidelines for AI coding assistants working o
 |------|---------|
 | `server/cmd/openlicensd/main.go` | Entry point: config, store, HTTP server, graceful shutdown |
 | `server/internal/api/server.go` | Router, login, health probes, shared helpers |
+| `server/internal/api/listing.go` | Shared list query parsing and paginated response envelope |
 | `server/internal/api/licenses.go` | License handlers |
 | `server/internal/api/products.go` | Product handlers |
 | `server/internal/api/policies.go` | Policy handlers |
@@ -101,6 +103,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `server/internal/harbor/harbor.go` | Harbor robot creation and cleanup |
 | `server/internal/oidc/oidc.go` | OIDC discovery, PKCE, ID token verification |
 | `server/internal/license/license.go` | Key generation and validation |
+| `server/internal/store/listing.go` | Shared list query building for paginated store queries |
 | `server/internal/store/store.go` | PostgreSQL operations |
 | `server/internal/store/migrations/` | SQL migrations (run on startup) |
 | `ui/nuxt.config.ts` | Nuxt config, API proxy in dev |

@@ -119,15 +119,16 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `POST` | `/api/v1/validate` | None | Validate a license key |
 | `POST` | `/api/v1/registry-credentials` | None | Issue Harbor credentials (when enabled) |
 | `POST` | `/api/v1/products` | Session | Create a product |
-| `GET` | `/api/v1/products` | Session | List products |
+| `GET` | `/api/v1/products` | Session | List products (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
 | `PATCH` | `/api/v1/products/{id}` | Session | Update a product |
 | `DELETE` | `/api/v1/products/{id}` | Session | Delete a product |
 | `POST` | `/api/v1/policies` | Session | Create a policy |
-| `GET` | `/api/v1/policies` | Session | List policies (`?product_id=` filter) |
+| `GET` | `/api/v1/policies` | Session | List policies (paginated; supports `product_id`, `search`, `sort`, `order`) |
 | `PATCH` | `/api/v1/policies/{id}` | Session | Update a policy |
 | `DELETE` | `/api/v1/policies/{id}` | Session | Delete a policy |
 | `POST` | `/api/v1/licenses` | Session | Create a license |
-| `GET` | `/api/v1/licenses` | Session | List licenses |
+| `GET` | `/api/v1/licenses` | Session | List licenses (paginated; supports `status`, `product_id`, `policy_id`, `search`, `sort`, `order`) |
+| `GET` | `/api/v1/licenses/stats` | Session | License status counts (total, active, expired, revoked) |
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
