@@ -99,8 +99,23 @@
         "addr": {
           "type": "string"
         },
-        "adminUser": {
-          "type": "string"
+        "sessionTTLHours": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cookieSecure": {
+          "type": "boolean"
+        },
+        "bootstrapAdmin": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
         },
         "harbor": {
           "type": "object",
@@ -150,10 +165,7 @@
             "databaseUrl": {
               "type": "string"
             },
-            "adminPasswordHash": {
-              "type": "string"
-            },
-            "jwtSecret": {
+            "bootstrapAdminPasswordHash": {
               "type": "string"
             },
             "harborAdminUsername": {

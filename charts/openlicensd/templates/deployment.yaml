@@ -42,8 +42,14 @@ spec:
           env:
             - name: OPENLICENSD_ADDR
               value: {{ .Values.config.addr | quote }}
-            - name: OPENLICENSD_ADMIN_USER
-              value: {{ .Values.config.adminUser | quote }}
+            - name: OPENLICENSD_SESSION_TTL_HOURS
+              value: {{ .Values.config.sessionTTLHours | quote }}
+            - name: OPENLICENSD_COOKIE_SECURE
+              value: {{ .Values.config.cookieSecure | quote }}
+            - name: OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL
+              value: {{ .Values.config.bootstrapAdmin.email | quote }}
+            - name: OPENLICENSD_BOOTSTRAP_ADMIN_NAME
+              value: {{ .Values.config.bootstrapAdmin.name | quote }}
             - name: OPENLICENSD_HARBOR_ENABLED
               value: {{ .Values.config.harbor.enabled | quote }}
             {{- if .Values.config.harbor.enabled }}

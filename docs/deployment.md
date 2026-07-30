@@ -107,9 +107,9 @@ docker run -d \
   --name openlicensd \
   -p 8080:8080 \
   -e OPENLICENSD_DATABASE_URL="postgres://user:pass@host:5432/openlicensd?sslmode=disable" \
-  -e OPENLICENSD_ADMIN_USER=admin \
-  -e OPENLICENSD_ADMIN_PASSWORD_HASH='$2a$10$...' \
-  -e OPENLICENSD_JWT_SECRET=your-jwt-secret \
+  -e OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com \
+  -e OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH='$2a$10$...' \
+  -e OPENLICENSD_COOKIE_SECURE=true \
   ghcr.io/alvarorg14/openlicensd:latest
 ```
 
@@ -127,9 +127,9 @@ Run:
 
 ```bash
 export OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/openlicensd?sslmode=disable
-export OPENLICENSD_ADMIN_USER=admin
-export OPENLICENSD_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
-export OPENLICENSD_JWT_SECRET=$(openssl rand -hex 32)
+export OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+export OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
+export OPENLICENSD_COOKIE_SECURE=false
 
 ./bin/openlicensd
 ```

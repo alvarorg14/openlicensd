@@ -34,7 +34,7 @@ This document provides context and guidelines for AI coding assistants working o
 | Package | Path | Responsibility |
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
-| `auth` | `server/internal/auth/` | Bcrypt login, HS256 JWT signing, bearer middleware |
+| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
@@ -50,7 +50,7 @@ This document provides context and guidelines for AI coding assistants working o
 ## Data Flow
 
 ```
-1. Admin logs in via UI or API → receives JWT (24h expiry)
+1. Admin logs in via UI or API → receives session cookie (httpOnly) + CSRF cookie
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
@@ -64,9 +64,11 @@ This document provides context and guidelines for AI coding assistants working o
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | **required** | PostgreSQL connection URL |
-| `OPENLICENSD_ADMIN_USER` | **required** | Admin username |
-| `OPENLICENSD_ADMIN_PASSWORD_HASH` | **required** | Bcrypt hash of admin password |
-| `OPENLICENSD_JWT_SECRET` | **required** | JWT signing secret |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Seed first admin when users table is empty |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | Display name for bootstrap admin |
+| `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
+| `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_HARBOR_ENABLED` | `false` | Enable Harbor credentials endpoint |
 | `OPENLICENSD_HARBOR_URL` | — | Harbor base URL (required when enabled) |
 | `OPENLICENSD_HARBOR_ADMIN_USERNAME` | — | Harbor admin username |
@@ -87,7 +89,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `server/internal/api/products.go` | Product handlers |
 | `server/internal/api/policies.go` | Policy handlers |
 | `server/internal/api/validate.go` | Validation and registry credentials handlers |
-| `server/internal/auth/auth.go` | Login, JWT, middleware |
+| `server/internal/auth/auth.go` | Session auth, CSRF, role middleware |
 | `server/internal/harbor/harbor.go` | Harbor robot creation and cleanup |
 | `server/internal/license/license.go` | Key generation and validation |
 | `server/internal/store/store.go` | PostgreSQL operations |

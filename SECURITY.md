@@ -50,7 +50,7 @@ We take the security of OpenLicensd seriously. If you believe you have found a s
 
 When deploying OpenLicensd:
 
-1. **Secrets**: Store `OPENLICENSD_JWT_SECRET`, `OPENLICENSD_ADMIN_PASSWORD_HASH`, and Harbor admin credentials in a secrets manager. Never commit secrets to version control.
+1. **Secrets**: Store `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` and Harbor admin credentials in a secrets manager. Never commit secrets to version control.
 2. **TLS**: Terminate TLS at your Ingress or reverse proxy. Do not expose the server over plain HTTP in production.
 3. **Network policies**: Restrict network access to the admin UI and API where possible.
 4. **Updates**: Keep OpenLicensd updated to the latest release.
@@ -61,7 +61,7 @@ When deploying OpenLicensd:
 
 - **Public endpoints**: `/api/v1/validate` and `/api/v1/registry-credentials` are unauthenticated. There is no rate limiting on these endpoints.
 - **License key storage**: Full license keys are never stored. Only SHA-256 hashes and a 5-character prefix are persisted.
-- **JWT tokens**: Admin JWTs are signed with HS256 and expire after 24 hours. Protect `OPENLICENSD_JWT_SECRET`.
+- **Sessions**: Admin sessions use httpOnly cookies with CSRF protection on unsafe methods. Set `OPENLICENSD_COOKIE_SECURE=true` in production.
 - **Harbor integration**: When enabled, anyone with a valid license key can obtain short-lived Harbor pull credentials. Robot accounts have pull-only access to configured projects.
 - **TLS verification**: `OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY=true` disables TLS certificate verification for Harbor. Use only in development or trusted internal networks.
 - **Container security**: Production images use a distroless base and run as non-root (UID 65532) with a read-only root filesystem.

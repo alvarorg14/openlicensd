@@ -2,5 +2,8 @@ secret:
   mode: create
   data:
     databaseUrl: postgres://openlicensd:openlicensd@postgres:5432/openlicensd?sslmode=disable
-    adminPasswordHash: $2a$10$w6lsMGg4BZVLWv0dqUXT2eUWcWhbh99FIECbPlBNeE.pu089T5E/2
-    jwtSecret: ci-test-jwt-secret
+    bootstrapAdminPasswordHash: $2a$10$w6lsMGg4BZVLWv0dqUXT2eUWcWhbh99FIECbPlBNeE.pu089T5E/2
+
+config:
+  bootstrapAdmin:
+    email: admin@example.com

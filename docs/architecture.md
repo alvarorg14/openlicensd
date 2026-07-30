@@ -26,7 +26,7 @@ flowchart TB
     harborAPI[Harbor API]
   end
 
-  adminUI -->|JWT| api
+  adminUI -->|session cookie| api
   app -->|POST /validate| api
   docker -->|POST /registry-credentials| api
   adminUI --> static
@@ -43,7 +43,7 @@ flowchart TB
 | Package | Path | Responsibility |
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
-| `auth` | `server/internal/auth/` | Bcrypt login, HS256 JWT signing, bearer middleware |
+| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
@@ -198,23 +198,23 @@ See [harbor-registry-credentials.md](harbor-registry-credentials.md) for full de
 |--------|------|------|-------|
 | `GET` | `/healthz` | None | Liveness |
 | `GET` | `/readyz` | None | Readiness (DB ping) |
-| `POST` | `/api/v1/auth/login` | None | Returns JWT |
+| `POST` | `/api/v1/auth/login` | None | Sets session cookies |
 | `POST` | `/api/v1/validate` | None | Public validation |
 | `POST` | `/api/v1/registry-credentials` | None | Only when Harbor enabled |
-| `POST` | `/api/v1/products` | JWT | Create product |
-| `GET` | `/api/v1/products` | JWT | List products |
-| `PATCH` | `/api/v1/products/{id}` | JWT | Update product |
-| `DELETE` | `/api/v1/products/{id}` | JWT | Delete product |
-| `POST` | `/api/v1/policies` | JWT | Create policy |
-| `GET` | `/api/v1/policies` | JWT | List policies (`?product_id=` filter) |
-| `PATCH` | `/api/v1/policies/{id}` | JWT | Update policy |
-| `DELETE` | `/api/v1/policies/{id}` | JWT | Delete policy |
-| `POST` | `/api/v1/licenses` | JWT | Create license |
-| `GET` | `/api/v1/licenses` | JWT | List licenses |
-| `PATCH` | `/api/v1/licenses/{id}` | JWT | Update license |
-| `DELETE` | `/api/v1/licenses/{id}` | JWT | Delete license |
-| `PATCH` | `/api/v1/licenses/{id}/revoke` | JWT | Revoke license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | JWT | Re-activate license |
+| `POST` | `/api/v1/products` | Session | Create product |
+| `GET` | `/api/v1/products` | Session | List products |
+| `PATCH` | `/api/v1/products/{id}` | Session | Update product |
+| `DELETE` | `/api/v1/products/{id}` | Session | Delete product |
+| `POST` | `/api/v1/policies` | Session | Create policy |
+| `GET` | `/api/v1/policies` | Session | List policies (`?product_id=` filter) |
+| `PATCH` | `/api/v1/policies/{id}` | Session | Update policy |
+| `DELETE` | `/api/v1/policies/{id}` | Session | Delete policy |
+| `POST` | `/api/v1/licenses` | Session | Create license |
+| `GET` | `/api/v1/licenses` | Session | List licenses |
+| `PATCH` | `/api/v1/licenses/{id}` | Session | Update license |
+| `DELETE` | `/api/v1/licenses/{id}` | Session | Delete license |
+| `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
+| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate license |
 | `*` | All other paths | None | Embedded SPA |
 
 ## Related
