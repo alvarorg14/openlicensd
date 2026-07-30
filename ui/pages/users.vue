@@ -66,6 +66,12 @@
           <UBadge color="neutral" variant="subtle" size="sm" class="capitalize">{{ row.original.role }}</UBadge>
         </template>
 
+        <template #auth_provider-cell="{ row }">
+          <UBadge color="neutral" variant="outline" size="sm" class="capitalize">
+            {{ row.original.auth_provider }}
+          </UBadge>
+        </template>
+
         <template #status-cell="{ row }">
           <UBadge
             :color="row.original.disabled_at ? 'error' : 'success'"
@@ -145,6 +151,7 @@ const columns = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'role', header: 'Role' },
+  { accessorKey: 'auth_provider', header: 'Provider' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'last_login_at', header: 'Last login' },
   { id: 'actions', header: '' }

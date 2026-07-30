@@ -40,43 +40,7 @@
             </div>
           </template>
 
-          <UForm :state="form" class="space-y-5" @submit="onSubmit">
-            <UFormField label="Email" name="email" required>
-              <UInput
-                v-model="form.email"
-                type="email"
-                autocomplete="email"
-                placeholder="Enter your email"
-                size="lg"
-                :disabled="loading"
-                class="transition-app"
-              />
-            </UFormField>
-
-            <UFormField label="Password" name="password" required>
-              <UInput
-                v-model="form.password"
-                :type="showPassword ? 'text' : 'password'"
-                autocomplete="current-password"
-                placeholder="Enter your password"
-                size="lg"
-                :disabled="loading"
-                class="transition-app"
-              >
-                <template #trailing>
-                  <UButton
-                    type="button"
-                    color="neutral"
-                    variant="ghost"
-                    :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                    :padded="false"
-                    size="xs"
-                    @click="showPassword = !showPassword"
-                  />
-                </template>
-              </UInput>
-            </UFormField>
-
+          <div class="space-y-5">
             <UAlert
               v-if="error"
               color="error"
@@ -86,16 +50,81 @@
             />
 
             <UButton
-              type="submit"
+              v-if="providers?.oidc && providers.oidc_login_url"
               block
               size="lg"
-              :loading="loading"
-              :disabled="!form.email.trim() || !form.password"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-log-in"
               class="transition-app"
+              @click="startSSO"
             >
-              Sign in
+              Sign in with {{ providers.oidc_name ?? 'SSO' }}
             </UButton>
-          </UForm>
+
+            <div
+              v-if="providers?.oidc && providers?.local"
+              class="relative flex items-center py-1"
+            >
+              <div class="flex-grow border-t border-slate-200 dark:border-slate-700" />
+              <span class="mx-3 text-xs uppercase tracking-wide text-slate-400">or</span>
+              <div class="flex-grow border-t border-slate-200 dark:border-slate-700" />
+            </div>
+
+            <UForm
+              v-if="providers?.local !== false"
+              :state="form"
+              class="space-y-5"
+              @submit="onSubmit"
+            >
+              <UFormField label="Email" name="email" required>
+                <UInput
+                  v-model="form.email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="Enter your email"
+                  size="lg"
+                  :disabled="loading"
+                  class="transition-app"
+                />
+              </UFormField>
+
+              <UFormField label="Password" name="password" required>
+                <UInput
+                  v-model="form.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
+                  size="lg"
+                  :disabled="loading"
+                  class="transition-app"
+                >
+                  <template #trailing>
+                    <UButton
+                      type="button"
+                      color="neutral"
+                      variant="ghost"
+                      :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                      :padded="false"
+                      size="xs"
+                      @click="showPassword = !showPassword"
+                    />
+                  </template>
+                </UInput>
+              </UFormField>
+
+              <UButton
+                type="submit"
+                block
+                size="lg"
+                :loading="loading"
+                :disabled="!form.email.trim() || !form.password"
+                class="transition-app"
+              >
+                Sign in
+              </UButton>
+            </UForm>
+          </div>
         </UCard>
       </div>
     </div>
@@ -109,8 +138,9 @@ definePageMeta({
   layout: false
 })
 
-const { login, isAuthenticated } = useAuth()
+const { login, isAuthenticated, fetchProviders, providers } = useAuth()
 const router = useRouter()
+const route = useRoute()
 
 const form = reactive({
   email: '',
@@ -121,11 +151,25 @@ const loading = ref(false)
 const error = ref('')
 const showPassword = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
   if (isAuthenticated.value) {
     router.replace('/licenses')
+    return
+  }
+
+  await fetchProviders()
+
+  if (route.query.error === 'sso_failed') {
+    error.value = 'Single sign-on failed. Please try again or use your email and password.'
   }
 })
+
+const startSSO = () => {
+  if (!providers.value?.oidc_login_url) {
+    return
+  }
+  window.location.href = providers.value.oidc_login_url
+}
 
 const onSubmit = async () => {
   loading.value = true

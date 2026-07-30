@@ -70,6 +70,13 @@ export interface LoginResponse {
   user: AuthUser
 }
 
+export interface AuthProviders {
+  local: boolean
+  oidc: boolean
+  oidc_name?: string
+  oidc_login_url?: string
+}
+
 export interface ValidateResponse {
   valid: boolean
   expires_at?: string | null
