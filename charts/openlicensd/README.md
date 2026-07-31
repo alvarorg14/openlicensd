@@ -72,6 +72,7 @@ helm install openlicensd ./charts/openlicensd \
 | config.oidc.providerName | string | `"SSO"` | SSO button label (maps to OPENLICENSD_OIDC_PROVIDER_NAME) |
 | config.oidc.redirectUrl | string | `""` | Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL) |
 | config.oidc.scopes | string | `"openid,profile,email"` | Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES) |
+| config.sessionCleanupIntervalMinutes | int | `60` | Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES) |
 | config.sessionTTLHours | int | `24` | Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS) |
 | extraArgs | list | `[]` | Extra command-line arguments passed to OpenLicensd |
 | extraEnv | list | `[]` | Extra environment variables for the OpenLicensd container |

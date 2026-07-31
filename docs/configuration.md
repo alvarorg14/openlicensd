@@ -14,6 +14,7 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | No | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
+| `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | No | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
 
@@ -78,6 +79,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 |------------|---------------------|
 | `config.addr` | `OPENLICENSD_ADDR` |
 | `config.sessionTTLHours` | `OPENLICENSD_SESSION_TTL_HOURS` |
+| `config.sessionCleanupIntervalMinutes` | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |

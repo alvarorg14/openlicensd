@@ -103,6 +103,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "sessionCleanupIntervalMinutes": {
+          "type": "integer",
+          "minimum": 0
+        },
         "cookieSecure": {
           "type": "boolean"
         },
