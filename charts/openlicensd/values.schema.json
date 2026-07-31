@@ -110,6 +110,40 @@
         "cookieSecure": {
           "type": "boolean"
         },
+        "localLoginEnabled": {
+          "type": "boolean"
+        },
+        "trustedProxies": {
+          "type": "string"
+        },
+        "rateLimit": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "publicPerMinute": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "publicBurst": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "loginPerMinute": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "loginBurst": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "idleMinutes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
         "bootstrapAdmin": {
           "type": "object",
           "properties": {

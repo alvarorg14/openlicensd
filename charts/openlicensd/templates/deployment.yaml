@@ -50,6 +50,20 @@ spec:
               value: {{ .Values.config.cookieSecure | quote }}
             - name: OPENLICENSD_LOCAL_LOGIN_ENABLED
               value: {{ .Values.config.localLoginEnabled | quote }}
+            - name: OPENLICENSD_TRUSTED_PROXIES
+              value: {{ .Values.config.trustedProxies | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_ENABLED
+              value: {{ .Values.config.rateLimit.enabled | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE
+              value: {{ .Values.config.rateLimit.publicPerMinute | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_PUBLIC_BURST
+              value: {{ .Values.config.rateLimit.publicBurst | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE
+              value: {{ .Values.config.rateLimit.loginPerMinute | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_LOGIN_BURST
+              value: {{ .Values.config.rateLimit.loginBurst | quote }}
+            - name: OPENLICENSD_RATE_LIMIT_IDLE_MINUTES
+              value: {{ .Values.config.rateLimit.idleMinutes | quote }}
             - name: OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL
               value: {{ .Values.config.bootstrapAdmin.email | quote }}
             - name: OPENLICENSD_BOOTSTRAP_ADMIN_NAME
