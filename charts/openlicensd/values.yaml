@@ -64,6 +64,8 @@ config:
   addr: ":8080"
   # -- Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS)
   sessionTTLHours: 24
+  # -- Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES)
+  sessionCleanupIntervalMinutes: 60
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
   localLoginEnabled: true

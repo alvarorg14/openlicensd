@@ -44,6 +44,8 @@ spec:
               value: {{ .Values.config.addr | quote }}
             - name: OPENLICENSD_SESSION_TTL_HOURS
               value: {{ .Values.config.sessionTTLHours | quote }}
+            - name: OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES
+              value: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
             - name: OPENLICENSD_COOKIE_SECURE
               value: {{ .Values.config.cookieSecure | quote }}
             - name: OPENLICENSD_LOCAL_LOGIN_ENABLED

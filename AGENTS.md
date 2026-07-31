@@ -39,6 +39,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
+| `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
 
@@ -70,6 +71,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
 | `OPENLICENSD_OIDC_ENABLED` | `false` | Enable OIDC SSO |
