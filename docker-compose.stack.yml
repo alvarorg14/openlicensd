@@ -1,0 +1,36 @@
+name: openlicensd-stack
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: openlicensd
+      POSTGRES_PASSWORD: openlicensd
+      POSTGRES_DB: openlicensd
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openlicensd -d openlicensd"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  openlicensd:
+    image: ghcr.io/alvarorg14/openlicensd:${OPENLICENSD_IMAGE_TAG:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${OPENLICENSD_PORT:-8080}:8080"
+    environment:
+      OPENLICENSD_ADDR: ":8080"
+      OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@postgres:5432/openlicensd?sslmode=disable
+      OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: ${OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
+      OPENLICENSD_BOOTSTRAP_ADMIN_NAME: ${OPENLICENSD_BOOTSTRAP_ADMIN_NAME:-Administrator}
+      OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH: ${OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH:-$$2a$$10$$w6lsMGg4BZVLWv0dqUXT2eUWcWhbh99FIECbPlBNeE.pu089T5E/2}
+      OPENLICENSD_COOKIE_SECURE: "false"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
