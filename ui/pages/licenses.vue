@@ -368,6 +368,19 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 
 const formatDateOrNever = (value: string | null) => (value ? formatDate(value) : 'Never')
 
+const formatCreatedBy = (license: License) => {
+  if (!license.created_by_name && !license.created_by_email) {
+    return '—'
+  }
+  if (!license.created_by_email) {
+    return license.created_by_name as string
+  }
+  if (!license.created_by_name) {
+    return license.created_by_email
+  }
+  return `${license.created_by_name} (${license.created_by_email})`
+}
+
 const getLicenseStatus = (license: License): LicenseStatus => {
   if (license.revoked) {
     return 'revoked'
@@ -414,7 +427,8 @@ const detailsItems = computed((): DetailItem[] => {
     { label: 'Activated', value: formatDateOrNever(license.activated_at) },
     { label: 'Last validated', value: formatDateOrNever(license.last_validated_at) },
     { label: 'Validations', value: String(license.validation_count) },
-    { label: 'Created', value: formatDate(license.created_at) }
+    { label: 'Created', value: formatDate(license.created_at) },
+    { label: 'Created by', value: formatCreatedBy(license) }
   ]
 })
 
