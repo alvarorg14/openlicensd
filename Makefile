@@ -1,4 +1,4 @@
-.PHONY: help dev dev-db dev-server dev-ui ui server test lint lint-server lint-ui vuln hash-password build release
+.PHONY: help dev dev-db dev-db-reset dev-server dev-ui stack-up stack-down stack-logs ui server test lint lint-server lint-ui vuln hash-password build release
 
 .DEFAULT_GOAL := help
 
@@ -22,11 +22,21 @@ dev: dev-db ## Start PostgreSQL and print dev instructions
 	@echo "Run 'make dev-server' and 'make dev-ui' in separate terminals"
 
 dev-db: ## Start local PostgreSQL via Docker Compose
-	COMPOSE_ENV_FILES=/dev/null docker compose up -d postgres
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.yml up -d postgres
 
 dev-db-reset: ## Reset local PostgreSQL volume and start fresh
-	COMPOSE_ENV_FILES=/dev/null docker compose down -v
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.yml down -v
 	$(MAKE) dev-db
+
+stack-up: ## Start Postgres + openlicensd from the published image
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml pull
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml up -d
+
+stack-down: ## Stop the full stack (add ARGS=-v to drop its data)
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml down $(ARGS)
+
+stack-logs: ## Tail full stack logs
+	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml logs -f
 
 dev-server: dev-db ## Run the API server (loads .env)
 	@test -f .env || (echo "Missing .env. Copy from .env.example: cp .env.example .env" && exit 1)

@@ -94,6 +94,20 @@ helm uninstall openlicensd -n openlicensd
 
 ## Docker
 
+### Docker Compose (evaluation)
+
+For a self-contained local stack (PostgreSQL + OpenLicensd), use [docker-compose.stack.yml](../docker-compose.stack.yml):
+
+```bash
+make stack-up
+```
+
+Open http://localhost:8080 and sign in with `admin@example.com` / `admin`. This uses the default bootstrap credentials and is intended for evaluation only — change the password hash before any real use.
+
+Stop with `make stack-down` (add `ARGS=-v` to drop the stack's database volume). The stack runs under a separate Compose project (`openlicensd-stack`) from the dev database (`docker-compose.yml`), so `make dev-db-reset` does not affect it.
+
+### Single container
+
 Pull the image:
 
 ```bash

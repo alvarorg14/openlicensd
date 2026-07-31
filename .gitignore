@@ -32,6 +32,7 @@ server/internal/static/dist/*
 # Env
 .env
 .env.local
+.env.stack
 
 # Test / coverage
 coverage.out

@@ -9,6 +9,7 @@ Choose one deployment path:
 | Path | Requirements |
 |------|-------------|
 | **Helm** | Kubernetes cluster, [Helm 3](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/) |
+| **Docker Compose** | [Docker](https://docs.docker.com/get-docker/), [Docker Compose](https://docs.docker.com/compose/) |
 | **Docker** | [Docker](https://docs.docker.com/get-docker/), a PostgreSQL instance |
 | **Local dev** | Go 1.26+, Node.js 24+, Docker (for PostgreSQL) |
 
@@ -47,6 +48,40 @@ curl -s localhost:8080/readyz
 ```
 
 Open http://localhost:8080 and sign in with your configured admin credentials.
+
+## Docker Compose (fastest)
+
+Run PostgreSQL and OpenLicensd together from the published image:
+
+```bash
+make stack-up
+```
+
+Open http://localhost:8080 and sign in with:
+
+- Email: `admin@example.com`
+- Password: `admin`
+
+> **Warning:** The default bootstrap password is for evaluation only. Generate your own hash with `make hash-password PASSWORD=yourpassword` and set `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` before any real use (for example via a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`).
+
+### Verify (Docker Compose)
+
+```bash
+curl -s localhost:8080/healthz
+curl -s localhost:8080/readyz
+```
+
+Stop the stack:
+
+```bash
+make stack-down
+```
+
+To remove the stack's database volume as well:
+
+```bash
+make stack-down ARGS=-v
+```
 
 ## Docker
 
