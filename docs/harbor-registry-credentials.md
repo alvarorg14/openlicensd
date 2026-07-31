@@ -226,7 +226,7 @@ Expired robot cleanup runs on each successful credential request. If cleanup fai
 - Harbor admin credentials are the highest-value secret in a Harbor-enabled deployment. Store them in a secrets manager (Kubernetes Secret, External Secrets Operator, etc.).
 - Robot accounts have pull-only access to the configured projects.
 - Credentials are short-lived (default 1 day).
-- The `/registry-credentials` endpoint is public and unauthenticated — anyone with a valid license key can obtain credentials. There is no rate limiting.
+- The `/registry-credentials` endpoint is public and unauthenticated — anyone with a valid license key can obtain credentials. Requests are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` when behind a reverse proxy.
 - License keys are validated by SHA-256 hash lookup; the full key is never stored.
 
 ## Related

@@ -69,6 +69,21 @@ config:
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
   localLoginEnabled: true
+  # -- Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES)
+  trustedProxies: ""
+  rateLimit:
+    # -- Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED)
+    enabled: true
+    # -- Sustained request rate for /validate and /registry-credentials (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE)
+    publicPerMinute: 600
+    # -- Burst capacity for public endpoints (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_BURST)
+    publicBurst: 60
+    # -- Sustained request rate for login and OIDC endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE)
+    loginPerMinute: 30
+    # -- Burst capacity for login endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_BURST)
+    loginBurst: 10
+    # -- Minutes before unused per-IP buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES)
+    idleMinutes: 10
   bootstrapAdmin:
     # -- Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL)
     email: ""

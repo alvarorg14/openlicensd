@@ -18,6 +18,20 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
 
+### Rate limiting
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_TRUSTED_PROXIES` | — | No | Comma-separated trusted proxy IPs or CIDRs. When the direct peer matches, `X-Forwarded-For` is used to resolve the client IP |
+| `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | No | Enable per-IP rate limiting on unauthenticated endpoints |
+| `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | No | Sustained request rate for `/validate` and `/registry-credentials` |
+| `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` | `60` | No | Burst capacity for public endpoints |
+| `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` | `30` | No | Sustained request rate for `/auth/login` and OIDC login/callback |
+| `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` | `10` | No | Burst capacity for login endpoints |
+| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted from memory |
+
+Limits are per process. With multiple replicas, effective throughput scales with replica count. Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer.
+
 ### OIDC SSO (optional)
 
 | Variable | Default | Required | Description |
@@ -84,6 +98,13 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
+| `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |
+| `config.rateLimit.enabled` | `OPENLICENSD_RATE_LIMIT_ENABLED` |
+| `config.rateLimit.publicPerMinute` | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` |
+| `config.rateLimit.publicBurst` | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` |
+| `config.rateLimit.loginPerMinute` | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` |
+| `config.rateLimit.loginBurst` | `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` |
+| `config.rateLimit.idleMinutes` | `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` |
 | `config.oidc.enabled` | `OPENLICENSD_OIDC_ENABLED` |
 | `config.oidc.issuerUrl` | `OPENLICENSD_OIDC_ISSUER_URL` |
 | `config.oidc.clientId` | `OPENLICENSD_OIDC_CLIENT_ID` |

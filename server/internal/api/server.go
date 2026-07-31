@@ -11,26 +11,37 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/openlicensd/openlicensd/server/internal/auth"
+	"github.com/openlicensd/openlicensd/server/internal/clientip"
 	"github.com/openlicensd/openlicensd/server/internal/config"
 	"github.com/openlicensd/openlicensd/server/internal/harbor"
 	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
+	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type Server struct {
-	cfg    *config.Config
-	auth   *auth.Service
-	store  *store.Store
-	harbor *harbor.Client
-	oidc   *appoidc.Client
+	cfg      *config.Config
+	auth     *auth.Service
+	store    *store.Store
+	harbor   *harbor.Client
+	oidc     *appoidc.Client
+	limiter  *ratelimit.Limiter
+	clientIP *clientip.Resolver
 }
 
 func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 	sessionTTL := time.Duration(cfg.SessionTTLHours) * time.Hour
+	clientIP, err := clientip.NewResolver(cfg.TrustedProxies)
+	if err != nil {
+		log.Fatalf("client ip resolver: %v", err)
+	}
+
 	srv := &Server{
-		cfg:   cfg,
-		auth:  auth.NewService(st, sessionTTL, cfg.CookieSecure),
-		store: st,
+		cfg:      cfg,
+		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure),
+		store:    st,
+		limiter:  ratelimit.New(cfg.RateLimit),
+		clientIP: clientIP,
 	}
 
 	if cfg.Harbor.Enabled {
@@ -75,16 +86,22 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Get("/readyz", s.handleReadyz)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/auth/login", s.handleLogin)
+		r.Group(func(r chi.Router) {
+			r.Use(s.rateLimit(ratelimit.ScopeLogin))
+			r.Post("/auth/login", s.handleLogin)
+			if s.cfg.OIDC.Enabled {
+				r.Get("/auth/oidc/login", s.handleOIDCLogin)
+				r.Get("/auth/oidc/callback", s.handleOIDCCallback)
+			}
+		})
 		r.Get("/auth/providers", s.handleAuthProviders)
-		if s.cfg.OIDC.Enabled {
-			r.Get("/auth/oidc/login", s.handleOIDCLogin)
-			r.Get("/auth/oidc/callback", s.handleOIDCCallback)
-		}
-		r.Post("/validate", s.handleValidate)
-		if s.cfg.Harbor.Enabled {
-			r.Post("/registry-credentials", s.handleRegistryCredentials)
-		}
+		r.Group(func(r chi.Router) {
+			r.Use(s.rateLimit(ratelimit.ScopePublic))
+			r.Post("/validate", s.handleValidate)
+			if s.cfg.Harbor.Enabled {
+				r.Post("/registry-credentials", s.handleRegistryCredentials)
+			}
+		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.auth.Middleware)
@@ -164,10 +181,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userAgent := r.UserAgent()
-	clientIP := r.RemoteAddr
-	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		clientIP = forwarded
-	}
+	clientIP := s.clientIP.From(r)
 
 	user, tokens, err := s.auth.Login(r.Context(), req.Email, req.Password, userAgent, clientIP)
 	if err != nil {

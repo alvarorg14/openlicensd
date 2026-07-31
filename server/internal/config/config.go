@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -38,6 +39,15 @@ type BootstrapAdminConfig struct {
 	PasswordHash string
 }
 
+type RateLimitConfig struct {
+	Enabled          bool
+	PublicPerMinute  int
+	PublicBurst      int
+	LoginPerMinute   int
+	LoginBurst       int
+	IdleMinutes      int
+}
+
 type Config struct {
 	Addr                          string
 	DatabaseURL                   string
@@ -46,6 +56,8 @@ type Config struct {
 	SessionCleanupIntervalMinutes int
 	CookieSecure                  bool
 	LocalLoginEnabled             bool
+	TrustedProxies                []string
+	RateLimit                     RateLimitConfig
 	Harbor                        HarborConfig
 	OIDC                          OIDCConfig
 }
@@ -65,6 +77,15 @@ func Load() (*Config, error) {
 		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
 		LocalLoginEnabled: localLoginEnabled,
+		TrustedProxies:  parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
+		RateLimit: RateLimitConfig{
+			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
+			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
+			PublicBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", 60),
+			LoginPerMinute:  getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
+			LoginBurst:      getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_BURST", 10),
+			IdleMinutes:     getIntEnv("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES", 10),
+		},
 		Harbor: HarborConfig{
 			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
 			URL:                os.Getenv("OPENLICENSD_HARBOR_URL"),
@@ -98,6 +119,12 @@ func Load() (*Config, error) {
 	if cfg.SessionCleanupIntervalMinutes < 0 {
 		return nil, fmt.Errorf("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES must be 0 or greater")
 	}
+	if err := validateTrustedProxies(cfg.TrustedProxies); err != nil {
+		return nil, err
+	}
+	if err := cfg.RateLimit.validate(); err != nil {
+		return nil, err
+	}
 
 	if err := cfg.Harbor.validate(); err != nil {
 		return nil, err
@@ -124,6 +151,43 @@ func (o OIDCConfig) IsAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+func (r RateLimitConfig) validate() error {
+	if !r.Enabled {
+		return nil
+	}
+	if r.PublicPerMinute < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE must be at least 1")
+	}
+	if r.PublicBurst < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST must be at least 1")
+	}
+	if r.LoginPerMinute < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE must be at least 1")
+	}
+	if r.LoginBurst < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_LOGIN_BURST must be at least 1")
+	}
+	if r.IdleMinutes < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES must be at least 1")
+	}
+	return nil
+}
+
+func validateTrustedProxies(entries []string) error {
+	for _, entry := range entries {
+		if strings.Contains(entry, "/") {
+			if _, err := netip.ParsePrefix(entry); err != nil {
+				return fmt.Errorf("invalid OPENLICENSD_TRUSTED_PROXIES entry %q: %w", entry, err)
+			}
+			continue
+		}
+		if _, err := netip.ParseAddr(entry); err != nil {
+			return fmt.Errorf("invalid OPENLICENSD_TRUSTED_PROXIES entry %q: %w", entry, err)
+		}
+	}
+	return nil
 }
 
 func (h HarborConfig) validate() error {

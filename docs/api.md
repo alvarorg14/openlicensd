@@ -288,7 +288,7 @@ Valid response:
 { "valid": true, "product": "acme-widget", "policy": "30-day trial" }
 ```
 
-Invalid response (always HTTP 200):
+Invalid response (HTTP 200 when the request is allowed):
 
 ```json
 { "valid": false, "reason": "expired", "expires_at": "2026-01-01T00:00:00Z" }
@@ -302,7 +302,7 @@ When a license is within the policy grace period after expiry:
 { "valid": true, "in_grace_period": true, "expires_at": "2026-01-01T00:00:00Z" }
 ```
 
-> **Note:** `/validate` always returns HTTP 200 with a `valid` boolean. The `/registry-credentials` endpoint returns HTTP 403 with an `error` field for invalid licenses instead.
+> **Note:** `/validate` returns HTTP 200 with a `valid` boolean when the request is allowed. Rate-limited requests return HTTP 429. The `/registry-credentials` endpoint returns HTTP 403 with an `error` field for invalid licenses instead.
 
 ## Error responses
 
@@ -321,6 +321,7 @@ Common status codes:
 | `403` | Forbidden (insufficient role or invalid license for registry-credentials) |
 | `404` | Resource not found |
 | `409` | Resource conflict (unique constraint or referential integrity violation) |
+| `429` | Rate limit exceeded (unauthenticated endpoints; includes `Retry-After` header) |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
 
