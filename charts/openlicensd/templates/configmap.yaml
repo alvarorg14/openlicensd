@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openlicensd.configMapName" . }}
+  labels:
+    {{- include "openlicensd.labels" . | nindent 4 }}
+data:
+  OPENLICENSD_ADDR: {{ .Values.config.addr | quote }}
+  OPENLICENSD_SESSION_TTL_HOURS: {{ .Values.config.sessionTTLHours | quote }}
+  OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
+  OPENLICENSD_COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
+  OPENLICENSD_LOCAL_LOGIN_ENABLED: {{ .Values.config.localLoginEnabled | quote }}
+  OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
+  OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
+  OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}
+  OPENLICENSD_RATE_LIMIT_PUBLIC_BURST: {{ .Values.config.rateLimit.publicBurst | quote }}
+  OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE: {{ .Values.config.rateLimit.loginPerMinute | quote }}
+  OPENLICENSD_RATE_LIMIT_LOGIN_BURST: {{ .Values.config.rateLimit.loginBurst | quote }}
+  OPENLICENSD_RATE_LIMIT_IDLE_MINUTES: {{ .Values.config.rateLimit.idleMinutes | quote }}
+  OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: {{ .Values.config.bootstrapAdmin.email | quote }}
+  OPENLICENSD_BOOTSTRAP_ADMIN_NAME: {{ .Values.config.bootstrapAdmin.name | quote }}
+  OPENLICENSD_HARBOR_ENABLED: {{ .Values.config.harbor.enabled | quote }}
+  {{- if .Values.config.harbor.enabled }}
+  OPENLICENSD_HARBOR_URL: {{ required "config.harbor.url is required when config.harbor.enabled is true" .Values.config.harbor.url | quote }}
+  OPENLICENSD_HARBOR_PROJECTS: {{ required "config.harbor.projects is required when config.harbor.enabled is true" .Values.config.harbor.projects | quote }}
+  OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS: {{ .Values.config.harbor.robotDurationDays | quote }}
+  OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX: {{ .Values.config.harbor.robotNamePrefix | quote }}
+  OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY: {{ .Values.config.harbor.insecureSkipVerify | quote }}
+  OPENLICENSD_HARBOR_DEBUG: {{ .Values.config.harbor.debug | quote }}
+  {{- end }}
+  OPENLICENSD_OIDC_ENABLED: {{ .Values.config.oidc.enabled | quote }}
+  {{- if .Values.config.oidc.enabled }}
+  OPENLICENSD_OIDC_ISSUER_URL: {{ required "config.oidc.issuerUrl is required when config.oidc.enabled is true" .Values.config.oidc.issuerUrl | quote }}
+  OPENLICENSD_OIDC_CLIENT_ID: {{ required "config.oidc.clientId is required when config.oidc.enabled is true" .Values.config.oidc.clientId | quote }}
+  OPENLICENSD_OIDC_REDIRECT_URL: {{ required "config.oidc.redirectUrl is required when config.oidc.enabled is true" .Values.config.oidc.redirectUrl | quote }}
+  OPENLICENSD_OIDC_SCOPES: {{ .Values.config.oidc.scopes | quote }}
+  OPENLICENSD_OIDC_DEFAULT_ROLE: {{ .Values.config.oidc.defaultRole | quote }}
+  OPENLICENSD_OIDC_PROVIDER_NAME: {{ .Values.config.oidc.providerName | quote }}
+  OPENLICENSD_OIDC_ADMIN_EMAILS: {{ .Values.config.oidc.adminEmails | quote }}
+  {{- end }}
