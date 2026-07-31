@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type HarborConfig struct {
@@ -38,14 +39,15 @@ type BootstrapAdminConfig struct {
 }
 
 type Config struct {
-	Addr            string
-	DatabaseURL     string
-	BootstrapAdmin  BootstrapAdminConfig
-	SessionTTLHours int
-	CookieSecure    bool
-	LocalLoginEnabled bool
-	Harbor          HarborConfig
-	OIDC            OIDCConfig
+	Addr                          string
+	DatabaseURL                   string
+	BootstrapAdmin                BootstrapAdminConfig
+	SessionTTLHours               int
+	SessionCleanupIntervalMinutes int
+	CookieSecure                  bool
+	LocalLoginEnabled             bool
+	Harbor                        HarborConfig
+	OIDC                          OIDCConfig
 }
 
 func Load() (*Config, error) {
@@ -59,8 +61,9 @@ func Load() (*Config, error) {
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
 			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
 		},
-		SessionTTLHours:   getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
-		CookieSecure:      getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
+		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
+		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
+		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
 		LocalLoginEnabled: localLoginEnabled,
 		Harbor: HarborConfig{
 			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
@@ -92,6 +95,9 @@ func Load() (*Config, error) {
 	if cfg.SessionTTLHours < 1 {
 		return nil, fmt.Errorf("OPENLICENSD_SESSION_TTL_HOURS must be at least 1")
 	}
+	if cfg.SessionCleanupIntervalMinutes < 0 {
+		return nil, fmt.Errorf("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES must be 0 or greater")
+	}
 
 	if err := cfg.Harbor.validate(); err != nil {
 		return nil, err
@@ -104,6 +110,10 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func (c *Config) SessionCleanupInterval() time.Duration {
+	return time.Duration(c.SessionCleanupIntervalMinutes) * time.Minute
 }
 
 func (o OIDCConfig) IsAdminEmail(email string) bool {

@@ -105,14 +105,17 @@ func (s *Store) RevokeUserSessionsExcept(ctx context.Context, userID, keepID uui
 	return err
 }
 
-func (s *Store) DeleteExpiredSessions(ctx context.Context) error {
+func (s *Store) DeleteExpiredSessions(ctx context.Context) (int64, error) {
 	const q = `
 		DELETE FROM sessions
 		WHERE expires_at < NOW() OR revoked_at IS NOT NULL
 	`
 
-	_, err := s.pool.Exec(ctx, q)
-	return err
+	tag, err := s.pool.Exec(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
 }
 
 func scanSession(row pgx.Row) (*Session, error) {

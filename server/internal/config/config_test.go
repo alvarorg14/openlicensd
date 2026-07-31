@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/openlicensd/openlicensd/server/internal/config"
 )
@@ -117,11 +118,43 @@ func TestLoadSessionDefaults(t *testing.T) {
 	if cfg.SessionTTLHours != 24 {
 		t.Fatalf("session ttl=%d want 24", cfg.SessionTTLHours)
 	}
+	if cfg.SessionCleanupIntervalMinutes != 60 {
+		t.Fatalf("session cleanup interval=%d want 60", cfg.SessionCleanupIntervalMinutes)
+	}
+	if cfg.SessionCleanupInterval() != 60*time.Minute {
+		t.Fatalf("session cleanup interval duration=%s want 1h0m0s", cfg.SessionCleanupInterval())
+	}
 	if !cfg.CookieSecure {
 		t.Fatalf("cookie secure=false want true")
 	}
 	if cfg.BootstrapAdmin.Name != "Administrator" {
 		t.Fatalf("bootstrap name=%q", cfg.BootstrapAdmin.Name)
+	}
+}
+
+func TestLoadSessionCleanupDisabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", "0")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.SessionCleanupIntervalMinutes != 0 {
+		t.Fatalf("session cleanup interval=%d want 0", cfg.SessionCleanupIntervalMinutes)
+	}
+	if cfg.SessionCleanupInterval() != 0 {
+		t.Fatalf("session cleanup interval duration=%s want 0", cfg.SessionCleanupInterval())
+	}
+}
+
+func TestLoadSessionCleanupInvalidInterval(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", "-1")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for negative session cleanup interval")
 	}
 }
 

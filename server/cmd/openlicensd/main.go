@@ -11,6 +11,7 @@ import (
 
 	"github.com/openlicensd/openlicensd/server/internal/api"
 	"github.com/openlicensd/openlicensd/server/internal/config"
+	"github.com/openlicensd/openlicensd/server/internal/maintenance"
 	"github.com/openlicensd/openlicensd/server/internal/static"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
@@ -34,6 +35,16 @@ func main() {
 		log.Fatalf("bootstrap: %v", err)
 	}
 
+	bgCtx, stopBackground := context.WithCancel(context.Background())
+	defer stopBackground()
+
+	if interval := cfg.SessionCleanupInterval(); interval > 0 {
+		go maintenance.NewSessionCleaner(st, interval).Run(bgCtx)
+		log.Printf("session cleanup every %s", interval)
+	} else {
+		log.Printf("session cleanup disabled")
+	}
+
 	srv := api.New(ctx, cfg, st)
 	staticHandler := static.MustHandler()
 	handler := srv.Router(staticHandler)
@@ -54,6 +65,8 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
+
+	stopBackground()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
