@@ -6,7 +6,8 @@ info:
 
     Admin endpoints require a session cookie obtained from `POST /api/v1/auth/login` or OIDC SSO.
     Unsafe methods also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
-    Public endpoints (`/validate`, `/registry-credentials`) do not require authentication.
+    Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
+    Unauthenticated endpoints are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
 
     The `/api/v1/registry-credentials` endpoint is only available when
     `OPENLICENSD_HARBOR_ENABLED=true` on the server.
@@ -121,6 +122,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
       security: []
 
   /api/v1/auth/providers:
@@ -155,6 +158,8 @@ paths:
           description: Redirect to identity provider
         "404":
           description: OIDC is not enabled
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
       security: []
 
   /api/v1/auth/oidc/callback:
@@ -168,6 +173,8 @@ paths:
           description: Redirect to app or login page on failure
         "404":
           description: OIDC is not enabled
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
       security: []
 
   /api/v1/auth/me:
@@ -1030,8 +1037,9 @@ paths:
       tags: [Validation]
       summary: Validate a license key
       description: |
-        Public endpoint. Always returns HTTP 200 with a validation result,
+        Public endpoint. Returns HTTP 200 with a validation result when the request is allowed,
         even when the key is invalid. Invalid keys include a `reason` field.
+        Rate-limited requests return HTTP 429.
       operationId: validateLicense
       requestBody:
         required: true
@@ -1052,6 +1060,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalError"
       security: []
@@ -1108,6 +1118,8 @@ paths:
                 invalid:
                   value:
                     error: invalid
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalError"
         "502":
@@ -1295,6 +1307,20 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds until the client may retry
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: rate limit exceeded
 
   schemas:
     Error:

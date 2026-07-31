@@ -35,11 +35,13 @@ This document provides context and guidelines for AI coding assistants working o
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
 | `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
+| `clientip` | `server/internal/clientip/` | Trusted-proxy aware client IP resolution |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
+| `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
 
@@ -74,6 +76,13 @@ This document provides context and guidelines for AI coding assistants working o
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
+| `OPENLICENSD_TRUSTED_PROXIES` | — | Trusted proxy IPs/CIDRs for client IP resolution |
+| `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | Enable per-IP rate limiting on unauthenticated endpoints |
+| `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | Sustained rate for `/validate` and `/registry-credentials` |
+| `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` | `60` | Burst capacity for public endpoints |
+| `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` | `30` | Sustained rate for login and OIDC endpoints |
+| `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` | `10` | Burst capacity for login endpoints |
+| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | Minutes before unused per-IP buckets are evicted |
 | `OPENLICENSD_OIDC_ENABLED` | `false` | Enable OIDC SSO |
 | `OPENLICENSD_OIDC_ISSUER_URL` | — | OIDC issuer URL (required when enabled) |
 | `OPENLICENSD_OIDC_CLIENT_ID` | — | OAuth client ID (required when enabled) |

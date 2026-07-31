@@ -158,7 +158,7 @@ See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies (`false` for local HTTP) |
 
-Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
+Rate limiting and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
 
 Generate a password hash:
 
