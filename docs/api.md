@@ -63,6 +63,14 @@ List endpoints for licenses, products, and policies return a paginated envelope:
 
 Common query parameters: `page` (default 1), `page_size` (default 25, max 100), `search`, `sort`, `order` (`asc` or `desc`). Licenses additionally support `status` (`active`, `expired`, `revoked`), `product_id`, and `policy_id`. Policies support `product_id`.
 
+Allowed `sort` values vary by resource:
+
+| Resource | Sort fields |
+|----------|-------------|
+| Licenses | `created_at`, `label`, `expires_at`, `product_name`, `policy_name`, `last_validated_at`, `validation_count` |
+| Products | `created_at`, `updated_at`, `name`, `code` |
+| Policies | `created_at`, `name`, `product_name`, `grace_period_days` |
+
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
@@ -71,6 +79,20 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
 ```
 
 Sessions expire after `OPENLICENSD_SESSION_TTL_HOURS` (default 24), with sliding renewal on activity.
+
+### 3. Current user and logout
+
+```bash
+# Get the currently authenticated user (any role)
+curl -s -b cookies.txt http://localhost:8080/api/v1/auth/me
+
+# Log out (revokes session and clears cookies)
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/auth/logout \
+  -H "X-CSRF-Token: $CSRF"
+```
+
+`GET /api/v1/auth/me` returns the same `AuthUser` shape as the login response `user` object. `POST /api/v1/auth/logout` returns `204 No Content`.
 
 ### 4. Change your password
 
@@ -111,13 +133,45 @@ Redirect the browser to `oidc_login_url` (or open `/api/v1/auth/oidc/login` dire
 
 See [oidc-sso.md](oidc-sso.md) for full setup instructions.
 
-## Roles
+## Roles and RBAC
 
 | Role | Permissions |
 |------|-------------|
 | `admin` | Full access including user management |
-| `operator` | Create/update/delete licenses, products, policies |
-| `viewer` | Read-only access |
+| `operator` | Create, update, and delete licenses, products, and policies |
+| `viewer` | Read-only access to licenses, products, and policies |
+
+Insufficient role returns `403` with `{"error":"forbidden"}`.
+
+### Endpoint access matrix
+
+| Method | Path | Required role |
+|--------|------|---------------|
+| `GET` | `/api/v1/auth/me` | any authenticated user |
+| `POST` | `/api/v1/auth/logout` | any authenticated user |
+| `POST` | `/api/v1/auth/password` | any authenticated user |
+| `GET` | `/api/v1/licenses/stats` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/licenses` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/products` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/policies` | `viewer`, `operator`, or `admin` |
+| `POST` | `/api/v1/licenses` | `operator` or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}` | `operator` or `admin` |
+| `DELETE` | `/api/v1/licenses/{id}` | `operator` or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}/revoke` | `operator` or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}/activate` | `operator` or `admin` |
+| `POST` | `/api/v1/products` | `operator` or `admin` |
+| `PATCH` | `/api/v1/products/{id}` | `operator` or `admin` |
+| `DELETE` | `/api/v1/products/{id}` | `operator` or `admin` |
+| `POST` | `/api/v1/policies` | `operator` or `admin` |
+| `PATCH` | `/api/v1/policies/{id}` | `operator` or `admin` |
+| `DELETE` | `/api/v1/policies/{id}` | `operator` or `admin` |
+| `GET` | `/api/v1/users` | `admin` |
+| `POST` | `/api/v1/users` | `admin` |
+| `PATCH` | `/api/v1/users/{id}` | `admin` |
+| `PATCH` | `/api/v1/users/{id}/password` | `admin` |
+| `PATCH` | `/api/v1/users/{id}/disable` | `admin` |
+| `PATCH` | `/api/v1/users/{id}/enable` | `admin` |
+| `DELETE` | `/api/v1/users/{id}` | `admin` |
 
 ## Public endpoints
 
@@ -137,7 +191,55 @@ These endpoints do not require authentication:
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/api/v1/auth/me` | Get current user profile |
+| `POST` | `/api/v1/auth/logout` | Revoke session and clear cookies |
 | `POST` | `/api/v1/auth/password` | Change own password (local accounts only) |
+
+See the [endpoint access matrix](#endpoint-access-matrix) for role requirements on all other authenticated routes.
+
+## User management (admin only)
+
+`GET /api/v1/users` returns an **unpaginated array** of users (not the paginated envelope used by licenses, products, and policies).
+
+```bash
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
+
+# List all users
+curl -s -b cookies.txt http://localhost:8080/api/v1/users | jq
+
+# Create a user
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"email":"operator@example.com","name":"Operator","password":"secure-pass","role":"operator"}'
+
+# Update a user
+USER_ID="..."
+curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"email":"operator@example.com","name":"Updated Name","role":"viewer"}'
+
+# Set or reset a user's password (admin action; no minimum length)
+curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/password" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"password":"new-password"}'
+
+# Disable a user (revokes all their sessions; cannot disable yourself)
+curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/disable" \
+  -H "X-CSRF-Token: $CSRF"
+
+# Re-enable a user
+curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/enable" \
+  -H "X-CSRF-Token: $CSRF"
+
+# Delete a user (cannot delete yourself)
+curl -s -b cookies.txt -X DELETE "http://localhost:8080/api/v1/users/$USER_ID" \
+  -H "X-CSRF-Token: $CSRF"
+```
+
+User objects include `id`, `email`, `name`, `role`, `auth_provider`, `created_at`, and `updated_at`. `disabled_at` and `last_login_at` are present only when applicable.
 
 ## Example: create a product and policy
 
@@ -218,7 +320,7 @@ Common status codes:
 | `401` | Missing or invalid session |
 | `403` | Forbidden (insufficient role or invalid license for registry-credentials) |
 | `404` | Resource not found |
-| `409` | Resource is referenced by other records |
+| `409` | Resource conflict (unique constraint or referential integrity violation) |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
 
