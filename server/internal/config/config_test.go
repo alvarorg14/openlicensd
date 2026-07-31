@@ -232,3 +232,68 @@ func TestOIDCIsAdminEmail(t *testing.T) {
 		t.Fatalf("unexpected admin email match")
 	}
 }
+
+func TestLoadRateLimitDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "")
+	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if !cfg.RateLimit.Enabled {
+		t.Fatalf("expected rate limiting enabled by default")
+	}
+	if cfg.RateLimit.PublicPerMinute != 600 {
+		t.Fatalf("public per minute=%d want 600", cfg.RateLimit.PublicPerMinute)
+	}
+	if cfg.RateLimit.PublicBurst != 60 {
+		t.Fatalf("public burst=%d want 60", cfg.RateLimit.PublicBurst)
+	}
+	if cfg.RateLimit.LoginPerMinute != 30 {
+		t.Fatalf("login per minute=%d want 30", cfg.RateLimit.LoginPerMinute)
+	}
+	if cfg.RateLimit.LoginBurst != 10 {
+		t.Fatalf("login burst=%d want 10", cfg.RateLimit.LoginBurst)
+	}
+	if cfg.RateLimit.IdleMinutes != 10 {
+		t.Fatalf("idle minutes=%d want 10", cfg.RateLimit.IdleMinutes)
+	}
+}
+
+func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", "0")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid public burst")
+	}
+}
+
+func TestLoadTrustedProxiesInvalidEntry(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "not-an-ip")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid trusted proxy")
+	}
+}
+
+func TestLoadTrustedProxiesParsesCSV(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "10.0.0.0/8, 10.1.2.3")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if len(cfg.TrustedProxies) != 2 {
+		t.Fatalf("trusted proxies=%v", cfg.TrustedProxies)
+	}
+	if cfg.TrustedProxies[0] != "10.0.0.0/8" || cfg.TrustedProxies[1] != "10.1.2.3" {
+		t.Fatalf("trusted proxies=%v", cfg.TrustedProxies)
+	}
+}

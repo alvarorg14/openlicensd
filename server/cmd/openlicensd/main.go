@@ -12,6 +12,7 @@ import (
 	"github.com/openlicensd/openlicensd/server/internal/api"
 	"github.com/openlicensd/openlicensd/server/internal/config"
 	"github.com/openlicensd/openlicensd/server/internal/maintenance"
+	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
 	"github.com/openlicensd/openlicensd/server/internal/static"
 	"github.com/openlicensd/openlicensd/server/internal/store"
 )
@@ -46,6 +47,8 @@ func main() {
 	}
 
 	srv := api.New(ctx, cfg, st)
+	srv.StartBackground(bgCtx)
+	ratelimit.LogStartup(cfg.RateLimit)
 	staticHandler := static.MustHandler()
 	handler := srv.Router(staticHandler)
 

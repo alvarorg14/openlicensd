@@ -110,10 +110,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userAgent := r.UserAgent()
-	clientIP := r.RemoteAddr
-	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		clientIP = forwarded
-	}
+	clientIP := s.clientIP.From(r)
 
 	tokens, err := s.auth.CreateSessionForUser(r.Context(), user, store.AuthProviderOIDC, userAgent, clientIP)
 	if err != nil {
