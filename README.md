@@ -98,6 +98,14 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --create-namespace
 ```
 
+Try the published image with Docker Compose:
+
+```bash
+make stack-up
+```
+
+Open http://localhost:8080 and sign in with `admin@example.com` / `admin`.
+
 For local development:
 
 ```bash
@@ -220,8 +228,12 @@ Run `make help` to list all available targets:
 
 ```bash
 make dev-db        # Start PostgreSQL
+make dev-db-reset  # Reset dev PostgreSQL volume
 make dev-server    # Run API server (loads .env)
 make dev-ui        # Run Nuxt dev server
+make stack-up      # Start Postgres + openlicensd from GHCR image
+make stack-down    # Stop full stack (ARGS=-v to drop data)
+make stack-logs    # Tail full stack logs
 make build         # Build UI + binary
 make test          # Run Go tests
 make lint          # go vet + golangci-lint + ESLint (same as CI)
