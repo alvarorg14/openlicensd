@@ -4,12 +4,26 @@ info:
   description: |
     HTTP API for OpenLicensd — an open source license server for creating and validating license keys.
 
-    Admin endpoints require a session cookie obtained from `POST /api/v1/auth/login`.
+    Admin endpoints require a session cookie obtained from `POST /api/v1/auth/login` or OIDC SSO.
     Unsafe methods also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
     Public endpoints (`/validate`, `/registry-credentials`) do not require authentication.
 
     The `/api/v1/registry-credentials` endpoint is only available when
     `OPENLICENSD_HARBOR_ENABLED=true` on the server.
+
+    ## Role-based access control
+
+    Authenticated endpoints enforce one of three roles. Insufficient role returns `403` with
+    `{"error":"forbidden"}`.
+
+    | Role | Permissions |
+    |------|-------------|
+    | `admin` | Full access including user management |
+    | `operator` | Create, update, and delete licenses, products, and policies |
+    | `viewer` | Read-only access to licenses, products, and policies |
+
+    Any authenticated user (any role) may call `/api/v1/auth/me`, `/api/v1/auth/logout`, and
+    `/api/v1/auth/password`.
   version: 0.1.0
   license:
     name: Apache-2.0
@@ -28,13 +42,15 @@ tags:
   - name: Health
     description: Liveness and readiness probes
   - name: Auth
-    description: Admin authentication
+    description: Admin authentication and session management
+  - name: Users
+    description: User management (admin only)
   - name: Products
-    description: Product management (admin only)
+    description: Product management
   - name: Policies
-    description: Policy management (admin only)
+    description: Policy management
   - name: Licenses
-    description: License management (admin only)
+    description: License management
   - name: Validation
     description: Public license validation
   - name: Registry
@@ -65,6 +81,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              example:
+                error: database unavailable
       security: []
 
   /api/v1/auth/login:
@@ -152,6 +170,44 @@ paths:
           description: OIDC is not enabled
       security: []
 
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      description: |
+        Returns the currently authenticated user.
+
+        **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
+      operationId: getCurrentUser
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: |
+        Revokes the current session and clears session cookies.
+
+        **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
+      operationId: logout
+      security:
+        - sessionAuth: []
+      responses:
+        "204":
+          description: Logged out successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/v1/auth/password:
     post:
       tags: [Auth]
@@ -161,6 +217,8 @@ paths:
         password. Only available for accounts with a local password (`has_password: true`).
         On success, all other sessions for the user are revoked; the current session
         remains valid.
+
+        **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
       operationId: changeOwnPassword
       security:
         - sessionAuth: []
@@ -180,16 +238,260 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "401":
-          description: Missing or invalid session
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: |
+        Returns all users as an unpaginated array, ordered by `created_at` descending.
+
+        **Required role:** `admin`.
+      operationId: listUsers
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Users]
+      summary: Create a user
+      description: |
+        Creates a local user with a bcrypt-hashed password.
+
+        **Required role:** `admin`.
+      operationId: createUser
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid request body (missing email, name, or password; or invalid role)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+
+    patch:
+      tags: [Users]
+      summary: Update a user
+      description: |
+        Updates a user's email, name, and role.
+
+        **Required role:** `admin`.
+      operationId: updateUser
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid user ID or request body (missing email, name, or invalid role)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: |
+        Permanently deletes a user. Cannot delete your own account.
+
+        **Required role:** `admin`.
+      operationId: deleteUser
+      security:
+        - sessionAuth: []
+      responses:
+        "204":
+          description: User deleted
+        "400":
+          description: Invalid user ID or cannot delete your own account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/users/{id}/password:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+
+    patch:
+      tags: [Users]
+      summary: Set user password
+      description: |
+        Sets or resets the password for a user (admin action). Does not require the current
+        password and does not enforce a minimum length. Store failures return `404`.
+
+        **Required role:** `admin`.
+      operationId: setUserPassword
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetUserPasswordRequest"
+      responses:
+        "204":
+          description: Password set successfully
+        "400":
+          description: Invalid user ID or missing password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/users/{id}/disable:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+
+    patch:
+      tags: [Users]
+      summary: Disable a user
+      description: |
+        Disables a user account and revokes all of their sessions. Cannot disable your own account.
+
+        **Required role:** `admin`.
+      operationId: disableUser
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: User disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid user ID or cannot disable your own account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/users/{id}/enable:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+
+    patch:
+      tags: [Users]
+      summary: Enable a user
+      description: |
+        Re-enables a disabled user and clears failed-login lockout counters.
+
+        **Required role:** `admin`.
+      operationId: enableUser
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: User enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /api/v1/products:
     get:
       tags: [Products]
       summary: List products
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
       operationId: listProducts
       security:
         - sessionAuth: []
@@ -197,7 +499,7 @@ paths:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Search"
-        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/ProductSort"
         - $ref: "#/components/parameters/Order"
       responses:
         "200":
@@ -214,12 +516,16 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
     post:
       tags: [Products]
       summary: Create a product
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: createProduct
       security:
         - sessionAuth: []
@@ -244,12 +550,10 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
-          description: Product code already exists
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -260,6 +564,8 @@ paths:
     patch:
       tags: [Products]
       summary: Update a product
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: updateProduct
       security:
         - sessionAuth: []
@@ -284,20 +590,20 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Product code already exists
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
     delete:
       tags: [Products]
       summary: Delete a product
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: deleteProduct
       security:
         - sessionAuth: []
@@ -312,14 +618,12 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Product is referenced by policies or licenses
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -327,6 +631,8 @@ paths:
     get:
       tags: [Policies]
       summary: List policies
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
       operationId: listPolicies
       security:
         - sessionAuth: []
@@ -334,7 +640,7 @@ paths:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Search"
-        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/PolicySort"
         - $ref: "#/components/parameters/Order"
         - name: product_id
           in: query
@@ -358,12 +664,16 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
     post:
       tags: [Policies]
       summary: Create a policy
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: createPolicy
       security:
         - sessionAuth: []
@@ -388,12 +698,10 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
-          description: Policy name already exists for product
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -404,6 +712,8 @@ paths:
     patch:
       tags: [Policies]
       summary: Update a policy
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: updatePolicy
       security:
         - sessionAuth: []
@@ -428,20 +738,20 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Policy name already exists for product
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
     delete:
       tags: [Policies]
       summary: Delete a policy
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: deletePolicy
       security:
         - sessionAuth: []
@@ -456,14 +766,12 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Policy is assigned to licenses
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -471,6 +779,8 @@ paths:
     get:
       tags: [Licenses]
       summary: License status counts
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
       operationId: getLicenseStats
       security:
         - sessionAuth: []
@@ -483,6 +793,8 @@ paths:
                 $ref: "#/components/schemas/LicenseStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -490,6 +802,8 @@ paths:
     get:
       tags: [Licenses]
       summary: List licenses
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
       operationId: listLicenses
       security:
         - sessionAuth: []
@@ -497,7 +811,7 @@ paths:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Search"
-        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/LicenseSort"
         - $ref: "#/components/parameters/Order"
         - name: status
           in: query
@@ -535,6 +849,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -544,6 +860,8 @@ paths:
       description: |
         Generates a new license key and returns it once in the response.
         Only the key prefix is stored for display; the full key cannot be retrieved later.
+
+        **Required role:** `operator` or `admin`.
       operationId: createLicense
       security:
         - sessionAuth: []
@@ -561,13 +879,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/LicenseCreated"
         "400":
-          description: Invalid request body or missing label
+          description: Invalid request body, missing label, or policy does not belong to product
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -578,6 +898,8 @@ paths:
     patch:
       tags: [Licenses]
       summary: Update a license
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: updateLicense
       security:
         - sessionAuth: []
@@ -602,6 +924,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -610,6 +934,8 @@ paths:
     delete:
       tags: [Licenses]
       summary: Delete a license
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: deleteLicense
       security:
         - sessionAuth: []
@@ -624,6 +950,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -635,7 +963,10 @@ paths:
     patch:
       tags: [Licenses]
       summary: Revoke a license
-      description: Revoked licenses fail validation immediately.
+      description: |
+        Revoked licenses fail validation immediately.
+
+        **Required role:** `operator` or `admin`.
       operationId: revokeLicense
       security:
         - sessionAuth: []
@@ -654,6 +985,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -665,6 +998,8 @@ paths:
     patch:
       tags: [Licenses]
       summary: Activate a revoked license
+      description: |
+        **Required role:** `operator` or `admin`.
       operationId: activateLicense
       security:
         - sessionAuth: []
@@ -683,6 +1018,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -765,6 +1102,12 @@ paths:
                 revoked:
                   value:
                     error: revoked
+                product_mismatch:
+                  value:
+                    error: product_mismatch
+                invalid:
+                  value:
+                    error: invalid
         "500":
           $ref: "#/components/responses/InternalError"
         "502":
@@ -784,7 +1127,7 @@ components:
       in: cookie
       name: openlicensd_session
       description: |
-        Session cookie obtained from `POST /api/v1/auth/login`.
+        Session cookie obtained from `POST /api/v1/auth/login` or OIDC SSO.
         Unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header
         set to the value of the `openlicensd_csrf` cookie.
 
@@ -810,6 +1153,14 @@ components:
       in: path
       required: true
       description: Policy UUID
+      schema:
+        type: string
+        format: uuid
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: User UUID
       schema:
         type: string
         format: uuid
@@ -839,14 +1190,40 @@ components:
       schema:
         type: string
       description: Case-insensitive search term
-    Sort:
+    LicenseSort:
       name: sort
       in: query
       required: false
       schema:
         type: string
+        enum:
+          - created_at
+          - label
+          - expires_at
+          - product_name
+          - policy_name
+          - last_validated_at
+          - validation_count
         default: created_at
-      description: Sort field (allowlist varies by resource)
+      description: Sort field for licenses
+    ProductSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, updated_at, name, code]
+        default: created_at
+      description: Sort field for products
+    PolicySort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, name, product_name, grace_period_days]
+        default: created_at
+      description: Sort field for policies
     Order:
       name: order
       in: query
@@ -859,26 +1236,59 @@ components:
 
   responses:
     Unauthorized:
-      description: Missing or invalid authorization
+      description: Missing or invalid session
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           examples:
-            missing:
+            invalid_session:
               value:
-                error: missing authorization header
-            invalid:
+                error: invalid session
+            unauthorized:
               value:
-                error: invalid token
-    NotFound:
-      description: License not found
+                error: unauthorized
+            missing_csrf:
+              value:
+                error: missing csrf token
+            invalid_csrf:
+              value:
+                error: invalid csrf token
+    Forbidden:
+      description: Insufficient role
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           example:
-            error: license not found
+            error: forbidden
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            license:
+              value:
+                error: license not found
+            product:
+              value:
+                error: product not found
+            policy:
+              value:
+                error: policy not found
+            user:
+              value:
+                error: user not found
+    Conflict:
+      description: Resource conflict (unique constraint or referential integrity violation)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: resource is referenced by other records
     InternalError:
       description: Internal server error
       content:
@@ -894,6 +1304,11 @@ components:
         error:
           type: string
           description: Human-readable error message
+
+    Role:
+      type: string
+      enum: [admin, operator, viewer]
+      description: User role for RBAC
 
     LoginRequest:
       type: object
@@ -927,14 +1342,82 @@ components:
         name:
           type: string
         role:
-          type: string
-          enum: [admin, operator, viewer]
+          $ref: "#/components/schemas/Role"
         auth_provider:
           type: string
           example: local
         has_password:
           type: boolean
           description: Whether the account has a local password (false for OIDC-only accounts)
+
+    User:
+      type: object
+      required: [id, email, name, role, auth_provider, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        auth_provider:
+          type: string
+          example: local
+          description: Authentication provider (`local` or `oidc`)
+        disabled_at:
+          type: string
+          format: date-time
+          description: Present when the account is disabled; omitted otherwise
+        last_login_at:
+          type: string
+          format: date-time
+          description: Last successful login time; omitted when the user has never logged in
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required: [email, name, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+          format: password
+        role:
+          $ref: "#/components/schemas/Role"
+
+    UpdateUserRequest:
+      type: object
+      required: [email, name, role]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+
+    SetUserPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          description: New password (non-empty; no minimum length enforced for admin resets)
 
     ChangePasswordRequest:
       type: object
@@ -1051,7 +1534,7 @@ components:
 
     Product:
       type: object
-      required: [id, name, code, created_at, updated_at]
+      required: [id, name, code, description, created_at, updated_at]
       properties:
         id:
           type: string
@@ -1063,8 +1546,9 @@ components:
         description:
           type: ["string", "null"]
         archived_at:
-          type: ["string", "null"]
+          type: string
           format: date-time
+          description: Present when the product is archived; omitted otherwise
         created_at:
           type: string
           format: date-time
@@ -1092,7 +1576,17 @@ components:
 
     Policy:
       type: object
-      required: [id, product_id, product_name, name, expiration_basis, grace_period_days, created_at, updated_at]
+      required:
+        - id
+        - product_id
+        - product_name
+        - name
+        - description
+        - duration_days
+        - expiration_basis
+        - grace_period_days
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
@@ -1114,8 +1608,9 @@ components:
         grace_period_days:
           type: integer
         archived_at:
-          type: ["string", "null"]
+          type: string
           format: date-time
+          description: Present when the policy is archived; omitted otherwise
         created_at:
           type: string
           format: date-time
@@ -1164,8 +1659,11 @@ components:
         - product_name
         - policy_id
         - policy_name
+        - expires_at
+        - activated_at
         - revoked
         - created_at
+        - last_validated_at
         - validation_count
       properties:
         id:
@@ -1209,10 +1707,14 @@ components:
         created_by:
           type: string
           format: uuid
+          description: ID of the user who created the license; omitted when unknown
         created_by_name:
           type: string
+          description: Display name of the creator; omitted when unknown
         created_by_email:
           type: string
+          format: email
+          description: Email of the creator; omitted when unknown
 
     PaginatedLicenses:
       type: object
@@ -1281,7 +1783,7 @@ components:
         expires_at:
           type: ["string", "null"]
           format: date-time
-          description: Present when the key is expired
+          description: Expiration time of the matched license, when set
         reason:
           type: string
           enum: [not_found, expired, revoked, product_mismatch]
