@@ -48,3 +48,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- default (printf "%s-secret" (include "openlicensd.fullname" .)) .Values.secret.name }}
 {{- end }}
 {{- end }}
+
+{{- define "openlicensd.configMapName" -}}
+{{- printf "%s-config" (include "openlicensd.fullname" .) }}
+{{- end }}

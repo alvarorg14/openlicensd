@@ -12,6 +12,7 @@ spec:
   template:
     metadata:
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -39,75 +40,15 @@ spec:
           args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          env:
-            - name: OPENLICENSD_ADDR
-              value: {{ .Values.config.addr | quote }}
-            - name: OPENLICENSD_SESSION_TTL_HOURS
-              value: {{ .Values.config.sessionTTLHours | quote }}
-            - name: OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES
-              value: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
-            - name: OPENLICENSD_COOKIE_SECURE
-              value: {{ .Values.config.cookieSecure | quote }}
-            - name: OPENLICENSD_LOCAL_LOGIN_ENABLED
-              value: {{ .Values.config.localLoginEnabled | quote }}
-            - name: OPENLICENSD_TRUSTED_PROXIES
-              value: {{ .Values.config.trustedProxies | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_ENABLED
-              value: {{ .Values.config.rateLimit.enabled | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE
-              value: {{ .Values.config.rateLimit.publicPerMinute | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_PUBLIC_BURST
-              value: {{ .Values.config.rateLimit.publicBurst | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE
-              value: {{ .Values.config.rateLimit.loginPerMinute | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_LOGIN_BURST
-              value: {{ .Values.config.rateLimit.loginBurst | quote }}
-            - name: OPENLICENSD_RATE_LIMIT_IDLE_MINUTES
-              value: {{ .Values.config.rateLimit.idleMinutes | quote }}
-            - name: OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL
-              value: {{ .Values.config.bootstrapAdmin.email | quote }}
-            - name: OPENLICENSD_BOOTSTRAP_ADMIN_NAME
-              value: {{ .Values.config.bootstrapAdmin.name | quote }}
-            - name: OPENLICENSD_HARBOR_ENABLED
-              value: {{ .Values.config.harbor.enabled | quote }}
-            {{- if .Values.config.harbor.enabled }}
-            - name: OPENLICENSD_HARBOR_URL
-              value: {{ required "config.harbor.url is required when config.harbor.enabled is true" .Values.config.harbor.url | quote }}
-            - name: OPENLICENSD_HARBOR_PROJECTS
-              value: {{ required "config.harbor.projects is required when config.harbor.enabled is true" .Values.config.harbor.projects | quote }}
-            - name: OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS
-              value: {{ .Values.config.harbor.robotDurationDays | quote }}
-            - name: OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX
-              value: {{ .Values.config.harbor.robotNamePrefix | quote }}
-            - name: OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY
-              value: {{ .Values.config.harbor.insecureSkipVerify | quote }}
-            - name: OPENLICENSD_HARBOR_DEBUG
-              value: {{ .Values.config.harbor.debug | quote }}
-            {{- end }}
-            - name: OPENLICENSD_OIDC_ENABLED
-              value: {{ .Values.config.oidc.enabled | quote }}
-            {{- if .Values.config.oidc.enabled }}
-            - name: OPENLICENSD_OIDC_ISSUER_URL
-              value: {{ required "config.oidc.issuerUrl is required when config.oidc.enabled is true" .Values.config.oidc.issuerUrl | quote }}
-            - name: OPENLICENSD_OIDC_CLIENT_ID
-              value: {{ required "config.oidc.clientId is required when config.oidc.enabled is true" .Values.config.oidc.clientId | quote }}
-            - name: OPENLICENSD_OIDC_REDIRECT_URL
-              value: {{ required "config.oidc.redirectUrl is required when config.oidc.enabled is true" .Values.config.oidc.redirectUrl | quote }}
-            - name: OPENLICENSD_OIDC_SCOPES
-              value: {{ .Values.config.oidc.scopes | quote }}
-            - name: OPENLICENSD_OIDC_DEFAULT_ROLE
-              value: {{ .Values.config.oidc.defaultRole | quote }}
-            - name: OPENLICENSD_OIDC_PROVIDER_NAME
-              value: {{ .Values.config.oidc.providerName | quote }}
-            - name: OPENLICENSD_OIDC_ADMIN_EMAILS
-              value: {{ .Values.config.oidc.adminEmails | quote }}
-            {{- end }}
-            {{- with .Values.extraEnv }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
           envFrom:
+            - configMapRef:
+                name: {{ include "openlicensd.configMapName" . }}
             - secretRef:
                 name: {{ include "openlicensd.secretName" . }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 8080

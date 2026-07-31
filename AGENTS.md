@@ -48,7 +48,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Helm Chart
 
 - **Location**: `charts/openlicensd/`
-- Deploys Deployment, Service, ServiceAccount, Secret/ExternalSecret, optional Ingress
+- Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
 
 ## Data Flow
