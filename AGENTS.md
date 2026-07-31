@@ -117,10 +117,13 @@ Use `make` targets as the canonical development commands:
 
 ```bash
 make help          # List all targets
-make dev-db        # Start PostgreSQL via Docker Compose
+make dev-db        # Start PostgreSQL via Docker Compose (docker-compose.yml)
 make dev-db-reset  # Reset local PostgreSQL volume (required when schema changes)
 make dev-server    # Run Go API server (loads .env)
 make dev-ui        # Run Nuxt dev server
+make stack-up      # Start Postgres + openlicensd from GHCR (docker-compose.stack.yml)
+make stack-down    # Stop full stack (ARGS=-v to drop its data)
+make stack-logs    # Tail full stack logs
 make ui            # Build static UI into server/internal/static/dist
 make server        # Build binary to bin/openlicensd
 make build         # ui + server
