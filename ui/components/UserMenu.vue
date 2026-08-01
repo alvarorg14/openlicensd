@@ -9,16 +9,30 @@
       color="neutral"
       variant="ghost"
       class="gap-3"
-      :class="compact ? 'px-2' : 'w-full justify-start px-2'"
+      :class="[
+        compact ? 'px-2' : 'w-full justify-start px-2',
+        onDark ? 'hover:bg-white/10' : ''
+      ]"
     >
       <UAvatar :alt="user.name" :text="initials" size="sm" />
       <div v-if="!compact" class="flex-1 min-w-0 text-left">
-        <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ user.name }}</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ user.email }}</p>
+        <p
+          class="text-sm font-medium truncate"
+          :class="onDark ? 'text-white' : 'text-highlighted'"
+        >
+          {{ user.name }}
+        </p>
+        <p
+          class="text-xs truncate"
+          :class="onDark ? 'text-navy-300' : 'text-muted dark:text-dimmed'"
+        >
+          {{ user.email }}
+        </p>
       </div>
       <UIcon
         :name="side === 'top' ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-        class="h-4 w-4 shrink-0 text-slate-400"
+        class="h-4 w-4 shrink-0"
+        :class="onDark ? 'text-navy-300' : 'text-dimmed'"
       />
     </UButton>
 
@@ -38,9 +52,11 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 withDefaults(defineProps<{
   side?: 'top' | 'bottom'
   compact?: boolean
+  onDark?: boolean
 }>(), {
   side: 'top',
-  compact: false
+  compact: false,
+  onDark: false
 })
 
 const { user, logout } = useAuth()
