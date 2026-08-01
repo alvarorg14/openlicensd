@@ -17,8 +17,8 @@
           description="The full license key is shown only once and cannot be retrieved later."
         />
 
-        <div v-if="label" class="text-sm text-slate-500 dark:text-slate-400">
-          Label: <span class="font-medium text-slate-900 dark:text-white">{{ label }}</span>
+        <div v-if="label" class="text-sm text-muted">
+          Label: <span class="font-medium text-highlighted">{{ label }}</span>
         </div>
 
         <div class="flex gap-2">

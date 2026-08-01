@@ -21,10 +21,10 @@
               v-if="item.multiline"
               class="space-y-1"
             >
-              <dt class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <dt class="text-xs font-medium uppercase tracking-wide text-muted">
                 {{ item.label }}
               </dt>
-              <dd class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+              <dd class="text-sm text-toned whitespace-pre-wrap break-words">
                 {{ item.value }}
               </dd>
             </div>
@@ -32,11 +32,11 @@
               v-else
               class="grid grid-cols-[minmax(0,8rem)_1fr] gap-x-4 gap-y-1 items-baseline"
             >
-              <dt class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <dt class="text-xs font-medium uppercase tracking-wide text-muted">
                 {{ item.label }}
               </dt>
               <dd
-                class="text-sm text-slate-700 dark:text-slate-300"
+                class="text-sm text-toned"
                 :class="item.mono ? 'font-mono text-xs' : ''"
               >
                 {{ item.value }}

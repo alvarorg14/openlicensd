@@ -2,8 +2,8 @@
   <UContainer class="py-6 pb-20 lg:pb-6 space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
       <div>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Policies</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Define expiration rules per product</p>
+        <h2 class="text-2xl font-medium tracking-brand text-highlighted">Policies</h2>
+        <p class="text-sm text-muted mt-0.5">Define expiration rules per product</p>
       </div>
       <UButton
         v-if="canWrite"
@@ -19,8 +19,8 @@
 
     <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
-    <UCard class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 overflow-hidden">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
+    <UCard class="shadow-app border-0 ring-1 ring-default overflow-hidden">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-default pb-4 mb-4">
         <UInput
           :model-value="search"
           icon="i-lucide-search"
@@ -50,10 +50,10 @@
         v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+        <h3 class="text-lg font-medium tracking-brand text-highlighted mb-1">
           {{ total === 0 && !search && !productFilter ? 'No policies yet' : 'No matching policies' }}
         </h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+        <p class="text-sm text-muted mb-6">
           Create a policy to define how licenses expire.
         </p>
         <UButton v-if="total === 0 && !search && !productFilter && canWrite" color="primary" icon="i-lucide-plus" @click="openCreate">
@@ -67,11 +67,11 @@
           :columns="columns"
           :data="items"
           :sorting-options="{ manualSorting: true }"
-          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-muted [&_tbody_tr]:cursor-pointer"
           @select="(_e, row) => openDetails(row.original)"
         >
           <template #name-cell="{ row }">
-            <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
+            <span class="font-medium text-highlighted">{{ row.original.name }}</span>
           </template>
 
           <template #product_name-cell="{ row }">
@@ -83,11 +83,11 @@
               v-if="row.original.description"
               :text="row.original.description"
             >
-              <span class="block max-w-md truncate text-slate-600 dark:text-slate-400">
+              <span class="block max-w-md truncate text-toned">
                 {{ row.original.description }}
               </span>
             </UTooltip>
-            <span v-else class="text-slate-500">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
 
           <template #duration-cell="{ row }">
@@ -115,7 +115,7 @@
           </template>
         </UTable>
 
-        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-slate-200/80 dark:border-slate-800/80 mt-4">
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-default mt-4">
           <UPagination
             :page="page"
             :items-per-page="pageSize"
@@ -132,8 +132,8 @@
       v-model:open="showDetails"
       :title="detailsPolicy?.name ?? 'Policy details'"
       icon="i-lucide-shield"
-      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
-      icon-class="text-indigo-600 dark:text-indigo-400"
+      icon-bg-class="bg-brand-100 dark:bg-brand-900/40"
+      icon-class="text-brand-600 dark:text-brand-400"
       :items="detailsItems"
     />
 
