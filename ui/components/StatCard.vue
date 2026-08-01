@@ -1,14 +1,14 @@
 <template>
   <div
-    class="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 p-4 shadow-app transition-app hover:shadow-app-lg hover:border-indigo-200/50 dark:hover:border-indigo-800/30 animate-fade-in-up"
+    class="rounded-xl border border-default bg-default p-4 shadow-app transition-app hover:shadow-app-lg hover:border-brand-200/50 dark:hover:border-brand-800/30 animate-fade-in-up"
     :class="staggerClass"
   >
     <div class="flex items-start justify-between">
       <div>
-        <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <p class="text-xs font-medium uppercase tracking-wider text-muted dark:text-dimmed">
           {{ label }}
         </p>
-        <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
+        <p class="mt-1 text-2xl font-medium tracking-brand text-highlighted tabular-nums">
           {{ count }}
         </p>
       </div>

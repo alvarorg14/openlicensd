@@ -2,8 +2,8 @@
   <UContainer class="py-6 pb-20 lg:pb-6 space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
       <div>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Licenses</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage and monitor your license keys</p>
+        <h2 class="text-2xl font-medium tracking-brand text-highlighted">Licenses</h2>
+        <p class="text-sm text-muted mt-0.5">Manage and monitor your license keys</p>
       </div>
       <UButton
         v-if="canWrite"
@@ -22,8 +22,8 @@
         label="Total"
         :count="stats.total"
         icon="i-lucide-key"
-        icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
-        icon-class="text-indigo-600 dark:text-indigo-400"
+        icon-bg-class="bg-brand-100 dark:bg-brand-900/40"
+        icon-class="text-brand-600 dark:text-brand-400"
         stagger-class="stagger-1"
       />
       <StatCard
@@ -55,9 +55,9 @@
     <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
     <UCard
-      class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 animate-fade-in-up stagger-2 overflow-hidden"
+      class="shadow-app border-0 ring-1 ring-default animate-fade-in-up stagger-2 overflow-hidden"
     >
-      <div class="flex flex-col gap-3 border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
+      <div class="flex flex-col gap-3 border-b border-default pb-4 mb-4">
         <UInput
           :model-value="search"
           icon="i-lucide-search"
@@ -103,13 +103,13 @@
         v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in"
       >
-        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
-          <UIcon name="i-lucide-key" class="h-7 w-7 text-slate-400" />
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-elevated mb-4">
+          <UIcon name="i-lucide-key" class="h-7 w-7 text-dimmed" />
         </div>
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+        <h3 class="text-lg font-medium tracking-brand text-highlighted mb-1">
           {{ total === 0 && !hasFilters ? 'No licenses yet' : 'No matching licenses' }}
         </h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
+        <p class="text-sm text-muted mb-6 max-w-sm">
           {{ total === 0 && !hasFilters
             ? 'Create your first license key to get started.'
             : 'Try adjusting your search or filter criteria.' }}
@@ -130,12 +130,12 @@
           :columns="columns"
           :data="items"
           :sorting-options="{ manualSorting: true }"
-          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-muted [&_tbody_tr]:cursor-pointer"
           @select="(_e, row) => openDetails(row.original)"
         >
           <template #label-cell="{ row }">
             <UTooltip :text="row.original.label">
-              <span class="block max-w-[16rem] truncate font-medium text-slate-900 dark:text-white">
+              <span class="block max-w-[16rem] truncate font-medium text-highlighted">
                 {{ row.original.label }}
               </span>
             </UTooltip>
@@ -143,7 +143,7 @@
 
           <template #product_name-cell="{ row }">
             <UTooltip :text="row.original.product_name">
-              <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+              <span class="block max-w-[10rem] truncate text-toned">
                 {{ row.original.product_name }}
               </span>
             </UTooltip>
@@ -151,21 +151,21 @@
 
           <template #policy_name-cell="{ row }">
             <UTooltip :text="row.original.policy_name">
-              <span class="block max-w-[10rem] truncate text-slate-700 dark:text-slate-300">
+              <span class="block max-w-[10rem] truncate text-toned">
                 {{ row.original.policy_name }}
               </span>
             </UTooltip>
           </template>
 
           <template #key_prefix-cell="{ row }">
-            <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
+            <code class="text-xs font-mono bg-elevated px-2 py-0.5 rounded text-toned">
               {{ row.original.key_prefix }}
             </code>
           </template>
 
           <template #expires_at-cell="{ row }">
-            <span v-if="!row.original.expires_at" class="text-slate-500">Never</span>
-            <span v-else class="text-slate-700 dark:text-slate-300">{{ formatDate(row.original.expires_at) }}</span>
+            <span v-if="!row.original.expires_at" class="text-muted">Never</span>
+            <span v-else class="text-toned">{{ formatDate(row.original.expires_at) }}</span>
           </template>
 
           <template #revoked-cell="{ row }">
@@ -192,7 +192,7 @@
           </template>
         </UTable>
 
-        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-slate-200/80 dark:border-slate-800/80 mt-4">
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-default mt-4">
           <UPagination
             :page="page"
             :items-per-page="pageSize"
@@ -215,13 +215,13 @@
       v-model:open="showDetails"
       :title="detailsTitle"
       icon="i-lucide-key"
-      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
-      icon-class="text-indigo-600 dark:text-indigo-400"
+      icon-bg-class="bg-brand-100 dark:bg-brand-900/40"
+      icon-class="text-brand-600 dark:text-brand-400"
       :items="detailsItems"
     >
       <template #top>
         <div v-if="detailsLicense" class="flex items-center gap-2">
-          <span class="font-medium text-slate-900 dark:text-white">{{ detailsLicense.label }}</span>
+          <span class="font-medium text-highlighted">{{ detailsLicense.label }}</span>
           <UBadge :color="statusColor(detailsLicense)" variant="subtle" class="gap-1.5">
             <span
               class="h-1.5 w-1.5 rounded-full shrink-0"

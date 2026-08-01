@@ -4,12 +4,12 @@
       <div class="flex items-center gap-2">
         <div
           class="flex h-8 w-8 items-center justify-center rounded-lg"
-          :class="confirmColor === 'error' ? 'bg-red-100 dark:bg-red-900/40' : 'bg-indigo-100 dark:bg-indigo-900/40'"
+          :class="confirmColor === 'error' ? 'bg-red-100 dark:bg-red-900/40' : 'bg-brand-100 dark:bg-brand-900/40'"
         >
           <UIcon
             :name="confirmColor === 'error' ? 'i-lucide-alert-triangle' : 'i-lucide-info'"
             class="h-4 w-4"
-            :class="confirmColor === 'error' ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'"
+            :class="confirmColor === 'error' ? 'text-red-600 dark:text-red-400' : 'text-brand-600 dark:text-brand-400'"
           />
         </div>
         <span class="font-semibold">{{ title }}</span>
@@ -17,7 +17,7 @@
     </template>
     <template #body>
       <div class="space-y-4">
-        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p class="text-sm text-toned leading-relaxed">
           {{ description }}
         </p>
 

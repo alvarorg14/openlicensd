@@ -2,8 +2,8 @@
   <UContainer class="py-6 pb-20 lg:pb-6 space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
       <div>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Users</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage admin accounts and roles</p>
+        <h2 class="text-2xl font-medium tracking-brand text-highlighted">Users</h2>
+        <p class="text-sm text-muted mt-0.5">Manage admin accounts and roles</p>
       </div>
       <UButton
         color="primary"
@@ -18,8 +18,8 @@
 
     <UAlert v-if="loadError" color="error" variant="subtle" :title="loadError" class="animate-fade-in" />
 
-    <UCard class="shadow-app border-0 ring-1 ring-slate-200/80 dark:ring-slate-800/80 overflow-hidden">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-slate-200/80 dark:border-slate-800/80 pb-4 mb-4">
+    <UCard class="shadow-app border-0 ring-1 ring-default overflow-hidden">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-default pb-4 mb-4">
         <UInput
           v-model="searchQuery"
           icon="i-lucide-search"
@@ -36,10 +36,10 @@
         v-else-if="filteredUsers.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+        <h3 class="text-lg font-medium tracking-brand text-highlighted mb-1">
           {{ users.length === 0 ? 'No users yet' : 'No matching users' }}
         </h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+        <p class="text-sm text-muted mb-6">
           Create users to grant access to the admin console.
         </p>
         <UButton v-if="users.length === 0" color="primary" icon="i-lucide-plus" @click="openCreate">
@@ -51,15 +51,15 @@
         v-else
         :columns="columns"
         :data="filteredUsers"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-slate-50 dark:[&_tbody_tr:hover]:bg-slate-800/30 [&_tbody_tr]:cursor-pointer"
+        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-muted [&_tbody_tr]:cursor-pointer"
         @select="(_e, row) => openDetails(row.original)"
       >
         <template #name-cell="{ row }">
-          <span class="font-medium text-slate-900 dark:text-white">{{ row.original.name }}</span>
+          <span class="font-medium text-highlighted">{{ row.original.name }}</span>
         </template>
 
         <template #email-cell="{ row }">
-          <span class="text-slate-600 dark:text-slate-400">{{ row.original.email }}</span>
+          <span class="text-toned">{{ row.original.email }}</span>
         </template>
 
         <template #role-cell="{ row }">
@@ -106,8 +106,8 @@
       v-model:open="showDetails"
       :title="detailsUser?.name ?? 'User details'"
       icon="i-lucide-user"
-      icon-bg-class="bg-indigo-100 dark:bg-indigo-900/40"
-      icon-class="text-indigo-600 dark:text-indigo-400"
+      icon-bg-class="bg-brand-100 dark:bg-brand-900/40"
+      icon-class="text-brand-600 dark:text-brand-400"
       :items="detailsItems"
     />
 
