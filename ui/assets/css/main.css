@@ -1,26 +1,91 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+}
+
+@theme static {
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --tracking-brand: -0.02em;
   --radius-app: 0.75rem;
   --shadow-app: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
   --shadow-app-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+
+  /* Brand blue scale */
+  --color-brand-50: #EFF5FF;
+  --color-brand-100: #DBE8FF;
+  --color-brand-200: #BFD6FF;
+  --color-brand-300: #93BAFF;
+  --color-brand-400: #4D8DFF;
+  --color-brand-500: #2F6FFF;
+  --color-brand-600: #1B54E8;
+  --color-brand-700: #1642BC;
+  --color-brand-800: #17399A;
+  --color-brand-900: #18347A;
+  --color-brand-950: #11204A;
+
+  /* Navy neutral scale */
+  --color-navy-50: #F7F9FC;
+  --color-navy-100: #EEF2F8;
+  --color-navy-200: #E6EBF3;
+  --color-navy-300: #CBD4E2;
+  --color-navy-400: #98A4B8;
+  --color-navy-500: #6E7C93;
+  --color-navy-600: #52607A;
+  --color-navy-700: #3A4760;
+  --color-navy-800: #1C2438;
+  --color-navy-900: #111C34;
+  --color-navy-950: #0B1425;
+}
+
+/* Primary text in light mode (navy-900 is reserved for dark backgrounds) */
+:root:not(.dark),
+.light {
+  --ui-text-highlighted: #1A2238;
 }
 
 /* App background */
 .app-bg {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(99 102 241 / 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(99 102 241 / 0.06), transparent),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(99 102 241 / 0.04), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(47 111 255 / 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(47 111 255 / 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(47 111 255 / 0.04), transparent);
 }
 
 .dark .app-bg {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(99 102 241 / 0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(99 102 241 / 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(99 102 241 / 0.05), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(47 111 255 / 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(47 111 255 / 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgb(47 111 255 / 0.05), transparent);
 }
 
 /* Keyframes */
@@ -72,9 +137,9 @@
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgb(148 163 184 / 0.15) 25%,
-    rgb(148 163 184 / 0.3) 50%,
-    rgb(148 163 184 / 0.15) 75%
+    rgb(110 124 147 / 0.15) 25%,
+    rgb(110 124 147 / 0.3) 50%,
+    rgb(110 124 147 / 0.15) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -83,9 +148,9 @@
 .dark .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgb(71 85 105 / 0.2) 25%,
-    rgb(71 85 105 / 0.4) 50%,
-    rgb(71 85 105 / 0.2) 75%
+    rgb(28 36 56 / 0.2) 25%,
+    rgb(28 36 56 / 0.4) 50%,
+    rgb(28 36 56 / 0.2) 75%
   );
   background-size: 200% 100%;
 }

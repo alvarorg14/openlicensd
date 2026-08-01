@@ -5,6 +5,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
+  fonts: {
+    families: [
+      { name: 'Space Grotesk', provider: 'none' }
+    ]
+  },
   app: {
     head: {
       title: APP_NAME,
@@ -12,12 +17,7 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Open source license server' }
       ],
       link: [
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-        }
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
       ]
     }
   },
