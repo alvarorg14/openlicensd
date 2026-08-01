@@ -28,6 +28,17 @@ This document provides context and guidelines for AI coding assistants working o
 - **Location**: `ui/`
 - **Framework**: Nuxt 4 (Vue 3), `@nuxt/ui` v4, TypeScript
 - **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`)
+- **Public assets**: `ui/public/` (favicon, self-hosted fonts)
+
+### Brand & Design Tokens
+
+- **Font**: Space Grotesk (self-hosted in `ui/public/fonts/`, Medium 500 for titles with `-0.02em` letter-spacing via `tracking-brand`)
+- **Colors**: Custom `brand` (primary blue) and `navy` (neutral) scales defined in `ui/assets/css/main.css`
+- **Primary**: `#2F6FFF` (brand-500), **Accent**: `#4D8DFF` (brand-400)
+- **Neutrals**: Background `#F7F9FC`, Surface `#FFFFFF`, Border `#E6EBF3`, Secondary text `#6E7C93`, Primary text `#1A2238`, Dark Navy `#111C34`, Midnight `#1C2438`
+- **Logo components**: `ui/components/BrandMark.vue`, `ui/components/BrandWordmark.vue` (inline SVGs with `currentColor` + accent `#2F6FFF`)
+- **Source assets**: `docs/brand/` (mark/wordmark SVGs for light and dark, font files)
+- **Nuxt UI config**: `ui/app.config.ts` sets `primary: 'brand'`, `neutral: 'navy'`
 
 ### Key Components
 
