@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/brand/wordmark-light.svg" alt="OpenLicensd" width="320">
+<img src="docs/brand/logo-light.svg" alt="OpenLicensd" width="400">
 
 <h3>Open source license server for creating and validating license keys</h3>
 
