@@ -10,7 +10,6 @@
         placeholder="Select a product"
         :loading="productSelect.loading"
         searchable
-        class="w-full"
         @update:search-term="productSelect.onSearch"
       />
     </UFormField>
@@ -26,7 +25,6 @@
         :loading="policySelect.loading"
         :disabled="!selectedProduct"
         searchable
-        class="w-full"
         @update:search-term="policySelect.onSearch"
       />
     </UFormField>

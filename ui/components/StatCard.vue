@@ -3,7 +3,7 @@
     class="rounded-xl border border-default bg-default p-4 shadow-app transition-app hover:shadow-app-lg hover:border-brand-200/50 dark:hover:border-brand-800/30 animate-fade-in-up"
     :class="staggerClass"
   >
-    <div class="flex items-start justify-between">
+    <div class="flex items-center justify-between gap-3">
       <div>
         <p class="text-xs font-medium uppercase tracking-wider text-muted dark:text-dimmed">
           {{ label }}
@@ -13,10 +13,10 @@
         </p>
       </div>
       <div
-        class="flex h-9 w-9 items-center justify-center rounded-lg"
+        class="flex size-14 shrink-0 items-center justify-center rounded-xl"
         :class="iconBgClass"
       >
-        <UIcon :name="icon" class="h-4 w-4" :class="iconClass" />
+        <UIcon :name="icon" class="size-6" :class="iconClass" />
       </div>
     </div>
   </div>
