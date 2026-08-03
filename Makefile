@@ -1,4 +1,4 @@
-.PHONY: help dev dev-db dev-db-reset dev-server dev-ui stack-up stack-down stack-logs ui server test lint lint-server lint-ui vuln hash-password build release
+.PHONY: help dev dev-db dev-db-reset dev-server dev-ui stack-up stack-down stack-logs ui server test test-sdk lint lint-server lint-ui lint-sdk vuln hash-password build release
 
 .DEFAULT_GOAL := help
 
@@ -54,10 +54,13 @@ server: ## Build binary to bin/openlicensd
 
 build: ui server ## Build UI and server binary
 
-test: ## Run Go tests
+test: test-sdk ## Run Go tests
 	@set -a && [ -f .env ] && . ./.env; set +a && cd server && go test ./...
 
-lint: lint-server lint-ui ## Run all linters
+test-sdk: ## Run Go SDK tests
+	cd sdk/go && go test ./...
+
+lint: lint-server lint-ui lint-sdk ## Run all linters
 
 lint-server: $(GOLANGCI_LINT) ## Run go vet and golangci-lint
 	cd server && go vet ./...
@@ -66,8 +69,13 @@ lint-server: $(GOLANGCI_LINT) ## Run go vet and golangci-lint
 lint-ui: ## Run ESLint
 	cd ui && npm run lint
 
+lint-sdk: $(GOLANGCI_LINT) ## Run go vet and golangci-lint on the Go SDK
+	cd sdk/go && go vet ./...
+	cd sdk/go && $(GOLANGCI_LINT) run ./...
+
 vuln: ## Run govulncheck
 	cd server && go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+	cd sdk/go && go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 hash-password: ## Generate bcrypt password hash (PASSWORD=...)
 	@test -n "$(PASSWORD)" || (echo "Usage: make hash-password PASSWORD=yourpassword" && exit 1)

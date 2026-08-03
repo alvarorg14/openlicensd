@@ -1,0 +1,43 @@
+name: SDK Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release Go SDK
+    if: ${{ startsWith(github.event.release.tag_name, 'sdk/go/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: sdk/go/go.sum
+
+      - name: Cache lint tools
+        uses: actions/cache@v6
+        with:
+          path: bin
+          key: ${{ runner.os }}-lint-tools-${{ hashFiles('Makefile') }}
+
+      - name: Lint
+        run: make lint-sdk
+
+      - name: Test
+        run: make test-sdk
+
+      - name: Warm Go module proxy
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: GOPROXY=proxy.golang.org go list -m "github.com/alvarorg14/openlicensd/sdk/go@${TAG#sdk/go/}"

@@ -22,7 +22,9 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: server/go.mod
-          cache-dependency-path: server/go.sum
+          cache-dependency-path: |
+            server/go.sum
+            sdk/go/go.sum
 
       - name: govulncheck
         run: make vuln

@@ -30,6 +30,15 @@ This document provides context and guidelines for AI coding assistants working o
 - **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`)
 - **Public assets**: `ui/public/` (favicon, self-hosted fonts)
 
+### Go SDK
+
+- **Location**: `sdk/go/`
+- **Module**: `github.com/alvarorg14/openlicensd/sdk/go`
+- **Go version**: 1.24+
+- **Dependencies**: stdlib only
+- **Scope**: public validation API (`/validate`, `/registry-credentials`, health probes)
+- **Release tags**: `sdk/go/vX.Y.Z` (independent from server tags)
+
 ### Brand & Design Tokens
 
 - **Font**: Space Grotesk (self-hosted in `ui/public/fonts/`, Medium 500 for titles with `-0.02em` letter-spacing via `tracking-brand`)
@@ -55,6 +64,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
+| `openlicensd` | `sdk/go/` | Go client SDK for license validation |
 
 ### Helm Chart
 
@@ -150,9 +160,11 @@ make ui            # Build static UI into server/internal/static/dist
 make server        # Build binary to bin/openlicensd
 make build         # ui + server
 make test          # Go tests (loads .env if present)
+make test-sdk      # Go SDK tests
 make lint          # go vet + golangci-lint + ESLint (same as CI)
 make lint-server   # go vet + golangci-lint
 make lint-ui       # ESLint
+make lint-sdk      # go vet + golangci-lint on sdk/go
 make vuln          # govulncheck
 make hash-password # Bcrypt hash CLI
 make release       # Local GoReleaser release
@@ -184,6 +196,7 @@ Triggers on push/PR to `main`:
 |-----|---------|
 | Server | `make lint-server`, `go test`, `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
+| Go SDK | `make lint-sdk` (Go 1.26), `go vet` + `make test-sdk` (Go 1.24 + 1.26 matrix) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
@@ -208,12 +221,32 @@ Pull requests must carry **exactly one** label:
 
 - `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, `ci`
 
+### Release Drafter (`.github/workflows/release-drafter.yml`)
+
+On push to `main`, maintains draft releases for the server and Go SDK independently:
+
+| Draft | Config | Tag format |
+|-------|--------|------------|
+| Server (stable + prerelease) | `release-drafter-template.yml` | `vX.Y.Z`, `vX.Y.Z-rc.N` |
+| Go SDK (stable + prerelease) | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
+
+SDK drafts include only pull requests that touched `sdk/go/`.
+
 ### Release (`.github/workflows/release.yml`)
 
-On GitHub release publish:
+On GitHub release publish (server tags only — SDK releases are excluded):
 
 - GoReleaser builds binaries and pushes `ghcr.io/alvarorg14/openlicensd` (amd64 + arm64)
 - Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts`
+
+### SDK Release (`.github/workflows/sdk-release.yml`)
+
+On GitHub release publish (SDK tags only — server releases are excluded):
+
+- Runs `make lint-sdk` and `make test-sdk`
+- Warms the Go module proxy for pkg.go.dev
+
+SDK and server versions are independent. Server tags use a `v` prefix (`v0.2.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
 
 ## Quality Assurance Requirements
 
@@ -221,9 +254,10 @@ On GitHub release publish:
 
 ### 1. Linting (MANDATORY)
 
-- Run `make lint` — must pass (runs `lint-server` + `lint-ui`, same as CI)
+- Run `make lint` — must pass (runs `lint-server` + `lint-ui` + `lint-sdk`, same as CI)
 - Server: `make lint-server` (`go vet` + `golangci-lint`)
 - UI: `make lint-ui` (ESLint)
+- SDK: `make lint-sdk` (`go vet` + `golangci-lint` on `sdk/go`)
 
 ### 2. Build (MANDATORY)
 
@@ -241,6 +275,7 @@ On GitHub release publish:
 - Update `README.md` for user-facing changes
 - Update `QUICKSTART.md` if install/verify steps change
 - Update `docs/openapi.yaml` if API changes
+- Update `docs/sdk-go.md` if SDK behavior changes
 - Update `AGENTS.md` for architectural changes
 - Update Helm chart README if values change
 
