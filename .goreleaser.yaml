@@ -2,6 +2,10 @@ version: 2
 
 project_name: openlicensd
 
+git:
+  ignore_tags:
+    - "sdk/*/v*"
+
 before:
   hooks:
     - sh -c "cd ui && npm ci && npm run generate"

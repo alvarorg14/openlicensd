@@ -122,10 +122,10 @@ SDK releases are independent from server releases:
 |-----|--------|
 | v0.1.x | >= 0.2.0 |
 
-Tag format: `sdk/go/vX.Y.Z` (note the `v` prefix required by Go modules). Releases are published from Release Drafter drafts on GitHub (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+Tag format: `sdk/go/vX.Y.Z` (note the `v` prefix required by Go modules). Releases are published from Release Drafter drafts on GitHub (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
 ## See also
 
-- [sdk/go/README.md](../sdk/go/README.md) — package README with full API reference
-- [api.md](api.md) — HTTP API documentation
-- [openapi.yaml](openapi.yaml) — OpenAPI specification
+- [sdk/go/README.md](../../sdk/go/README.md) — package README with full API reference
+- [api.md](../api.md) — HTTP API documentation
+- [openapi.yaml](../openapi.yaml) — OpenAPI specification

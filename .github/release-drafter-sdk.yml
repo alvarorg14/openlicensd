@@ -5,7 +5,12 @@ categories:
   - type: 'pre-include'
     when:
       paths:
-        - 'sdk/go/**'
+        - 'sdk/**'
+        - 'docs/sdk/**'
+        - '.github/workflows/sdk-ci.yml'
+        - '.github/workflows/sdk-release.yml'
+        - '.github/workflows/sdk-release-drafter.yml'
+        - '.github/release-drafter-sdk.yml'
   - title: 'Breaking Changes 🔥'
     semver-increment: major
     when:

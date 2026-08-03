@@ -190,16 +190,23 @@ make release       # Local GoReleaser release
 
 ### CI (`.github/workflows/ci.yml`)
 
-Triggers on push/PR to `main`:
+Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path filters in the workflow):
 
 | Job | Command |
 |-----|---------|
 | Server | `make lint-server`, `go test`, `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
-| Go SDK | `make lint-sdk` (Go 1.26), `go vet` + `make test-sdk` (Go 1.24 + 1.26 matrix) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
+
+### SDK CI (`.github/workflows/sdk-ci.yml`)
+
+Triggers on push/PR to `main` when `sdk/**`, `Makefile`, or the workflow file changes:
+
+| Job | Command |
+|-----|---------|
+| Go SDK | `make lint-sdk` (Go 1.26), `go vet` + `make test-sdk` (Go 1.24 + 1.26 matrix) |
 
 ### Vulnerability scanning (`.github/workflows/vuln.yml`)
 
@@ -221,16 +228,16 @@ Pull requests must carry **exactly one** label:
 
 - `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, `ci`
 
-### Release Drafter (`.github/workflows/release-drafter.yml`)
+### Release Drafter
 
 On push to `main`, maintains draft releases for the server and Go SDK independently:
 
-| Draft | Config | Tag format |
-|-------|--------|------------|
-| Server (stable + prerelease) | `release-drafter-template.yml` | `vX.Y.Z`, `vX.Y.Z-rc.N` |
-| Go SDK (stable + prerelease) | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
+| Draft | Workflow | Config | Tag format |
+|-------|----------|--------|------------|
+| Server (stable + prerelease) | `.github/workflows/release-drafter.yml` | `release-drafter-template.yml` | `vX.Y.Z`, `vX.Y.Z-rc.N` |
+| Go SDK (stable + prerelease) | `.github/workflows/sdk-release-drafter.yml` | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
 
-SDK drafts include only pull requests that touched `sdk/go/`.
+SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files). Pure SDK-only PRs are excluded from server drafts via `pre-exclude` in `release-drafter-template.yml`.
 
 ### Release (`.github/workflows/release.yml`)
 
@@ -275,7 +282,7 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.2.0`)
 - Update `README.md` for user-facing changes
 - Update `QUICKSTART.md` if install/verify steps change
 - Update `docs/openapi.yaml` if API changes
-- Update `docs/sdk-go.md` if SDK behavior changes
+- Update `docs/sdk/go.md` if SDK behavior changes
 - Update `AGENTS.md` for architectural changes
 - Update Helm chart README if values change
 
