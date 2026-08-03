@@ -1,7 +1,11 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
-tag-prefix: 'v'
+name-template: 'Go SDK v$RESOLVED_VERSION'
+tag-template: 'sdk/go/v$RESOLVED_VERSION'
+tag-prefix: 'sdk/go/v'
 categories:
+  - type: 'pre-include'
+    when:
+      paths:
+        - 'sdk/go/**'
   - title: 'Breaking Changes 🔥'
     semver-increment: major
     when:
@@ -42,4 +46,6 @@ change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
 template: |
+  ## Go SDK
+
   $CHANGES

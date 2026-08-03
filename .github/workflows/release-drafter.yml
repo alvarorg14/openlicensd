@@ -30,3 +30,28 @@ jobs:
           include-pre-releases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update_sdk_release_draft:
+    name: Update SDK Stable Release Draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7
+        with:
+          config-name: release-drafter-sdk.yml
+          prerelease: false
+          include-pre-releases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update_sdk_prerelease_draft:
+    name: Update SDK Prerelease Draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7
+        with:
+          config-name: release-drafter-sdk.yml
+          prerelease: true
+          prerelease-identifier: rc
+          include-pre-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

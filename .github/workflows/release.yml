@@ -11,6 +11,7 @@ permissions:
 jobs:
   release:
     name: Release
+    if: ${{ !startsWith(github.event.release.tag_name, 'sdk/go/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,6 +61,7 @@ jobs:
 
   chart:
     name: Publish Helm chart
+    if: ${{ !startsWith(github.event.release.tag_name, 'sdk/go/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

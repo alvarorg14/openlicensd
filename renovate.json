@@ -12,6 +12,11 @@
       "labels": ["dependencies"]
     },
     {
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["sdk/go/**"],
+      "labels": ["dependencies"]
+    },
+    {
       "matchManagers": ["npm"],
       "matchFileNames": ["ui/**"],
       "labels": ["dependencies"]

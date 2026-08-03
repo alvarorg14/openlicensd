@@ -142,6 +142,34 @@ jobs:
       - name: Package chart
         run: helm package charts/openlicensd
 
+  sdk:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.24", "1.26"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: sdk/go/go.sum
+
+      - name: Cache lint tools
+        uses: actions/cache@v6
+        with:
+          path: bin
+          key: ${{ runner.os }}-lint-tools-${{ hashFiles('Makefile') }}
+
+      - name: Lint
+        run: make lint-sdk
+
+      - name: Test
+        run: make test-sdk
+
   openapi:
     name: OpenAPI
     runs-on: ubuntu-latest
