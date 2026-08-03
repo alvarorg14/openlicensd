@@ -2,6 +2,16 @@ name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 tag-prefix: 'v'
 categories:
+  - type: 'pre-exclude'
+    when:
+      paths:
+        - 'sdk/**'
+        - 'docs/sdk/**'
+        - '.github/workflows/sdk-ci.yml'
+        - '.github/workflows/sdk-release.yml'
+        - '.github/workflows/sdk-release-drafter.yml'
+        - '.github/release-drafter-sdk.yml'
+      paths-mode: only
   - title: 'Breaking Changes 🔥'
     semver-increment: major
     when:

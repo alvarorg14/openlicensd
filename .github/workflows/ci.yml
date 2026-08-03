@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "sdk/**"
+      - "docs/sdk/**"
+      - ".github/workflows/sdk-ci.yml"
+      - ".github/workflows/sdk-release.yml"
+      - ".github/workflows/sdk-release-drafter.yml"
+      - ".github/release-drafter-sdk.yml"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "sdk/**"
+      - "docs/sdk/**"
+      - ".github/workflows/sdk-ci.yml"
+      - ".github/workflows/sdk-release.yml"
+      - ".github/workflows/sdk-release-drafter.yml"
+      - ".github/release-drafter-sdk.yml"
 
 jobs:
   server:
@@ -141,40 +155,6 @@ jobs:
 
       - name: Package chart
         run: helm package charts/openlicensd
-
-  sdk:
-    name: Go SDK
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.24", "1.26"]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache-dependency-path: sdk/go/go.sum
-
-      - name: Cache lint tools
-        if: matrix.go-version == '1.26'
-        uses: actions/cache@v6
-        with:
-          path: bin
-          key: ${{ runner.os }}-lint-tools-${{ hashFiles('Makefile') }}
-
-      - name: Lint
-        if: matrix.go-version == '1.26'
-        run: make lint-sdk
-
-      - name: Vet
-        if: matrix.go-version == '1.24'
-        run: cd sdk/go && go vet ./...
-
-      - name: Test
-        run: make test-sdk
 
   openapi:
     name: OpenAPI
