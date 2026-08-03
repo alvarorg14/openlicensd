@@ -9,6 +9,7 @@
 <br>
 
 [![CI](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml)
+[![SDK CI](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml)
 [![Vulnerability Scan](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml)
 [![Release](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/releases)
@@ -152,7 +153,7 @@ Official client libraries for integrating license validation into your applicati
 
 | Language | Package | Docs |
 |----------|---------|------|
-| Go | [`github.com/alvarorg14/openlicensd/sdk/go`](https://pkg.go.dev/github.com/alvarorg14/openlicensd/sdk/go) | [docs/sdk-go.md](docs/sdk-go.md) |
+| Go | [`github.com/alvarorg14/openlicensd/sdk/go`](https://pkg.go.dev/github.com/alvarorg14/openlicensd/sdk/go) | [docs/sdk/go.md](docs/sdk/go.md) |
 
 ```go
 import openlicensd "github.com/alvarorg14/openlicensd/sdk/go"

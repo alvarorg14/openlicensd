@@ -60,7 +60,7 @@ Publishing triggers `.github/workflows/release.yml`, which builds binaries, cont
 
 ### Go SDK
 
-The Go SDK is versioned independently from the server. Release Drafter maintains separate drafts scoped to `sdk/go/` changes (tag format: `sdk/go/vX.Y.Z`).
+The Go SDK is versioned independently from the server. Release Drafter maintains separate drafts scoped to SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files; tag format: `sdk/go/vX.Y.Z`).
 
 1. Open the repository's **Releases** page on GitHub.
 2. Review the **Go SDK** stable or prerelease draft.
@@ -74,7 +74,7 @@ Consumers install with:
 go get github.com/alvarorg14/openlicensd/sdk/go@v0.1.0
 ```
 
-See [docs/sdk-go.md](docs/sdk-go.md) for integration documentation.
+See [docs/sdk/go.md](docs/sdk/go.md) for integration documentation.
 
 For architecture details and AI assistant guidelines, see [AGENTS.md](AGENTS.md).
 
