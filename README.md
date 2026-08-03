@@ -146,6 +146,21 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 
 See [docs/api.md](docs/api.md) for authentication flow and curl examples.
 
+## Client SDKs
+
+Official client libraries for integrating license validation into your applications:
+
+| Language | Package | Docs |
+|----------|---------|------|
+| Go | [`github.com/alvarorg14/openlicensd/sdk/go`](https://pkg.go.dev/github.com/alvarorg14/openlicensd/sdk/go) | [docs/sdk-go.md](docs/sdk-go.md) |
+
+```go
+import openlicensd "github.com/alvarorg14/openlicensd/sdk/go"
+
+client, _ := openlicensd.New("https://licenses.example.com", "acme-widget")
+result, _ := client.Validate(ctx, licenseKey)
+```
+
 ## ⚙️ Configuration
 
 | Variable | Default | Description |

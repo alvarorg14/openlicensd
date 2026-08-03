@@ -8,6 +8,7 @@
 | [configuration.md](configuration.md) | Environment variables, Helm values, and secret management |
 | [oidc-sso.md](oidc-sso.md) | OIDC SSO setup, provider walkthroughs, and troubleshooting |
 | [harbor-registry-credentials.md](harbor-registry-credentials.md) | Harbor integration: setup, robot accounts, and troubleshooting |
+| [sdk-go.md](sdk-go.md) | Go client SDK for license validation |
 | [deployment.md](deployment.md) | Helm, Docker, binary, Ingress, and upgrades |
 
 ## Quick links

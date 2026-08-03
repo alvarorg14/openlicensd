@@ -44,6 +44,38 @@ make lint
 make hash-password PASSWORD=yourpassword
 ```
 
+## Releasing
+
+Releases are managed through [Release Drafter](https://github.com/release-drafter/release-drafter). Merging labeled pull requests to `main` updates draft releases automatically.
+
+### Server
+
+1. Open the repository's **Releases** page on GitHub.
+2. Review the stable or prerelease draft (tag format: `vX.Y.Z` or `vX.Y.Z-rc.N`).
+3. Publish the draft when ready.
+
+Publishing triggers `.github/workflows/release.yml`, which builds binaries, container images, and the Helm chart via GoReleaser.
+
+**First release after the `v` prefix migration:** if no `v*` release exists yet, the draft may suggest `v0.1.0` instead of continuing from the last bare semver tag. Edit the draft's tag and title in the GitHub UI before publishing (for example, `v0.3.0`).
+
+### Go SDK
+
+The Go SDK is versioned independently from the server. Release Drafter maintains separate drafts scoped to `sdk/go/` changes (tag format: `sdk/go/vX.Y.Z`).
+
+1. Open the repository's **Releases** page on GitHub.
+2. Review the **Go SDK** stable or prerelease draft.
+3. Publish the draft when ready.
+
+Publishing triggers `.github/workflows/sdk-release.yml`, which lints, tests, and warms the Go module proxy for pkg.go.dev.
+
+Consumers install with:
+
+```bash
+go get github.com/alvarorg14/openlicensd/sdk/go@v0.1.0
+```
+
+See [docs/sdk-go.md](docs/sdk-go.md) for integration documentation.
+
 For architecture details and AI assistant guidelines, see [AGENTS.md](AGENTS.md).
 
 ## Pull requests
