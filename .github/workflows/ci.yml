@@ -128,6 +128,12 @@ jobs:
           version: v2.17.1
           args: check
 
+      - name: Set GoReleaser snapshot tag
+        run: |
+          TAG="$(git tag -l 'v*' --sort=-v:refname | head -n1)"
+          if [ -z "$TAG" ]; then TAG=v0.0.0; fi
+          echo "GORELEASER_CURRENT_TAG=$TAG" >> "$GITHUB_ENV"
+
       - name: Run GoReleaser snapshot
         uses: goreleaser/goreleaser-action@v7
         with:
