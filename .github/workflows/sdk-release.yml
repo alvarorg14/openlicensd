@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: sdk/go/go.mod
+          go-version-file: server/go.mod
           cache-dependency-path: sdk/go/go.sum
 
       - name: Cache lint tools

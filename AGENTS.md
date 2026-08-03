@@ -196,7 +196,7 @@ Triggers on push/PR to `main`:
 |-----|---------|
 | Server | `make lint-server`, `go test`, `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
-| Go SDK | `make lint-sdk`, `make test-sdk` (Go 1.24 + 1.26 matrix) |
+| Go SDK | `make lint-sdk` (Go 1.26), `go vet` + `make test-sdk` (Go 1.24 + 1.26 matrix) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
