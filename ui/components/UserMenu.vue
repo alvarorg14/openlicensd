@@ -48,8 +48,9 @@
 
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { GITHUB_URL } from '~/constants/app'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   side?: 'top' | 'bottom'
   compact?: boolean
   onDark?: boolean
@@ -59,7 +60,10 @@ withDefaults(defineProps<{
   onDark: false
 })
 
-const { user, logout } = useAuth()
+const auth = useAuth()
+const user = auth.user
+const logout = auth.logout
+const serverVersion = auth.serverVersion
 const colorMode = useColorMode()
 const showChangePassword = ref(false)
 
@@ -126,10 +130,23 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       ]
     }],
     [{
+      label: 'Star us on GitHub',
+      icon: 'i-lucide-github',
+      to: GITHUB_URL,
+      target: '_blank'
+    }],
+    [{
       label: 'Logout',
       icon: 'i-lucide-log-out',
       onSelect: () => { void logout() }
-    }]
+    }],
+    ...(props.compact && serverVersion.value
+      ? [[{
+          label: serverVersion.value,
+          icon: 'i-lucide-info',
+          disabled: true
+        }]]
+      : [])
   ]
 })
 </script>

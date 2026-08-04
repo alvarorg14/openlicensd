@@ -11,6 +11,10 @@ export interface AuthUser {
   has_password: boolean
 }
 
+export interface MeResponse extends AuthUser {
+  server_version?: string
+}
+
 export interface User {
   id: string
   email: string
