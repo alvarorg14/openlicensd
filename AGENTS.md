@@ -34,7 +34,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `sdk/go/`
 - **Module**: `github.com/alvarorg14/openlicensd/sdk/go`
-- **Go version**: 1.24+
+- **Go version**: 1.26+
 - **Dependencies**: stdlib only
 - **Scope**: public validation API (`/validate`, `/registry-credentials`, health probes)
 - **Release tags**: `sdk/go/vX.Y.Z` (independent from server tags)
@@ -206,7 +206,7 @@ Triggers on push/PR to `main` when `sdk/**`, `Makefile`, or the workflow file ch
 
 | Job | Command |
 |-----|---------|
-| Go SDK | `make lint-sdk` (Go 1.26), `go vet` + `make test-sdk` (Go 1.24 + 1.26 matrix) |
+| Go SDK | `make lint-sdk`, `make test-sdk` (Go 1.26) |
 
 ### Vulnerability scanning (`.github/workflows/vuln.yml`)
 
