@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/openlicensd/openlicensd/server/internal/auth"
 	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/openlicensd/openlicensd/server/internal/version"
 )
 
 type userResponse struct {
@@ -293,12 +294,13 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"id":            principal.UserID,
-		"email":         principal.Email,
-		"name":          principal.Name,
-		"role":          principal.Role,
-		"auth_provider": principal.AuthProvider,
-		"has_password":  principal.HasPassword,
+		"id":             principal.UserID,
+		"email":          principal.Email,
+		"name":           principal.Name,
+		"role":           principal.Role,
+		"auth_provider":  principal.AuthProvider,
+		"has_password":   principal.HasPassword,
+		"server_version": version.Version,
 	})
 }
 

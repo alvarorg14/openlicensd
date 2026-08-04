@@ -26,7 +26,7 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X main.version={{.Version}}
+      - -X github.com/openlicensd/openlicensd/server/internal/version.Version={{.Version}}
 
 archives:
   - formats:
