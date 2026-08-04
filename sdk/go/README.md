@@ -5,7 +5,7 @@ Official Go client for the OpenLicensd public validation API.
 - **Module:** `github.com/alvarorg14/openlicensd/sdk/go`
 - **Import:** `openlicensd "github.com/alvarorg14/openlicensd/sdk/go"`
 - **Dependencies:** stdlib only
-- **Go version:** 1.24+
+- **Go version:** 1.26+
 
 ## Install
 
