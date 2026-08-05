@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "sdk/**"
+      - "docs/sdk/**"
+      - ".github/workflows/sdk-ci.yml"
+      - ".github/workflows/sdk-release.yml"
+      - ".github/workflows/sdk-release-drafter.yml"
+      - ".github/release-drafter-sdk.yml"
 
 permissions:
   contents: write
