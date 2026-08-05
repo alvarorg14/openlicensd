@@ -194,7 +194,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthUser"
+                $ref: "#/components/schemas/CurrentUser"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -1375,6 +1375,17 @@ components:
         has_password:
           type: boolean
           description: Whether the account has a local password (false for OIDC-only accounts)
+
+    CurrentUser:
+      allOf:
+        - $ref: "#/components/schemas/AuthUser"
+        - type: object
+          required: [server_version]
+          properties:
+            server_version:
+              type: string
+              description: Server build version ("dev" for unreleased builds)
+              example: v0.2.0
 
     User:
       type: object

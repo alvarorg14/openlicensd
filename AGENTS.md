@@ -64,6 +64,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
+| `version` | `server/internal/version/` | Build version string injected via ldflags; exposed as `server_version` on `GET /api/v1/auth/me` |
 | `openlicensd` | `sdk/go/` | Go client SDK for license validation |
 
 ### Helm Chart
@@ -82,6 +83,7 @@ This document provides context and guidelines for AI coding assistants working o
 5. Admin lists resources → GET /api/v1/licenses|products|policies with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
+8. UI sidebar shows deployed server version from `GET /api/v1/auth/me` (`server_version` field)
 ```
 
 ## Configuration

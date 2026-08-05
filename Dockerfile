@@ -25,7 +25,7 @@ COPY --from=ui-builder /src/server/internal/static/dist ./server/internal/static
 ARG VERSION=dev
 RUN cd server && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -trimpath \
-    -ldflags="-s -w -X main.version=${VERSION}" \
+    -ldflags="-s -w -X github.com/openlicensd/openlicensd/server/internal/version.Version=${VERSION}" \
     -o /out/openlicensd \
     ./cmd/openlicensd
 

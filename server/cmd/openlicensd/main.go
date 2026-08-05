@@ -15,9 +15,8 @@ import (
 	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
 	"github.com/openlicensd/openlicensd/server/internal/static"
 	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/openlicensd/openlicensd/server/internal/version"
 )
-
-var version = "dev"
 
 func main() {
 	cfg, err := config.Load()
@@ -59,7 +58,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("openlicensd %s listening on %s", version, cfg.Addr)
+		log.Printf("openlicensd %s listening on %s", version.Version, cfg.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server: %v", err)
 		}

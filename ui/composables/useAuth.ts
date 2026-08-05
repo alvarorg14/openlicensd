@@ -1,4 +1,4 @@
-import type { AuthProviders, AuthUser, LoginResponse } from '~/types'
+import type { AuthProviders, AuthUser, LoginResponse, MeResponse } from '~/types'
 
 const CSRF_COOKIE = 'openlicensd_csrf'
 
@@ -14,6 +14,7 @@ export const useAuth = () => {
   const user = useState<AuthUser | null>('auth_user', () => null)
   const authReady = useState('auth_ready', () => false)
   const providers = useState<AuthProviders | null>('auth_providers', () => null)
+  const serverVersion = useState<string | null>('server_version', () => null)
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
@@ -25,13 +26,15 @@ export const useAuth = () => {
 
   const fetchMe = async () => {
     try {
-      const me = await $fetch<AuthUser>('/api/v1/auth/me', {
+      const me = await $fetch<MeResponse>('/api/v1/auth/me', {
         credentials: 'include'
       })
       setUser(me)
+      serverVersion.value = me.server_version ?? null
       return me
     } catch {
       setUser(null)
+      serverVersion.value = null
       return null
     }
   }
@@ -48,12 +51,12 @@ export const useAuth = () => {
   }
 
   const login = async (email: string, password: string) => {
-    const res = await $fetch<LoginResponse>('/api/v1/auth/login', {
+    await $fetch<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: { email, password },
       credentials: 'include'
     })
-    setUser(res.user)
+    await fetchMe()
   }
 
   const logout = async () => {
@@ -68,6 +71,7 @@ export const useAuth = () => {
       // ignore — clear local state regardless
     }
     setUser(null)
+    serverVersion.value = null
     await navigateTo('/login')
   }
 
@@ -75,6 +79,7 @@ export const useAuth = () => {
     user,
     authReady,
     providers,
+    serverVersion,
     isAuthenticated,
     isAdmin,
     canWrite,

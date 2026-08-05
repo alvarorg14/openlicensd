@@ -1,12 +1,14 @@
 package api_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/openlicensd/openlicensd/server/internal/auth"
+	"github.com/openlicensd/openlicensd/server/internal/version"
 )
 
 func TestRolePermissions(t *testing.T) {
@@ -124,5 +126,29 @@ func TestChangeOwnPassword(t *testing.T) {
 	newMeResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, newCookies)
 	if newMeResp.Code != http.StatusOK {
 		t.Fatalf("new password login status=%d want 200", newMeResp.Code)
+	}
+}
+
+func TestGetCurrentUserIncludesServerVersion(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	meResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, cookies)
+	if meResp.Code != http.StatusOK {
+		t.Fatalf("auth/me status=%d want 200 body=%s", meResp.Code, meResp.Body.String())
+	}
+
+	var me map[string]any
+	if err := json.Unmarshal(meResp.Body.Bytes(), &me); err != nil {
+		t.Fatalf("decode auth/me: %v", err)
+	}
+
+	got, ok := me["server_version"].(string)
+	if !ok || got == "" {
+		t.Fatalf("server_version missing or empty: %#v", me["server_version"])
+	}
+	if got != version.Version {
+		t.Fatalf("server_version=%q want %q", got, version.Version)
 	}
 }
