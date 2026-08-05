@@ -5,13 +5,11 @@ on:
     branches: [main]
     paths:
       - "sdk/**"
-      - "Makefile"
       - ".github/workflows/sdk-ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "sdk/**"
-      - "Makefile"
       - ".github/workflows/sdk-ci.yml"
 
 permissions:

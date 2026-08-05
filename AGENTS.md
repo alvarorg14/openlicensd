@@ -204,7 +204,7 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 
 ### SDK CI (`.github/workflows/sdk-ci.yml`)
 
-Triggers on push/PR to `main` when `sdk/**`, `Makefile`, or the workflow file changes:
+Triggers on push/PR to `main` when `sdk/**` or the workflow file changes:
 
 | Job | Command |
 |-----|---------|
@@ -232,7 +232,7 @@ Pull requests must carry **exactly one** label:
 
 ### Release Drafter
 
-On push to `main`, maintains draft releases for the server and Go SDK independently:
+On push to `main`, maintains draft releases for the server and Go SDK independently. Each drafter workflow uses path filters aligned with SDK-owned vs server paths (`Makefile` is server-owned):
 
 | Draft | Workflow | Config | Tag format |
 |-------|----------|--------|------------|
