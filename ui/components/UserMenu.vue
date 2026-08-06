@@ -10,12 +10,17 @@
       variant="ghost"
       class="gap-3"
       :class="[
-        compact ? 'px-2' : 'w-full justify-start px-2',
+        isCompact ? 'px-2' : 'w-full justify-start px-2',
         onDark ? 'hover:bg-white/10' : ''
       ]"
     >
-      <UAvatar :alt="user.name" :text="initials" size="sm" />
-      <div v-if="!compact" class="flex-1 min-w-0 text-left">
+      <UAvatar
+        :alt="user.name"
+        :src="avatarSrc"
+        :text="initials"
+        size="sm"
+      />
+      <div v-if="!isCompact" class="flex-1 min-w-0 text-left">
         <p
           class="text-sm font-medium truncate"
           :class="onDark ? 'text-white' : 'text-highlighted'"
@@ -30,6 +35,7 @@
         </p>
       </div>
       <UIcon
+        v-if="!isCompact"
         :name="side === 'top' ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
         class="h-4 w-4 shrink-0"
         :class="onDark ? 'text-navy-300' : 'text-dimmed'"
@@ -67,6 +73,8 @@ const serverVersion = auth.serverVersion
 const colorMode = useColorMode()
 const showChangePassword = ref(false)
 
+const isCompact = computed(() => props.compact)
+
 const initials = computed(() => {
   if (!user.value?.name) {
     return '?'
@@ -80,6 +88,8 @@ const initials = computed(() => {
     .toUpperCase()
 })
 
+const avatarSrc = computed(() => user.value?.picture_url ?? undefined)
+
 const menuItems = computed<DropdownMenuItem[][]>(() => {
   if (!user.value) {
     return []
@@ -92,7 +102,10 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       slot: 'account-header',
       label: user.value.name,
       description: user.value.email,
-      avatar: { text: initials.value },
+      avatar: {
+        src: avatarSrc.value,
+        text: initials.value
+      },
       disabled: true
     }],
     ...(user.value.has_password
