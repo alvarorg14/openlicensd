@@ -9,6 +9,7 @@ export interface AuthUser {
   role: UserRole
   auth_provider: string
   has_password: boolean
+  picture_url?: string | null
 }
 
 export interface MeResponse extends AuthUser {
