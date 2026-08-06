@@ -33,10 +33,11 @@ type mockOIDCProvider struct {
 }
 
 type mockOIDCPending struct {
-	nonce string
-	sub   string
-	email string
-	name  string
+	nonce   string
+	sub     string
+	email   string
+	name    string
+	picture string
 }
 
 func newMockOIDCProvider(t *testing.T, clientID string) *mockOIDCProvider {
@@ -111,7 +112,7 @@ func newMockOIDCProvider(t *testing.T, clientID string) *mockOIDCProvider {
 			name = "OIDC User"
 		}
 
-		idToken, err := m.signIDToken(sub, email, name, pending.nonce)
+		idToken, err := m.signIDToken(sub, email, name, pending.picture, pending.nonce)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -130,16 +131,17 @@ func newMockOIDCProvider(t *testing.T, clientID string) *mockOIDCProvider {
 	return m
 }
 
-func (m *mockOIDCProvider) setPending(code, nonce, sub, email, name string) {
+func (m *mockOIDCProvider) setPending(code, nonce, sub, email, name, picture string) {
 	m.pending[code] = mockOIDCPending{
-		nonce: nonce,
-		sub:   sub,
-		email: email,
-		name:  name,
+		nonce:   nonce,
+		sub:     sub,
+		email:   email,
+		name:    name,
+		picture: picture,
 	}
 }
 
-func (m *mockOIDCProvider) signIDToken(sub, email, name, nonce string) (string, error) {
+func (m *mockOIDCProvider) signIDToken(sub, email, name, picture, nonce string) (string, error) {
 	signer, err := jose.NewSigner(
 		jose.SigningKey{Algorithm: jose.RS256, Key: m.key},
 		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", m.kid),
@@ -158,6 +160,9 @@ func (m *mockOIDCProvider) signIDToken(sub, email, name, nonce string) (string, 
 		"nonce": nonce,
 		"iat":   now.Unix(),
 		"exp":   now.Add(time.Hour).Unix(),
+	}
+	if picture != "" {
+		claims["picture"] = picture
 	}
 
 	return josejwt.Signed(signer).Claims(claims).Serialize()
@@ -293,7 +298,7 @@ func TestOIDCExchangeDirect(t *testing.T) {
 		t.Fatalf("oidc client: %v", err)
 	}
 
-	idp.setPending("test-code", "test-nonce", "sub-1", "exchange@example.com", "Exchange User")
+	idp.setPending("test-code", "test-nonce", "sub-1", "exchange@example.com", "Exchange User", "")
 	_, err = client.Exchange(ctx, "test-code", "test-verifier", "test-nonce")
 	if err != nil {
 		t.Fatalf("exchange: %v", err)
@@ -322,7 +327,7 @@ func TestOIDCCallbackCreatesUser(t *testing.T) {
 		t.Fatalf("missing oidc flow cookies")
 	}
 
-	idp.setPending("test-code", nonce, sub, email, "OIDC New User")
+	idp.setPending("test-code", nonce, sub, email, "OIDC New User", "")
 
 	callbackURL := "/api/v1/auth/oidc/callback?code=test-code&state=" + url.QueryEscape(state)
 	callbackReq := httptest.NewRequest(http.MethodGet, callbackURL, nil)
@@ -356,6 +361,122 @@ func TestOIDCCallbackCreatesUser(t *testing.T) {
 	sessionCookie := findCookie(callbackRec.Result().Cookies(), auth.SessionCookieName)
 	if sessionCookie == nil {
 		t.Fatalf("expected session cookie")
+	}
+}
+
+func TestOIDCExchangeDirect_WithPicture(t *testing.T) {
+	idp := newMockOIDCProvider(t, "exchange-picture-client")
+	ctx := context.Background()
+
+	client, err := appoidc.New(ctx, appoidc.Config{
+		IssuerURL:    idp.issuer,
+		ClientID:     idp.clientID,
+		ClientSecret: "client-secret",
+		RedirectURL:  "http://example.com/api/v1/auth/oidc/callback",
+		Scopes:       []string{"openid", "profile", "email"},
+	})
+	if err != nil {
+		t.Fatalf("oidc client: %v", err)
+	}
+
+	picture := "https://lh3.googleusercontent.com/a/example-photo"
+	idp.setPending("test-code", "test-nonce", "sub-1", "exchange@example.com", "Exchange User", picture)
+
+	claims, err := client.Exchange(ctx, "test-code", "test-verifier", "test-nonce")
+	if err != nil {
+		t.Fatalf("exchange: %v", err)
+	}
+	if claims.Picture != picture {
+		t.Fatalf("picture=%q want %q", claims.Picture, picture)
+	}
+}
+
+func TestOIDCExchangeIgnoresInsecurePicture(t *testing.T) {
+	idp := newMockOIDCProvider(t, "exchange-insecure-picture-client")
+	ctx := context.Background()
+
+	client, err := appoidc.New(ctx, appoidc.Config{
+		IssuerURL:    idp.issuer,
+		ClientID:     idp.clientID,
+		ClientSecret: "client-secret",
+		RedirectURL:  "http://example.com/api/v1/auth/oidc/callback",
+		Scopes:       []string{"openid", "profile", "email"},
+	})
+	if err != nil {
+		t.Fatalf("oidc client: %v", err)
+	}
+
+	idp.setPending("test-code", "test-nonce", "sub-1", "exchange@example.com", "Exchange User", "http://example.com/photo.jpg")
+
+	claims, err := client.Exchange(ctx, "test-code", "test-verifier", "test-nonce")
+	if err != nil {
+		t.Fatalf("exchange: %v", err)
+	}
+	if claims.Picture != "" {
+		t.Fatalf("picture=%q want empty for insecure url", claims.Picture)
+	}
+}
+
+func TestOIDCCallbackStoresPictureURL(t *testing.T) {
+	idp := newMockOIDCProvider(t, "callback-picture-client")
+	redirectURL := "http://example.com/api/v1/auth/oidc/callback"
+	handler, st := setupOIDCTestEnv(t, idp, redirectURL)
+
+	email := fmt.Sprintf("oidc-picture-%s@example.com", uuid.NewString())
+	sub := "sub-" + uuid.NewString()
+	picture := "https://lh3.googleusercontent.com/a/callback-photo"
+
+	loginReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oidc/login", nil)
+	loginRec := httptest.NewRecorder()
+	handler.ServeHTTP(loginRec, loginReq)
+	if loginRec.Code != http.StatusFound {
+		t.Fatalf("login status=%d", loginRec.Code)
+	}
+
+	state := cookieValue(loginRec, "openlicensd_oidc_state")
+	nonce := cookieValue(loginRec, "openlicensd_oidc_nonce")
+	verifier := cookieValue(loginRec, "openlicensd_oidc_verifier")
+	if state == "" || nonce == "" || verifier == "" {
+		t.Fatalf("missing oidc flow cookies")
+	}
+
+	idp.setPending("test-code", nonce, sub, email, "OIDC Picture User", picture)
+
+	callbackURL := "/api/v1/auth/oidc/callback?code=test-code&state=" + url.QueryEscape(state)
+	callbackReq := httptest.NewRequest(http.MethodGet, callbackURL, nil)
+	for _, c := range loginRec.Result().Cookies() {
+		callbackReq.AddCookie(c)
+	}
+
+	callbackRec := httptest.NewRecorder()
+	handler.ServeHTTP(callbackRec, callbackReq)
+	if callbackRec.Code != http.StatusFound {
+		t.Fatalf("callback status=%d body=%s", callbackRec.Code, callbackRec.Body.String())
+	}
+
+	user, err := st.GetUserByEmail(context.Background(), email)
+	if err != nil {
+		t.Fatalf("get user: %v", err)
+	}
+	if user == nil {
+		t.Fatalf("expected user created")
+	}
+	if user.PictureURL == nil || *user.PictureURL != picture {
+		t.Fatalf("picture_url=%v want %q", user.PictureURL, picture)
+	}
+
+	sessionCookies := callbackRec.Result().Cookies()
+	meResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, sessionCookies)
+	if meResp.Code != http.StatusOK {
+		t.Fatalf("me status=%d body=%s", meResp.Code, meResp.Body.String())
+	}
+
+	var me map[string]any
+	if err := json.Unmarshal(meResp.Body.Bytes(), &me); err != nil {
+		t.Fatalf("decode me: %v", err)
+	}
+	if me["picture_url"] != picture {
+		t.Fatalf("me picture_url=%v want %q", me["picture_url"], picture)
 	}
 }
 

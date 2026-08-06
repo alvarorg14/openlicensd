@@ -300,6 +300,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		"role":           principal.Role,
 		"auth_provider":  principal.AuthProvider,
 		"has_password":   principal.HasPassword,
+		"picture_url":    principal.PictureURL,
 		"server_version": version.Version,
 	})
 }
