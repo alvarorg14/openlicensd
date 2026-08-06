@@ -169,7 +169,7 @@ func (s *Server) resolveOIDCUser(r *http.Request, claims *appoidc.Claims) (*stor
 		return nil, fmt.Errorf("user is disabled")
 	}
 
-	user, err = s.store.SyncUserProfile(ctx, user.ID, claims.Email, claims.Name)
+	user, err = s.store.SyncUserProfile(ctx, user.ID, claims.Email, claims.Name, pictureURLPtr(claims.Picture))
 	if err != nil {
 		return nil, err
 	}
@@ -231,4 +231,11 @@ func randomToken() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+func pictureURLPtr(picture string) *string {
+	if picture == "" {
+		return nil
+	}
+	return &picture
 }

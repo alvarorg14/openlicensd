@@ -61,7 +61,7 @@ func TestOIDCUserLookupAndLink(t *testing.T) {
 		t.Fatalf("expected linked user by external id")
 	}
 
-	updated, err := st.SyncUserProfile(ctx, localUser.ID, email, "Updated Name")
+	updated, err := st.SyncUserProfile(ctx, localUser.ID, email, "Updated Name", nil)
 	if err != nil {
 		t.Fatalf("sync profile: %v", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	gooidc "github.com/coreos/go-oidc/v3/oidc"
@@ -30,12 +31,14 @@ type Claims struct {
 	Subject string
 	Email   string
 	Name    string
+	Picture string
 }
 
 type idTokenClaims struct {
 	Email             string `json:"email"`
 	Name              string `json:"name"`
 	PreferredUsername string `json:"preferred_username"`
+	Picture           string `json:"picture"`
 }
 
 func New(ctx context.Context, cfg Config) (*Client, error) {
@@ -126,5 +129,20 @@ func (c *Client) Exchange(ctx context.Context, code, verifier, nonce string) (*C
 		Subject: idToken.Subject,
 		Email:   email,
 		Name:    name,
+		Picture: sanitizePictureURL(claims.Picture),
 	}, nil
+}
+
+func sanitizePictureURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || len(raw) > 2048 {
+		return ""
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
+		return ""
+	}
+
+	return raw
 }

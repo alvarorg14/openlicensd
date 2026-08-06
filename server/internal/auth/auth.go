@@ -40,6 +40,7 @@ type Principal struct {
 	Name         string
 	Role         store.Role
 	AuthProvider string
+	PictureURL   *string
 	SessionID    uuid.UUID
 	HasPassword  bool
 }
@@ -203,6 +204,7 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 		Name:         user.Name,
 		Role:         user.Role,
 		AuthProvider: user.AuthProvider,
+		PictureURL:   user.PictureURL,
 		SessionID:    sess.ID,
 		HasPassword:  user.PasswordHash != nil,
 	}, nil

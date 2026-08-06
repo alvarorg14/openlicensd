@@ -84,6 +84,8 @@ On each successful SSO login, OpenLicensd resolves the user in this order:
 
 **Roles are managed locally.** New users get `OPENLICENSD_OIDC_DEFAULT_ROLE` unless their email is listed in `OPENLICENSD_OIDC_ADMIN_EMAILS` (admin at creation time only). Admins can change roles in the **Users** page; changes persist across logins.
 
+On each login, OpenLicensd also syncs the user's display name, email, and (when present) the OIDC `picture` claim into `users.picture_url`. The admin UI shows this photo in the user menu. The `profile` scope is required for providers such as Google that include `picture` in the ID token.
+
 **SSO-only bootstrap:** set `OPENLICENSD_LOCAL_LOGIN_ENABLED=false`, enable OIDC, and list initial admin emails in `OPENLICENSD_OIDC_ADMIN_EMAILS`. Those users receive `admin` on first login.
 
 **Disabling users:** a disabled user cannot sign in via SSO or local login. All their sessions are revoked when disabled.

@@ -29,6 +29,7 @@ type User struct {
 	Role                Role
 	AuthProvider        string
 	ExternalID          *string
+	PictureURL          *string
 	DisabledAt          *time.Time
 	FailedLoginAttempts int
 	LockedUntil         *time.Time
@@ -38,7 +39,7 @@ type User struct {
 }
 
 const userColumns = `
-	id, email, name, password_hash, role, auth_provider, external_id,
+	id, email, name, password_hash, role, auth_provider, external_id, picture_url,
 	disabled_at, failed_login_attempts, locked_until, last_login_at, created_at, updated_at
 `
 
@@ -147,14 +148,14 @@ func (s *Store) LinkUserToProvider(ctx context.Context, id uuid.UUID, authProvid
 	return u, nil
 }
 
-func (s *Store) SyncUserProfile(ctx context.Context, id uuid.UUID, email, name string) (*User, error) {
+func (s *Store) SyncUserProfile(ctx context.Context, id uuid.UUID, email, name string, pictureURL *string) (*User, error) {
 	const q = `
 		UPDATE users
-		SET email = $2, name = $3, updated_at = NOW()
+		SET email = $2, name = $3, picture_url = COALESCE($4, picture_url), updated_at = NOW()
 		WHERE id = $1
 		RETURNING ` + userColumns
 
-	row := s.pool.QueryRow(ctx, q, id, strings.ToLower(strings.TrimSpace(email)), name)
+	row := s.pool.QueryRow(ctx, q, id, strings.ToLower(strings.TrimSpace(email)), name, pictureURL)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -287,7 +288,7 @@ func scanUser(row pgx.Row) (*User, error) {
 	var u User
 	var role string
 	err := row.Scan(
-		&u.ID, &u.Email, &u.Name, &u.PasswordHash, &role, &u.AuthProvider, &u.ExternalID,
+		&u.ID, &u.Email, &u.Name, &u.PasswordHash, &role, &u.AuthProvider, &u.ExternalID, &u.PictureURL,
 		&u.DisabledAt, &u.FailedLoginAttempts, &u.LockedUntil, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
