@@ -1376,9 +1376,8 @@ components:
           type: boolean
           description: Whether the account has a local password (false for OIDC-only accounts)
         picture_url:
-          type: string
+          type: ["string", "null"]
           format: uri
-          nullable: true
           description: Profile photo URL from the OIDC provider (when available)
 
     CurrentUser:
