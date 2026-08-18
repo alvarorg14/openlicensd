@@ -5,7 +5,7 @@
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 GOLANGCI_LINT_VERSION ?= v2.12.2
 # renovate: datasource=go depName=golang.org/x/vuln
-GOVULNCHECK_VERSION ?= v1.6.0
+GOVULNCHECK_VERSION ?= v1.7.0
 
 TOOLS_BIN := $(CURDIR)/bin
 GOLANGCI_LINT := $(TOOLS_BIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
