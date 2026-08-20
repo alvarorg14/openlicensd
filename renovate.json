@@ -7,6 +7,13 @@
   ],
   "packageRules": [
     {
+      "description": "Stay on Go 1.26 until a coordinated minor upgrade",
+      "matchDatasources": ["golang-version", "docker"],
+      "matchPackageNames": ["go", "golang"],
+      "matchUpdateTypes": ["minor", "major"],
+      "enabled": false
+    },
+    {
       "matchManagers": ["gomod"],
       "matchFileNames": ["server/**"],
       "labels": ["dependencies"]

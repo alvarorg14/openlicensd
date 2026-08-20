@@ -2,7 +2,7 @@ module github.com/openlicensd/openlicensd/server
 
 go 1.26.0
 
-toolchain go1.27.0
+toolchain go1.26.6
 
 require (
 	github.com/coreos/go-oidc/v3 v3.20.0
