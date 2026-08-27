@@ -34,6 +34,9 @@ server/internal/static/dist/*
 .env.local
 .env.stack
 
+# Local drafts (not for commit)
+.local/
+
 # Test / coverage
 coverage.out
 *.test
