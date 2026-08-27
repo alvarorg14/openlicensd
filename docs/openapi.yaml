@@ -1049,7 +1049,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
-        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/MachineSort"
         - $ref: "#/components/parameters/Order"
         - name: status
           in: query
@@ -1355,9 +1355,18 @@ components:
       required: false
       schema:
         type: string
-        enum: [created_at, name, product_name, grace_period_days]
+        enum: [created_at, name, product_name, grace_period_days, max_activations]
         default: created_at
       description: Sort field for policies
+    MachineSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, first_seen_at, last_seen_at, validation_count, fingerprint]
+        default: created_at
+      description: Sort field for license machines
     Order:
       name: order
       in: query
