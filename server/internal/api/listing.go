@@ -122,6 +122,16 @@ var licenseSorts = map[string]string{
 	"policy_name":         "pol.name",
 	"last_validated_at":   "l.last_validated_at",
 	"validation_count":    "l.validation_count",
+	"activation_count":    "activation_count",
+	"max_activations":     "l.max_activations",
+}
+
+var machineSorts = map[string]string{
+	"created_at":       "m.first_seen_at",
+	"first_seen_at":    "m.first_seen_at",
+	"last_seen_at":     "m.last_seen_at",
+	"validation_count": "m.validation_count",
+	"fingerprint":      "m.fingerprint",
 }
 
 var productSorts = map[string]string{
@@ -136,4 +146,5 @@ var policySorts = map[string]string{
 	"name":              "pol.name",
 	"product_name":      "p.name",
 	"grace_period_days": "pol.grace_period_days",
+	"max_activations":   "pol.max_activations",
 }

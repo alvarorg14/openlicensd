@@ -168,6 +168,20 @@
             <span v-else class="text-toned">{{ formatDate(row.original.expires_at) }}</span>
           </template>
 
+          <template #activation_count-cell="{ row }">
+            <div class="flex items-center gap-2">
+              <span class="text-toned">{{ formatMachines(row.original) }}</span>
+              <UBadge
+                v-if="machineLimitBadge(row.original)"
+                :color="machineLimitBadge(row.original)!.color"
+                variant="subtle"
+                size="xs"
+              >
+                {{ machineLimitBadge(row.original)!.label }}
+              </UBadge>
+            </div>
+          </template>
+
           <template #revoked-cell="{ row }">
             <UBadge :color="statusColor(row.original)" variant="subtle" class="gap-1.5">
               <span
@@ -210,6 +224,11 @@
       @updated="onUpdated"
     />
     <LicenseKeyModal v-model:open="showKeyModal" :license-key="createdKey" :label="createdLabel" />
+
+    <LicenseMachinesModal
+      v-model:open="showMachines"
+      :license="machinesLicense"
+    />
 
     <DetailsModal
       v-model:open="showDetails"
@@ -307,10 +326,12 @@ const showKeyModal = ref(false)
 const showDetails = ref(false)
 const showRevokeConfirm = ref(false)
 const showDeleteConfirm = ref(false)
+const showMachines = ref(false)
 const createdKey = ref('')
 const createdLabel = ref('')
 const editingLicense = ref<License | null>(null)
 const detailsLicense = ref<License | null>(null)
+const machinesLicense = ref<License | null>(null)
 const confirmTarget = ref<License | null>(null)
 const actionId = ref<string | null>(null)
 const actionType = ref<'revoke' | 'activate' | 'delete' | null>(null)
@@ -328,6 +349,7 @@ const columns = [
   { accessorKey: 'policy_name', header: 'Policy', enableSorting: true },
   { accessorKey: 'key_prefix', header: 'Key prefix' },
   { accessorKey: 'expires_at', header: 'Expires', enableSorting: true },
+  { accessorKey: 'activation_count', header: 'Machines', enableSorting: true },
   { accessorKey: 'revoked', header: 'Status' },
   { id: 'actions', header: '' }
 ]
@@ -367,6 +389,26 @@ watch(policyFilter, (value) => {
 const formatDate = (value: string) => new Date(value).toLocaleString()
 
 const formatDateOrNever = (value: string | null) => (value ? formatDate(value) : 'Never')
+
+const formatMachines = (license: License) => {
+  if (license.max_activations == null) {
+    return `${license.activation_count} / ∞`
+  }
+  return `${license.activation_count} / ${license.max_activations}`
+}
+
+const machineLimitBadge = (license: License) => {
+  if (license.max_activations == null) {
+    return null
+  }
+  if (license.activation_count > license.max_activations) {
+    return { label: 'Over limit', color: 'error' as const }
+  }
+  if (license.activation_count >= license.max_activations) {
+    return { label: 'At limit', color: 'warning' as const }
+  }
+  return null
+}
 
 const formatCreatedBy = (license: License) => {
   if (!license.created_by_name && !license.created_by_email) {
@@ -424,6 +466,7 @@ const detailsItems = computed((): DetailItem[] => {
     { label: 'Policy', value: license.policy_name },
     { label: 'Key prefix', value: license.key_prefix, mono: true },
     { label: 'Expires', value: formatDateOrNever(license.expires_at) },
+    { label: 'Machines', value: formatMachines(license) },
     { label: 'Activated', value: formatDateOrNever(license.activated_at) },
     { label: 'Last validated', value: formatDateOrNever(license.last_validated_at) },
     { label: 'Validations', value: String(license.validation_count) },
@@ -455,12 +498,22 @@ const openDetails = (license: License) => {
   showDetails.value = true
 }
 
+const openMachines = (license: License) => {
+  machinesLicense.value = license
+  showMachines.value = true
+}
+
 const getActionItems = (license: License): DropdownMenuItem[][] => {
   const menuItems: DropdownMenuItem[] = [
     {
       label: 'View details',
       icon: 'i-lucide-info',
       onSelect: () => openDetails(license)
+    },
+    {
+      label: 'Manage machines',
+      icon: 'i-lucide-monitor',
+      onSelect: () => openMachines(license)
     }
   ]
 

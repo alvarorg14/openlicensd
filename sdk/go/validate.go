@@ -8,12 +8,14 @@ import (
 
 // ValidationResult is the response from POST /api/v1/validate.
 type ValidationResult struct {
-	Valid         bool       `json:"valid"`
-	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
-	Reason        Reason     `json:"reason,omitempty"`
-	Product       string     `json:"product,omitempty"`
-	Policy        string     `json:"policy,omitempty"`
-	InGracePeriod bool       `json:"in_grace_period,omitempty"`
+	Valid           bool       `json:"valid"`
+	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
+	Reason          Reason     `json:"reason,omitempty"`
+	Product         string     `json:"product,omitempty"`
+	Policy          string     `json:"policy,omitempty"`
+	InGracePeriod   bool       `json:"in_grace_period,omitempty"`
+	ActivationCount *int64     `json:"activation_count,omitempty"`
+	MaxActivations  *int       `json:"max_activations,omitempty"`
 }
 
 // TimeUntilExpiry returns the duration until the license expires, or zero if
@@ -38,8 +40,10 @@ func (r ValidationResult) ExpiresWithin(d time.Duration) bool {
 }
 
 type validateRequest struct {
-	Key     string `json:"key"`
-	Product string `json:"product,omitempty"`
+	Key         string `json:"key"`
+	Product     string `json:"product,omitempty"`
+	Fingerprint string `json:"fingerprint,omitempty"`
+	Hostname    string `json:"hostname,omitempty"`
 }
 
 // Validate checks a license key against the client's configured product.
@@ -51,10 +55,7 @@ func (c *Client) Validate(ctx context.Context, key string) (ValidationResult, er
 // ValidateProduct checks a license key against the given product code.
 // An invalid license returns a result with Valid=false and a nil error.
 func (c *Client) ValidateProduct(ctx context.Context, key, product string) (ValidationResult, error) {
-	req := validateRequest{
-		Key:     key,
-		Product: product,
-	}
+	req := c.validationRequest(key, product)
 
 	var result ValidationResult
 	err := c.doWithRetry(ctx, func() (int, error) {

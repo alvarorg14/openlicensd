@@ -102,6 +102,10 @@
             <span>{{ row.original.grace_period_days }}</span>
           </template>
 
+          <template #max_activations-cell="{ row }">
+            <span>{{ formatMaxActivations(row.original) }}</span>
+          </template>
+
           <template #actions-cell="{ row }">
             <UDropdownMenu :items="getActionItems(row.original)">
               <UButton
@@ -203,6 +207,7 @@ const columns = [
   { accessorKey: 'duration', header: 'Duration' },
   { accessorKey: 'expiration_basis', header: 'Basis' },
   { accessorKey: 'grace_period_days', header: 'Grace (days)', enableSorting: true },
+  { accessorKey: 'max_activations', header: 'Max activations', enableSorting: true },
   { id: 'actions', header: '' }
 ]
 
@@ -220,6 +225,13 @@ const formatDuration = (policy: Policy) => {
   return `${policy.duration_days} days`
 }
 
+const formatMaxActivations = (policy: Policy) => {
+  if (policy.max_activations == null) {
+    return 'Unlimited'
+  }
+  return String(policy.max_activations)
+}
+
 const detailsItems = computed((): DetailItem[] => {
   const policy = detailsPolicy.value
   if (!policy) {
@@ -232,6 +244,7 @@ const detailsItems = computed((): DetailItem[] => {
     { label: 'Duration', value: formatDuration(policy) },
     { label: 'Basis', value: formatBasis(policy.expiration_basis) },
     { label: 'Grace period', value: `${policy.grace_period_days} days` },
+    { label: 'Max activations', value: formatMaxActivations(policy) },
     { label: 'Created', value: formatDate(policy.created_at) }
   ]
 })

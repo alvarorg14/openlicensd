@@ -51,6 +51,14 @@
           <UInput v-model.number="form.gracePeriodDays" type="number" min="0" />
         </UFormField>
 
+        <UFormField name="unlimitedActivations">
+          <UCheckbox v-model="form.unlimitedActivations" label="Unlimited machine activations" />
+        </UFormField>
+
+        <UFormField v-if="!form.unlimitedActivations" label="Max activations" name="maxActivations" required>
+          <UInput v-model.number="form.maxActivations" type="number" min="1" />
+        </UFormField>
+
         <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
         <div class="flex justify-end gap-2 pt-2">
@@ -89,7 +97,9 @@ const form = reactive({
   perpetual: true,
   durationDays: 30,
   expirationBasis: 'on_creation' as ExpirationBasis,
-  gracePeriodDays: 0
+  gracePeriodDays: 0,
+  unlimitedActivations: true,
+  maxActivations: 3
 })
 
 const loading = ref(false)
@@ -118,6 +128,8 @@ watch(open, async (value) => {
     form.durationDays = props.policy.duration_days ?? 30
     form.expirationBasis = props.policy.expiration_basis
     form.gracePeriodDays = props.policy.grace_period_days
+    form.unlimitedActivations = props.policy.max_activations == null
+    form.maxActivations = props.policy.max_activations ?? 3
   } else {
     form.productId = null
     form.name = ''
@@ -126,6 +138,8 @@ watch(open, async (value) => {
     form.durationDays = 30
     form.expirationBasis = 'on_creation'
     form.gracePeriodDays = 0
+    form.unlimitedActivations = true
+    form.maxActivations = 3
   }
   error.value = ''
 })
@@ -143,17 +157,23 @@ const onSubmit = async () => {
     error.value = 'Duration must be at least 1 day'
     return
   }
+  if (!form.unlimitedActivations && (!form.maxActivations || form.maxActivations < 1)) {
+    error.value = 'Max activations must be at least 1'
+    return
+  }
 
   loading.value = true
   error.value = ''
 
   const durationDays = form.perpetual ? null : form.durationDays
+  const maxActivations = form.unlimitedActivations ? null : form.maxActivations
   const payload = {
     name: form.name.trim(),
     description: form.description.trim() || null,
     duration_days: durationDays,
     expiration_basis: form.expirationBasis,
-    grace_period_days: form.gracePeriodDays
+    grace_period_days: form.gracePeriodDays,
+    max_activations: maxActivations
   }
 
   try {

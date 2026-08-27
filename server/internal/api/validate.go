@@ -13,8 +13,10 @@ import (
 )
 
 type validateRequest struct {
-	Key     string `json:"key"`
-	Product string `json:"product"`
+	Key         string `json:"key"`
+	Product     string `json:"product"`
+	Fingerprint string `json:"fingerprint"`
+	Hostname    string `json:"hostname"`
 }
 
 type registryCredentialsResponse struct {
@@ -24,7 +26,7 @@ type registryCredentialsResponse struct {
 	ExpiresAt int64  `json:"expires_at"`
 }
 
-func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProduct string) (*store.License, license.ValidationResult, error) {
+func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProduct, fingerprint, hostname, clientIP string) (*store.License, license.ValidationResult, error) {
 	keyHash := license.HashKey(rawKey)
 	lic, err := s.store.GetLicenseByKeyHash(ctx, keyHash)
 	if err != nil {
@@ -65,7 +67,67 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 	)
 	result.Policy = lic.PolicyName
 
+	if !result.Valid {
+		return lic, result, nil
+	}
+
+	fingerprint = store.SanitizeFingerprint(fingerprint)
+	hostname = store.SanitizeHostname(hostname)
+
+	if lic.MaxActivations != nil {
+		if fingerprint == "" {
+			result.Valid = false
+			result.Reason = "fingerprint_required"
+			s.setActivationFields(&result, lic)
+			return lic, result, nil
+		}
+
+		machine, allowed, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, lic.MaxActivations)
+		if err != nil {
+			return nil, license.ValidationResult{}, err
+		}
+		if !allowed {
+			result.Valid = false
+			result.Reason = "activation_limit"
+			s.setActivationFields(&result, lic)
+			return lic, result, nil
+		}
+		if machine != nil {
+			lic.ActivationCount, err = s.store.CountActiveMachines(ctx, lic.ID)
+			if err != nil {
+				return nil, license.ValidationResult{}, err
+			}
+		}
+	} else if fingerprint != "" {
+		_, allowed, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, nil)
+		if err != nil {
+			return nil, license.ValidationResult{}, err
+		}
+		if !allowed {
+			result.Valid = false
+			result.Reason = "activation_limit"
+			s.setActivationFields(&result, lic)
+			return lic, result, nil
+		}
+		lic.ActivationCount, err = s.store.CountActiveMachines(ctx, lic.ID)
+		if err != nil {
+			return nil, license.ValidationResult{}, err
+		}
+	}
+
+	s.setActivationFields(&result, lic)
 	return lic, result, nil
+}
+
+func (s *Server) setActivationFields(result *license.ValidationResult, lic *store.License) {
+	if lic.ActivationCount > 0 || lic.MaxActivations != nil {
+		count := lic.ActivationCount
+		result.ActivationCount = &count
+	}
+	if lic.MaxActivations != nil {
+		max := *lic.MaxActivations
+		result.MaxActivations = &max
+	}
 }
 
 func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +142,8 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product)
+	clientIP := s.clientIP.From(r)
+	_, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product, req.Fingerprint, req.Hostname, clientIP)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to validate license")
 		return
@@ -101,7 +164,8 @@ func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	lic, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product)
+	clientIP := s.clientIP.From(r)
+	lic, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product, req.Fingerprint, req.Hostname, clientIP)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to validate license")
 		return

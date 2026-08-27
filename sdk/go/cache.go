@@ -34,7 +34,7 @@ func NewCachedValidator(client *Client, ttl time.Duration) *CachedValidator {
 
 // Validate returns a cached result when available and not expired.
 func (v *CachedValidator) Validate(ctx context.Context, key string) (ValidationResult, error) {
-	cacheKey := v.client.product + "\x00" + NormalizeKey(key)
+	cacheKey := v.client.product + "\x00" + NormalizeKey(key) + "\x00" + v.client.fingerprint
 
 	v.mu.RLock()
 	if entry, ok := v.cache[cacheKey]; ok && time.Now().Before(entry.expiresAt) {
@@ -60,7 +60,7 @@ func (v *CachedValidator) Validate(ctx context.Context, key string) (ValidationR
 
 // Invalidate removes a key from the cache.
 func (v *CachedValidator) Invalidate(key string) {
-	cacheKey := v.client.product + "\x00" + NormalizeKey(key)
+	cacheKey := v.client.product + "\x00" + NormalizeKey(key) + "\x00" + v.client.fingerprint
 	v.mu.Lock()
 	delete(v.cache, cacheKey)
 	v.mu.Unlock()

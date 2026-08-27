@@ -1032,6 +1032,122 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/v1/licenses/{id}/machines:
+    parameters:
+      - $ref: "#/components/parameters/LicenseId"
+    get:
+      tags: [Licenses]
+      summary: List machines for a license
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
+
+        Returns paginated machine activations for the license. Use `status=active` or
+        `status=released` to filter by activation state.
+      operationId: listLicenseMachines
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/MachineSort"
+        - $ref: "#/components/parameters/Order"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, released]
+      responses:
+        "200":
+          description: Paginated machines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedLicenseMachines"
+        "400":
+          description: Invalid license ID or query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/licenses/{id}/machines/{machineId}:
+    parameters:
+      - $ref: "#/components/parameters/LicenseId"
+      - name: machineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Licenses]
+      summary: Rename a license machine
+      description: |
+        **Required role:** `operator` or `admin`.
+      operationId: updateLicenseMachine
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLicenseMachineRequest"
+      responses:
+        "200":
+          description: Updated machine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseMachine"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      tags: [Licenses]
+      summary: Release a license machine
+      description: |
+        **Required role:** `operator` or `admin`.
+
+        Soft-deactivates the machine and frees one activation slot.
+      operationId: releaseLicenseMachine
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Released machine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseMachine"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/v1/validate:
     post:
       tags: [Validation]
@@ -1115,6 +1231,12 @@ paths:
                 product_mismatch:
                   value:
                     error: product_mismatch
+                fingerprint_required:
+                  value:
+                    error: fingerprint_required
+                activation_limit:
+                  value:
+                    error: activation_limit
                 invalid:
                   value:
                     error: invalid
@@ -1233,9 +1355,18 @@ components:
       required: false
       schema:
         type: string
-        enum: [created_at, name, product_name, grace_period_days]
+        enum: [created_at, name, product_name, grace_period_days, max_activations]
         default: created_at
       description: Sort field for policies
+    MachineSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, first_seen_at, last_seen_at, validation_count, fingerprint]
+        default: created_at
+      description: Sort field for license machines
     Order:
       name: order
       in: query
@@ -1508,6 +1639,9 @@ components:
           type: ["string", "null"]
           format: date-time
           description: Optional override of the policy-derived expiration time.
+        max_activations:
+          type: ["integer", "null"]
+          description: Optional override of the policy-derived activation limit.
 
     CreateProductRequest:
       type: object
@@ -1556,6 +1690,9 @@ components:
         grace_period_days:
           type: integer
           default: 0
+        max_activations:
+          type: ["integer", "null"]
+          description: Maximum concurrent machine activations; null for unlimited
 
     UpdatePolicyRequest:
       type: object
@@ -1572,6 +1709,8 @@ components:
           enum: [on_creation, on_first_validation]
         grace_period_days:
           type: integer
+        max_activations:
+          type: ["integer", "null"]
 
     Product:
       type: object
@@ -1648,6 +1787,9 @@ components:
           enum: [on_creation, on_first_validation]
         grace_period_days:
           type: integer
+        max_activations:
+          type: ["integer", "null"]
+          description: Null means unlimited concurrent machine activations
         archived_at:
           type: string
           format: date-time
@@ -1688,6 +1830,9 @@ components:
           type: ["string", "null"]
           format: date-time
           description: Set to null for a key that never expires.
+        max_activations:
+          type: ["integer", "null"]
+          description: Set to null for unlimited machine activations.
 
     License:
       type: object
@@ -1706,6 +1851,8 @@ components:
         - created_at
         - last_validated_at
         - validation_count
+        - max_activations
+        - activation_count
       properties:
         id:
           type: string
@@ -1745,6 +1892,13 @@ components:
         validation_count:
           type: integer
           format: int64
+        max_activations:
+          type: ["integer", "null"]
+          description: Snapshotted activation limit; null means unlimited
+        activation_count:
+          type: integer
+          format: int64
+          description: Number of active machines for this license
         created_by:
           type: string
           format: uuid
@@ -1814,6 +1968,12 @@ components:
         product:
           type: string
           description: Optional product code to enforce product scoping
+        fingerprint:
+          type: string
+          description: Stable machine identifier. Required when the license has a max activation limit.
+        hostname:
+          type: string
+          description: Optional display hostname sent by the client (untrusted)
 
     ValidationResult:
       type: object
@@ -1827,7 +1987,7 @@ components:
           description: Expiration time of the matched license, when set
         reason:
           type: string
-          enum: [not_found, expired, revoked, product_mismatch]
+          enum: [not_found, expired, revoked, product_mismatch, fingerprint_required, activation_limit]
           description: Present when valid is false
         product:
           type: string
@@ -1838,6 +1998,79 @@ components:
         in_grace_period:
           type: boolean
           description: True when the license is past expiry but still within the policy grace period
+        activation_count:
+          type: integer
+          format: int64
+        max_activations:
+          type: ["integer", "null"]
+
+    UpdateLicenseMachineRequest:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+          description: Admin display name for the machine
+
+    LicenseMachine:
+      type: object
+      required:
+        - id
+        - license_id
+        - fingerprint
+        - display_name
+        - first_seen_at
+        - last_seen_at
+        - validation_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        license_id:
+          type: string
+          format: uuid
+        fingerprint:
+          type: string
+        name:
+          type: ["string", "null"]
+        hostname:
+          type: ["string", "null"]
+        display_name:
+          type: string
+        first_seen_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        last_seen_ip:
+          type: ["string", "null"]
+        validation_count:
+          type: integer
+          format: int64
+        deactivated_at:
+          type: ["string", "null"]
+          format: date-time
+        deactivated_by:
+          type: ["string", "null"]
+          format: uuid
+
+    PaginatedLicenseMachines:
+      type: object
+      required: [items, page, page_size, total, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LicenseMachine"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
 
     RegistryCredentials:
       type: object

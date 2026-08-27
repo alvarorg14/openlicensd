@@ -25,27 +25,28 @@ type Policy struct {
 	DurationDays    *int
 	ExpirationBasis ExpirationBasis
 	GracePeriodDays int
+	MaxActivations  *int
 	ArchivedAt      *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
 
-const policyColumns = `pol.id, pol.product_id, p.name, pol.name, pol.description, pol.duration_days, pol.expiration_basis, pol.grace_period_days, pol.archived_at, pol.created_at, pol.updated_at`
+const policyColumns = `pol.id, pol.product_id, p.name, pol.name, pol.description, pol.duration_days, pol.expiration_basis, pol.grace_period_days, pol.max_activations, pol.archived_at, pol.created_at, pol.updated_at`
 
 const policyFromJoin = `
 	FROM policies pol
 	JOIN products p ON p.id = pol.product_id
 `
 
-func (s *Store) CreatePolicy(ctx context.Context, productID uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int) (*Policy, error) {
+func (s *Store) CreatePolicy(ctx context.Context, productID uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int, maxActivations *int) (*Policy, error) {
 	const q = `
-		INSERT INTO policies (product_id, name, description, duration_days, expiration_basis, grace_period_days)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO policies (product_id, name, description, duration_days, expiration_basis, grace_period_days, max_activations)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
 	`
 
 	var id uuid.UUID
-	if err := s.pool.QueryRow(ctx, q, productID, name, description, durationDays, expirationBasis, gracePeriodDays).Scan(&id); err != nil {
+	if err := s.pool.QueryRow(ctx, q, productID, name, description, durationDays, expirationBasis, gracePeriodDays, maxActivations).Scan(&id); err != nil {
 		return nil, mapInsertError(err)
 	}
 	return s.GetPolicy(ctx, id)
@@ -114,17 +115,17 @@ func (s *Store) GetPolicyForProduct(ctx context.Context, id, productID uuid.UUID
 	return p, nil
 }
 
-func (s *Store) UpdatePolicy(ctx context.Context, id uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int) (*Policy, error) {
+func (s *Store) UpdatePolicy(ctx context.Context, id uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int, maxActivations *int) (*Policy, error) {
 	const q = `
 		UPDATE policies
 		SET name = $2, description = $3, duration_days = $4, expiration_basis = $5,
-		    grace_period_days = $6, updated_at = NOW()
+		    grace_period_days = $6, max_activations = $7, updated_at = NOW()
 		WHERE id = $1
 		RETURNING id
 	`
 
 	var returnedID uuid.UUID
-	err := s.pool.QueryRow(ctx, q, id, name, description, durationDays, expirationBasis, gracePeriodDays).Scan(&returnedID)
+	err := s.pool.QueryRow(ctx, q, id, name, description, durationDays, expirationBasis, gracePeriodDays, maxActivations).Scan(&returnedID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -152,7 +153,7 @@ func scanPolicy(row pgx.Row) (*Policy, error) {
 	var expirationBasis string
 	err := row.Scan(
 		&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
-		&p.GracePeriodDays, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+		&p.GracePeriodDays, &p.MaxActivations, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -171,7 +172,7 @@ func scanPoliciesWithTotal(rows pgx.Rows) ([]Policy, int64, error) {
 		var expirationBasis string
 		if err := rows.Scan(
 			&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
-			&p.GracePeriodDays, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+			&p.GracePeriodDays, &p.MaxActivations, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
 			&totalCount,
 		); err != nil {
 			return nil, 0, err

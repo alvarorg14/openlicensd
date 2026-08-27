@@ -5,12 +5,15 @@ import type {
   CreateUserInput,
   License,
   LicenseListQueryParams,
+  LicenseMachine,
   LicenseStats,
   ListQueryParams,
+  MachineListQueryParams,
   Paginated,
   Policy,
   PolicyListQueryParams,
   Product,
+  UpdateLicenseInput,
   User
 } from '~/types'
 
@@ -68,13 +71,24 @@ export const useApi = () => {
       body: input
     })
 
-  const updateLicense = (id: string, label: string, expiresAt: string | null) =>
+  const updateLicense = (id: string, input: UpdateLicenseInput) =>
     authFetch<License>(`/api/v1/licenses/${id}`, {
       method: 'PATCH',
-      body: {
-        label,
-        expires_at: expiresAt
-      }
+      body: input
+    })
+
+  const listLicenseMachines = (licenseId: string, params?: MachineListQueryParams) =>
+    authFetch<Paginated<LicenseMachine>>(`/api/v1/licenses/${licenseId}/machines${buildQuery(params as Record<string, string | number | undefined | null>)}`)
+
+  const updateLicenseMachine = (licenseId: string, machineId: string, name: string | null) =>
+    authFetch<LicenseMachine>(`/api/v1/licenses/${licenseId}/machines/${machineId}`, {
+      method: 'PATCH',
+      body: { name }
+    })
+
+  const releaseLicenseMachine = (licenseId: string, machineId: string) =>
+    authFetch<LicenseMachine>(`/api/v1/licenses/${licenseId}/machines/${machineId}`, {
+      method: 'DELETE'
     })
 
   const revokeLicense = (id: string) =>
@@ -182,6 +196,9 @@ export const useApi = () => {
     revokeLicense,
     activateLicense,
     deleteLicense,
+    listLicenseMachines,
+    updateLicenseMachine,
+    releaseLicenseMachine,
     listProducts,
     createProduct,
     updateProduct,

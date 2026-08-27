@@ -47,6 +47,7 @@ export interface Policy {
   duration_days: number | null
   expiration_basis: ExpirationBasis
   grace_period_days: number
+  max_activations: number | null
   archived_at?: string | null
   created_at: string
   updated_at: string
@@ -68,6 +69,8 @@ export interface License {
   created_at: string
   last_validated_at: string | null
   validation_count: number
+  max_activations: number | null
+  activation_count: number
   created_by?: string | null
   created_by_name?: string | null
   created_by_email?: string | null
@@ -91,6 +94,8 @@ export interface ValidateResponse {
   product?: string
   policy?: string
   in_grace_period?: boolean
+  activation_count?: number
+  max_activations?: number | null
 }
 
 export type LicenseStatus = 'active' | 'expired' | 'revoked'
@@ -107,6 +112,7 @@ export interface CreateLicenseInput {
   product_id: string
   policy_id: string
   expires_at?: string | null
+  max_activations?: number | null
 }
 
 export interface CreateProductInput {
@@ -122,6 +128,13 @@ export interface CreatePolicyInput {
   duration_days?: number | null
   expiration_basis?: ExpirationBasis
   grace_period_days?: number
+  max_activations?: number | null
+}
+
+export interface UpdateLicenseInput {
+  label: string
+  expires_at: string | null
+  max_activations?: number | null
 }
 
 export interface CreateUserInput {
@@ -162,4 +175,23 @@ export interface LicenseListQueryParams extends ListQueryParams {
 
 export interface PolicyListQueryParams extends ListQueryParams {
   product_id?: string
+}
+
+export interface LicenseMachine {
+  id: string
+  license_id: string
+  fingerprint: string
+  name: string | null
+  hostname: string | null
+  display_name: string
+  first_seen_at: string
+  last_seen_at: string
+  last_seen_ip: string | null
+  validation_count: number
+  deactivated_at: string | null
+  deactivated_by: string | null
+}
+
+export interface MachineListQueryParams extends ListQueryParams {
+  status?: 'active' | 'released'
 }

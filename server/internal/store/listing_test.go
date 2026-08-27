@@ -71,16 +71,16 @@ func TestListLicensesStatusAndStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create product: %v", err)
 	}
-	policy, err := st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0)
+	policy, err := st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0, nil)
 	if err != nil {
 		t.Fatalf("create policy: %v", err)
 	}
 
-	activeLicense, err := st.CreateLicense(ctx, "active-"+suffix, "hash-"+suffix, "AAAA", product.ID, policy.ID, nil, nil)
+	activeLicense, err := st.CreateLicense(ctx, "active-"+suffix, "hash-"+suffix, "AAAA", product.ID, policy.ID, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("create active license: %v", err)
 	}
-	revokedLicense, err := st.CreateLicense(ctx, "revoked-"+suffix, "hash-revoked-"+suffix, "BBBB", product.ID, policy.ID, nil, nil)
+	revokedLicense, err := st.CreateLicense(ctx, "revoked-"+suffix, "hash-revoked-"+suffix, "BBBB", product.ID, policy.ID, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("create revoked license: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestListPoliciesWithProductName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create product: %v", err)
 	}
-	_, err = st.CreatePolicy(ctx, product.ID, "Named Policy "+suffix, nil, nil, store.ExpirationOnCreation, 0)
+	_, err = st.CreatePolicy(ctx, product.ID, "Named Policy "+suffix, nil, nil, store.ExpirationOnCreation, 0, nil)
 	if err != nil {
 		t.Fatalf("create policy: %v", err)
 	}

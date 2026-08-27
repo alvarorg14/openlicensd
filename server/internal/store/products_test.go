@@ -28,7 +28,7 @@ func TestDeleteProductForeignKey(t *testing.T) {
 		t.Fatalf("create product: %v", err)
 	}
 
-	_, err = st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0)
+	_, err = st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0, nil)
 	if err != nil {
 		t.Fatalf("create policy: %v", err)
 	}

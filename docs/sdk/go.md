@@ -25,7 +25,16 @@ Admin API endpoints (license/product/policy management) are not included. Those 
 ```go
 import openlicensd "github.com/alvarorg14/openlicensd/sdk/go"
 
-client, err := openlicensd.New("https://licenses.example.com", "acme-widget")
+fp, err := openlicensd.Fingerprint("my-cli")
+if err != nil {
+    log.Fatal(err)
+}
+
+client, err := openlicensd.New(
+    "https://licenses.example.com",
+    "acme-widget",
+    openlicensd.WithFingerprint(fp),
+)
 if err != nil {
     log.Fatal(err)
 }
@@ -71,7 +80,16 @@ This reads `OPENLICENSD_URL` and `OPENLICENSD_PRODUCT` from the environment. The
 `/validate` always returns HTTP 200 for business outcomes. The SDK reflects this:
 
 - `Validate` returns `(result, nil)` when the key is invalid — check `result.Valid` and `result.Reason`
-- Rejection reasons: `not_found`, `expired`, `revoked`, `product_mismatch`
+- Rejection reasons: `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, `activation_limit`
+
+When the server enforces `max_activations`, configure the client with a stable machine fingerprint:
+
+```go
+fp, err := openlicensd.Fingerprint("my-cli")
+client, err := openlicensd.New(baseURL, product, openlicensd.WithFingerprint(fp))
+```
+
+`Fingerprint` persists a UUID under the OS user config directory (`<UserConfigDir>/my-cli/machine-id`). Use `FingerprintAt(path)` when you need a custom location (for example a mounted volume in CI). The SDK sends `os.Hostname()` by default; pass `openlicensd.WithoutHostname()` to omit it.
 
 `/registry-credentials` returns HTTP 403 for invalid licenses. The SDK maps this to `*LicenseError`.
 

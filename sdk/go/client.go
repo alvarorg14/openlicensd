@@ -30,6 +30,9 @@ type Client struct {
 	baseURL          *url.URL
 	product          string
 	allowAnyProduct  bool
+	fingerprint      string
+	hostname         string
+	sendHostname     bool
 	httpClient       *http.Client
 	userAgent        string
 	retryMaxAttempts int
@@ -84,6 +87,47 @@ func WithAnyProduct() Option {
 	}
 }
 
+// WithFingerprint sets the machine fingerprint sent on validation requests.
+func WithFingerprint(fp string) Option {
+	return func(cl *Client) {
+		cl.fingerprint = strings.TrimSpace(fp)
+	}
+}
+
+// WithHostname sets the hostname sent on validation requests and disables the
+// default os.Hostname() behavior.
+func WithHostname(hostname string) Option {
+	return func(cl *Client) {
+		cl.hostname = strings.TrimSpace(hostname)
+		cl.sendHostname = true
+	}
+}
+
+// WithoutHostname disables sending os.Hostname() on validation requests.
+func WithoutHostname() Option {
+	return func(cl *Client) {
+		cl.sendHostname = false
+		cl.hostname = ""
+	}
+}
+
+func (c *Client) validationRequest(key, product string) validateRequest {
+	req := validateRequest{
+		Key:         key,
+		Product:     product,
+		Fingerprint: c.fingerprint,
+	}
+	if c.sendHostname {
+		req.Hostname = c.hostname
+		if req.Hostname == "" {
+			if hostname, err := os.Hostname(); err == nil {
+				req.Hostname = strings.TrimSpace(hostname)
+			}
+		}
+	}
+	return req
+}
+
 // New creates a client for the given OpenLicensd server base URL and product
 // code. baseURL must be an absolute http or https URL. Trailing slashes are
 // stripped. Product is always sent on validation requests unless
@@ -97,6 +141,7 @@ func New(baseURL, product string, opts ...Option) (*Client, error) {
 	cl := &Client{
 		baseURL:          parsed,
 		product:          strings.TrimSpace(product),
+		sendHostname:     true,
 		httpClient:       &http.Client{Timeout: defaultTimeout},
 		userAgent:        defaultUserAgent,
 		retryMaxAttempts: defaultRetryMax,
