@@ -51,6 +51,4 @@ change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
 template: |
-  ## Go SDK
-
   $CHANGES
