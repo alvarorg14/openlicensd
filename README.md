@@ -272,6 +272,7 @@ See [AGENTS.md](AGENTS.md) for architecture details and AI assistant guidelines.
 
 Contributions are welcome! Issues and pull requests help make this project better for everyone.
 
+- See [ROADMAP.md](ROADMAP.md) for the path to v1.0 and open work
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow
 - Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
 - See [AGENTS.md](AGENTS.md) if you're an AI assistant or want deeper architecture context
