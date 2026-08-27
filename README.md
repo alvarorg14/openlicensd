@@ -78,7 +78,9 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - License creation requires a product and policy; expiration is derived from the policy
 - Optional manual expiration override per license
 - Usage tracking (`last_validated_at` and `validation_count`)
-- Public validation endpoint with optional product scoping and grace period support
+- **Max activations** — limit concurrent machines per license key (policy default, per-license override)
+- Machine activation tracking with admin release and rename
+- Public validation endpoint with optional product scoping, machine fingerprint, and grace period support
 - Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
@@ -142,6 +144,9 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
 | `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate a license |
+| `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
+| `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
+| `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |
 | `GET` | `/api/v1/users` | Session (admin) | List users |
 | `POST` | `/api/v1/users` | Session (admin) | Create a user |
 
@@ -158,7 +163,12 @@ Official client libraries for integrating license validation into your applicati
 ```go
 import openlicensd "github.com/alvarorg14/openlicensd/sdk/go"
 
-client, _ := openlicensd.New("https://licenses.example.com", "acme-widget")
+fp, _ := openlicensd.Fingerprint("my-cli")
+client, _ := openlicensd.New(
+    "https://licenses.example.com",
+    "acme-widget",
+    openlicensd.WithFingerprint(fp),
+)
 result, _ := client.Validate(ctx, licenseKey)
 ```
 

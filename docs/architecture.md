@@ -75,6 +75,7 @@ erDiagram
     products ||--o{ policies : has
     products ||--o{ licenses : scopes
     policies ||--o{ licenses : governs
+    licenses ||--o{ license_machines : tracks
 ```
 
 ### `products` table
@@ -99,6 +100,7 @@ erDiagram
 | `duration_days` | `INTEGER` | Null = perpetual |
 | `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation` |
 | `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds |
+| `max_activations` | `INTEGER` | Null = unlimited concurrent machine activations |
 | `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
@@ -118,8 +120,25 @@ erDiagram
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
 | `validation_count` | `BIGINT` | Total validation count |
+| `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited |
 
-Only the SHA-256 hash of the license key is stored. The full key is shown once at creation and cannot be recovered.
+### `license_machines` table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `UUID` | Primary key |
+| `license_id` | `UUID` | FK to `licenses` (cascade on delete) |
+| `fingerprint` | `TEXT` | Client-supplied stable machine identifier (unique per license) |
+| `name` | `TEXT` | Optional admin alias |
+| `hostname` | `TEXT` | Optional client-supplied display hostname |
+| `first_seen_at` | `TIMESTAMPTZ` | First activation time |
+| `last_seen_at` | `TIMESTAMPTZ` | Last successful validation from this fingerprint |
+| `last_seen_ip` | `TEXT` | Last client IP observed during validation |
+| `validation_count` | `BIGINT` | Validations from this fingerprint |
+| `deactivated_at` | `TIMESTAMPTZ` | Set when an operator releases the machine |
+| `deactivated_by` | `UUID` | FK to `users`; operator who released the machine |
+
+Only the SHA-256 hash of the license key is stored.
 
 ### Expiry semantics
 
@@ -155,7 +174,7 @@ sequenceDiagram
   participant Store
   participant PG as PostgreSQL
 
-  Client->>API: POST /api/v1/validate {key, product?}
+  Client->>API: POST /api/v1/validate {key, product?, fingerprint?, hostname?}
   API->>License: HashKey(key)
   API->>Store: GetLicenseByKeyHash(hash)
   Store->>PG: SELECT with product/policy join
@@ -166,10 +185,13 @@ sequenceDiagram
   end
   API->>Store: RecordValidation(id)
   API->>License: Validate(expires_at, grace, product)
-  API-->>Client: 200 {valid, product, policy, reason?}
+  opt valid and max_activations set
+    API->>Store: RecordActivation(license_id, fingerprint)
+  end
+  API-->>Client: 200 {valid, product, policy, reason?, activation_count?, max_activations?}
 ```
 
-Validation always returns HTTP 200. When the key is found (even if expired or revoked), `last_validated_at` and `validation_count` are updated.
+Validation always returns HTTP 200. When the key is found (even if expired or revoked), `last_validated_at` and `validation_count` are updated. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
 
 ### Harbor registry credentials
 

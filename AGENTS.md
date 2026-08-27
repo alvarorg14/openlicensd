@@ -11,6 +11,7 @@ This document provides context and guidelines for AI coding assistants working o
 - Generate and manage human-readable license keys (Crockford Base32 format)
 - Provide a public validation endpoint for client applications
 - Track license usage (validation count and last validated time)
+- Enforce max concurrent machine activations per license key (policy default, per-license override)
 - Optionally issue short-lived Harbor registry credentials to licensed clients
 - Serve an admin UI for license management
 
@@ -62,7 +63,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
 | `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
-| `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses; validation recording; migrations |
+| `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses, machines; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
 | `version` | `server/internal/version/` | Build version string injected via ldflags; exposed as `server_version` on `GET /api/v1/auth/me` |
 | `openlicensd` | `sdk/go/` | Go client SDK for license validation |

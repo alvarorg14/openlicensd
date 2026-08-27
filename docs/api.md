@@ -67,9 +67,9 @@ Allowed `sort` values vary by resource:
 
 | Resource | Sort fields |
 |----------|-------------|
-| Licenses | `created_at`, `label`, `expires_at`, `product_name`, `policy_name`, `last_validated_at`, `validation_count` |
+| Licenses | `created_at`, `label`, `expires_at`, `product_name`, `policy_name`, `last_validated_at`, `validation_count`, `activation_count`, `max_activations` |
+| Policies | `created_at`, `name`, `product_name`, `grace_period_days`, `max_activations` |
 | Products | `created_at`, `updated_at`, `name`, `code` |
-| Policies | `created_at`, `name`, `product_name`, `grace_period_days` |
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
@@ -159,6 +159,9 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `DELETE` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/activate` | `operator` or `admin` |
+| `GET` | `/api/v1/licenses/{id}/machines` | `viewer`, `operator`, or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
+| `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
 | `POST` | `/api/v1/products` | `operator` or `admin` |
 | `PATCH` | `/api/v1/products/{id}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/products/{id}` | `operator` or `admin` |
@@ -272,20 +275,26 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/licenses \
 
 The response includes the raw `key` field **once**. Store it securely — it cannot be retrieved later.
 
-You can optionally override the policy-derived expiration with `expires_at`.
+You can optionally override the policy-derived expiration with `expires_at` and the activation limit with `max_activations` (null = unlimited).
 
 ## Example: validate a license
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/validate \
   -H "Content-Type: application/json" \
-  -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD","product":"acme-widget"}' | jq
+  -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD","product":"acme-widget","fingerprint":"550e8400-e29b-41d4-a716-446655440000","hostname":"dev-macbook.local"}' | jq
+```
+
+When the license has `max_activations`, `fingerprint` is required. Known fingerprints reuse a seat; new fingerprints beyond the limit return:
+
+```json
+{ "valid": false, "reason": "activation_limit", "activation_count": 2, "max_activations": 2 }
 ```
 
 Valid response:
 
 ```json
-{ "valid": true, "product": "acme-widget", "policy": "30-day trial" }
+{ "valid": true, "product": "acme-widget", "policy": "30-day trial", "activation_count": 1, "max_activations": 2 }
 ```
 
 Invalid response (HTTP 200 when the request is allowed):
