@@ -64,6 +64,8 @@ The UI is a Nuxt 4 SPA built from `ui/`:
 ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
 ```
 
+Git tracks a self-contained placeholder `index.html` so `go build` on a fresh clone serves a working page. Run `make ui` (or `make build`) locally, or rely on GoReleaser's pre-build hook, to embed the full Nuxt SPA.
+
 In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`).
 
 The admin UI has a left sidebar with pages for **Licenses**, **Products**, and **Policies**.

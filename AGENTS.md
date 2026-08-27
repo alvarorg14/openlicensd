@@ -28,7 +28,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `ui/`
 - **Framework**: Nuxt 4 (Vue 3), `@nuxt/ui` v4, TypeScript
-- **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`)
+- **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`; git tracks a placeholder `index.html`, run `make ui` or GoReleaser to generate the full SPA)
 - **Public assets**: `ui/public/` (favicon, self-hosted fonts)
 
 ### Go SDK
