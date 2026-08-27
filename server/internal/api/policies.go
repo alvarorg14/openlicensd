@@ -18,6 +18,7 @@ type policyResponse struct {
 	DurationDays    *int      `json:"duration_days"`
 	ExpirationBasis string    `json:"expiration_basis"`
 	GracePeriodDays int       `json:"grace_period_days"`
+	MaxActivations  *int      `json:"max_activations"`
 	ArchivedAt      *string   `json:"archived_at,omitempty"`
 	CreatedAt       string    `json:"created_at"`
 	UpdatedAt       string    `json:"updated_at"`
@@ -30,6 +31,7 @@ type createPolicyRequest struct {
 	DurationDays    *int      `json:"duration_days"`
 	ExpirationBasis string    `json:"expiration_basis"`
 	GracePeriodDays *int      `json:"grace_period_days"`
+	MaxActivations  *int      `json:"max_activations"`
 }
 
 type updatePolicyRequest struct {
@@ -38,6 +40,7 @@ type updatePolicyRequest struct {
 	DurationDays    *int    `json:"duration_days"`
 	ExpirationBasis string  `json:"expiration_basis"`
 	GracePeriodDays *int    `json:"grace_period_days"`
+	MaxActivations  *int    `json:"max_activations"`
 }
 
 func policyToResponse(p *store.Policy) policyResponse {
@@ -50,6 +53,7 @@ func policyToResponse(p *store.Policy) policyResponse {
 		DurationDays:    p.DurationDays,
 		ExpirationBasis: string(p.ExpirationBasis),
 		GracePeriodDays: p.GracePeriodDays,
+		MaxActivations:  p.MaxActivations,
 		CreatedAt:       p.CreatedAt.Format(timeRFC3339),
 		UpdatedAt:       p.UpdatedAt.Format(timeRFC3339),
 	}
@@ -100,6 +104,16 @@ func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		gracePeriodDays = *req.GracePeriodDays
 	}
 
+	var maxActivations *int
+	if req.MaxActivations != nil {
+		var err error
+		maxActivations, err = parseMaxActivations(req.MaxActivations)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+			return
+		}
+	}
+
 	policy, err := s.store.CreatePolicy(
 		r.Context(),
 		req.ProductID,
@@ -108,6 +122,7 @@ func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		req.DurationDays,
 		expirationBasis,
 		gracePeriodDays,
+		maxActivations,
 	)
 	if err != nil {
 		if writeStoreError(w, err, "") {
@@ -195,6 +210,16 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		gracePeriodDays = *req.GracePeriodDays
 	}
 
+	var maxActivations *int
+	if req.MaxActivations != nil {
+		var err error
+		maxActivations, err = parseMaxActivations(req.MaxActivations)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+			return
+		}
+	}
+
 	policy, err := s.store.UpdatePolicy(
 		r.Context(),
 		id,
@@ -203,6 +228,7 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		req.DurationDays,
 		expirationBasis,
 		gracePeriodDays,
+		maxActivations,
 	)
 	if err != nil {
 		if writeStoreError(w, err, "") {

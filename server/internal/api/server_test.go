@@ -324,3 +324,126 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("list policies status=%d", listPoliciesResp.Code)
 	}
 }
+
+func TestActivationLimits(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("activation-product-%d", time.Now().UnixNano())
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Activation Product",
+		"code": productCode,
+	}, cookies)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product: %v", err)
+	}
+
+	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       product["id"],
+		"name":             "Two seats",
+		"expiration_basis": "on_creation",
+		"max_activations":  2,
+	}, cookies)
+	if policyResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
+	}
+	var policy map[string]any
+	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy: %v", err)
+	}
+
+	licenseResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "activation-license",
+		"product_id": product["id"],
+		"policy_id":  policy["id"],
+	}, cookies)
+	if licenseResp.Code != http.StatusCreated {
+		t.Fatalf("create license status=%d body=%s", licenseResp.Code, licenseResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(licenseResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode license: %v", err)
+	}
+	rawKey := created["key"].(string)
+	licenseID := created["id"].(string)
+
+	noFpResp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key":     rawKey,
+		"product": productCode,
+	}, nil)
+	var noFp license.ValidationResult
+	if err := json.Unmarshal(noFpResp.Body.Bytes(), &noFp); err != nil {
+		t.Fatalf("decode validate without fingerprint: %v", err)
+	}
+	if noFp.Valid || noFp.Reason != "fingerprint_required" {
+		t.Fatalf("expected fingerprint_required, got %+v", noFp)
+	}
+
+	for _, fp := range []string{"machine-a", "machine-b"} {
+		resp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+			"key":         rawKey,
+			"product":     productCode,
+			"fingerprint": fp,
+			"hostname":    fp + ".local",
+		}, nil)
+		var result license.ValidationResult
+		if err := json.Unmarshal(resp.Body.Bytes(), &result); err != nil {
+			t.Fatalf("decode validate: %v", err)
+		}
+		if !result.Valid {
+			t.Fatalf("expected valid activation for %s, got %+v", fp, result)
+		}
+	}
+
+	limitResp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key":         rawKey,
+		"product":     productCode,
+		"fingerprint": "machine-c",
+	}, nil)
+	var limit license.ValidationResult
+	if err := json.Unmarshal(limitResp.Body.Bytes(), &limit); err != nil {
+		t.Fatalf("decode limit validate: %v", err)
+	}
+	if limit.Valid || limit.Reason != "activation_limit" {
+		t.Fatalf("expected activation_limit, got %+v", limit)
+	}
+
+	machinesResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID+"/machines", nil, cookies)
+	if machinesResp.Code != http.StatusOK {
+		t.Fatalf("list machines status=%d body=%s", machinesResp.Code, machinesResp.Body.String())
+	}
+	var machinesPage map[string]any
+	if err := json.Unmarshal(machinesResp.Body.Bytes(), &machinesPage); err != nil {
+		t.Fatalf("decode machines: %v", err)
+	}
+	items, ok := machinesPage["items"].([]any)
+	if !ok || len(items) != 2 {
+		t.Fatalf("expected 2 machines, got %+v", machinesPage)
+	}
+
+	firstMachine := items[0].(map[string]any)
+	machineID := firstMachine["id"].(string)
+
+	releaseResp := doJSON(t, handler, http.MethodDelete, "/api/v1/licenses/"+licenseID+"/machines/"+machineID, nil, cookies)
+	if releaseResp.Code != http.StatusOK {
+		t.Fatalf("release machine status=%d body=%s", releaseResp.Code, releaseResp.Body.Bytes())
+	}
+
+	afterRelease := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key":         rawKey,
+		"product":     productCode,
+		"fingerprint": "machine-c",
+	}, nil)
+	var after license.ValidationResult
+	if err := json.Unmarshal(afterRelease.Body.Bytes(), &after); err != nil {
+		t.Fatalf("decode after release: %v", err)
+	}
+	if !after.Valid {
+		t.Fatalf("expected valid activation after release, got %+v", after)
+	}
+}

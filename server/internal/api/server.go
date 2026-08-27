@@ -115,6 +115,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 				r.Get("/licenses/stats", s.handleLicenseStats)
 				r.Get("/licenses", s.handleListLicenses)
+				r.Get("/licenses/{id}/machines", s.handleListLicenseMachines)
 				r.Get("/products", s.handleListProducts)
 				r.Get("/policies", s.handleListPolicies)
 			})
@@ -127,6 +128,8 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Delete("/licenses/{id}", s.handleDeleteLicense)
 				r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
 				r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
+				r.Patch("/licenses/{id}/machines/{machineId}", s.handleUpdateLicenseMachine)
+				r.Delete("/licenses/{id}/machines/{machineId}", s.handleReleaseLicenseMachine)
 
 				r.Post("/products", s.handleCreateProduct)
 				r.Patch("/products/{id}", s.handleUpdateProduct)

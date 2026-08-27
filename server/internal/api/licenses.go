@@ -13,15 +13,17 @@ import (
 )
 
 type createLicenseRequest struct {
-	Label     string     `json:"label"`
-	ProductID uuid.UUID  `json:"product_id"`
-	PolicyID  uuid.UUID  `json:"policy_id"`
-	ExpiresAt *time.Time `json:"expires_at"`
+	Label            string     `json:"label"`
+	ProductID        uuid.UUID  `json:"product_id"`
+	PolicyID         uuid.UUID  `json:"policy_id"`
+	ExpiresAt        *time.Time `json:"expires_at"`
+	MaxActivations   *int       `json:"max_activations"`
 }
 
 type updateLicenseRequest struct {
-	Label     string     `json:"label"`
-	ExpiresAt *time.Time `json:"expires_at"`
+	Label          string     `json:"label"`
+	ExpiresAt      *time.Time `json:"expires_at"`
+	MaxActivations *int       `json:"max_activations"`
 }
 
 type licenseResponse struct {
@@ -40,6 +42,8 @@ type licenseResponse struct {
 	CreatedAt        time.Time  `json:"created_at"`
 	LastValidatedAt  *time.Time `json:"last_validated_at"`
 	ValidationCount  int64      `json:"validation_count"`
+	MaxActivations   *int       `json:"max_activations"`
+	ActivationCount  int64      `json:"activation_count"`
 	CreatedBy        *uuid.UUID `json:"created_by,omitempty"`
 	CreatedByName    *string    `json:"created_by_name,omitempty"`
 	CreatedByEmail   *string    `json:"created_by_email,omitempty"`
@@ -62,6 +66,8 @@ func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
 		CreatedAt:       lic.CreatedAt,
 		LastValidatedAt: lic.LastValidatedAt,
 		ValidationCount: lic.ValidationCount,
+		MaxActivations:  lic.MaxActivations,
+		ActivationCount: lic.ActivationCount,
 		CreatedBy:       lic.CreatedBy,
 		CreatedByName:   lic.CreatedByName,
 		CreatedByEmail:  lic.CreatedByEmail,
@@ -119,12 +125,24 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	expiresAt := resolveInitialExpiry(policy, req.ExpiresAt, time.Now())
 
+	var maxActivations *int
+	if req.MaxActivations != nil {
+		var err error
+		maxActivations, err = parseMaxActivations(req.MaxActivations)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+			return
+		}
+	} else {
+		maxActivations = policy.MaxActivations
+	}
+
 	var createdBy *uuid.UUID
 	if principal, ok := auth.PrincipalFromContext(r.Context()); ok {
 		createdBy = &principal.UserID
 	}
 
-	lic, err := s.store.CreateLicense(r.Context(), req.Label, keyHash, keyPrefix, req.ProductID, req.PolicyID, expiresAt, createdBy)
+	lic, err := s.store.CreateLicense(r.Context(), req.Label, keyHash, keyPrefix, req.ProductID, req.PolicyID, expiresAt, maxActivations, createdBy)
 	if err != nil {
 		if writeStoreError(w, err, "") {
 			return
@@ -236,7 +254,14 @@ func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lic, err := s.store.UpdateLicense(r.Context(), id, req.Label, req.ExpiresAt)
+	if req.MaxActivations != nil {
+		if _, err := parseMaxActivations(req.MaxActivations); err != nil {
+			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+			return
+		}
+	}
+
+	lic, err := s.store.UpdateLicense(r.Context(), id, req.Label, req.ExpiresAt, req.MaxActivations)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to update license")
 		return
