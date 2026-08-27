@@ -113,6 +113,8 @@ Download from [GitHub Releases](https://github.com/alvarorg14/openlicensd/releas
 make build
 ```
 
+> **Note:** `make build` runs `make ui` first so the binary embeds the full admin UI. A plain `go build` embeds a placeholder page instead.
+
 ```bash
 export OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/openlicensd?sslmode=disable
 export OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com

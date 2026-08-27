@@ -90,8 +90,16 @@ jobs:
         run: make lint-ui
 
       - name: Generate
-        working-directory: ui
-        run: npm run generate
+        run: make ui
+
+      - name: Verify generated assets resolve
+        run: |
+          ASSET=$(grep -Eo 'href="/_nuxt/[^"]+\.(js|css)"' server/internal/static/dist/index.html | head -n1 | sed 's/.*href="\([^"]*\)".*/\1/')
+          if [ -z "$ASSET" ]; then
+            echo "No /_nuxt asset reference found in generated index.html"
+            exit 1
+          fi
+          test -f "server/internal/static/dist${ASSET}"
 
   goreleaser:
     name: GoReleaser

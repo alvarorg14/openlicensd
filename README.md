@@ -266,6 +266,8 @@ make test          # Run Go tests
 make lint          # go vet + golangci-lint + ESLint (same as CI)
 ```
 
+A plain `go build` embeds a placeholder admin page; run `make build` (or `make ui` first) for the full admin UI.
+
 See [AGENTS.md](AGENTS.md) for architecture details and AI assistant guidelines.
 
 ## 🤝 Contributing
