@@ -31,6 +31,14 @@
           <UInput v-model="form.expiresAt" type="datetime-local" />
         </UFormField>
 
+        <UFormField name="unlimitedActivations">
+          <UCheckbox v-model="form.unlimitedActivations" label="Unlimited machine activations" />
+        </UFormField>
+
+        <UFormField v-if="!form.unlimitedActivations" label="Max activations" name="maxActivations" required>
+          <UInput v-model.number="form.maxActivations" type="number" min="1" />
+        </UFormField>
+
         <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
         <div class="flex justify-end gap-2 pt-2">
@@ -63,7 +71,9 @@ const { updateLicense } = useApi()
 const form = reactive({
   label: '',
   neverExpires: true,
-  expiresAt: ''
+  expiresAt: '',
+  unlimitedActivations: true,
+  maxActivations: 3
 })
 
 const loading = ref(false)
@@ -85,6 +95,8 @@ watch(open, (value) => {
     form.label = props.license.label
     form.neverExpires = !props.license.expires_at
     form.expiresAt = props.license.expires_at ? toDatetimeLocal(props.license.expires_at) : ''
+    form.unlimitedActivations = props.license.max_activations == null
+    form.maxActivations = props.license.max_activations ?? 3
     error.value = ''
   }
 })
@@ -104,12 +116,22 @@ const onSubmit = async () => {
     return
   }
 
+  if (!form.unlimitedActivations && (!form.maxActivations || form.maxActivations < 1)) {
+    error.value = 'Max activations must be at least 1'
+    return
+  }
+
   loading.value = true
   error.value = ''
 
   try {
     const expiresAt = form.neverExpires ? null : new Date(form.expiresAt).toISOString()
-    const license = await updateLicense(props.license.id, form.label.trim(), expiresAt)
+    const maxActivations = form.unlimitedActivations ? null : form.maxActivations
+    const license = await updateLicense(props.license.id, {
+      label: form.label.trim(),
+      expires_at: expiresAt,
+      max_activations: maxActivations
+    })
     open.value = false
     emit('updated', license)
   } catch {

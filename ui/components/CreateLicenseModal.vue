@@ -31,6 +31,18 @@
           <UInput v-model="form.expiresAt" type="datetime-local" />
         </UFormField>
 
+        <UFormField name="usePolicyActivations">
+          <UCheckbox v-model="form.usePolicyActivations" label="Use policy activation limit" />
+        </UFormField>
+
+        <p v-if="form.usePolicyActivations && policyActivationsHint" class="text-sm text-muted">
+          {{ policyActivationsHint }}
+        </p>
+
+        <UFormField v-if="!form.usePolicyActivations" label="Max activations" name="maxActivations" required>
+          <UInput v-model.number="form.maxActivations" type="number" min="1" />
+        </UFormField>
+
         <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
         <div class="flex justify-end gap-2 pt-2">
@@ -47,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import type { License, Policy } from '~/types'
+import type { CreateLicenseInput, License, Policy } from '~/types'
 
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{
@@ -61,7 +73,9 @@ const form = reactive({
   productId: null as string | null,
   policyId: null as string | null,
   usePolicyExpiration: true,
-  expiresAt: ''
+  expiresAt: '',
+  usePolicyActivations: true,
+  maxActivations: 3
 })
 
 const loading = ref(false)
@@ -90,6 +104,16 @@ watch(() => form.policyId, async (policyId) => {
   selectedPolicy.value = policies.items.find((policy) => policy.id === policyId) ?? null
 })
 
+const policyActivationsHint = computed(() => {
+  if (!selectedPolicy.value) {
+    return ''
+  }
+  if (selectedPolicy.value.max_activations == null) {
+    return 'This policy allows unlimited machine activations.'
+  }
+  return `This policy allows up to ${selectedPolicy.value.max_activations} machine activations.`
+})
+
 watch(open, (value) => {
   if (value) {
     form.label = ''
@@ -97,6 +121,8 @@ watch(open, (value) => {
     form.policyId = null
     form.usePolicyExpiration = true
     form.expiresAt = ''
+    form.usePolicyActivations = true
+    form.maxActivations = 3
     selectedPolicy.value = null
     error.value = ''
   }
@@ -119,17 +145,16 @@ const onSubmit = async () => {
     error.value = 'Expiration date is required when not using policy expiration'
     return
   }
+  if (!form.usePolicyActivations && (!form.maxActivations || form.maxActivations < 1)) {
+    error.value = 'Max activations must be at least 1'
+    return
+  }
 
   loading.value = true
   error.value = ''
 
   try {
-    const body: {
-      label: string
-      product_id: string
-      policy_id: string
-      expires_at?: string | null
-    } = {
+    const body: CreateLicenseInput = {
       label: form.label.trim(),
       product_id: form.productId,
       policy_id: form.policyId
@@ -137,6 +162,9 @@ const onSubmit = async () => {
 
     if (!form.usePolicyExpiration) {
       body.expires_at = new Date(form.expiresAt).toISOString()
+    }
+    if (!form.usePolicyActivations) {
+      body.max_activations = form.maxActivations
     }
 
     const license = await createLicense(body)
