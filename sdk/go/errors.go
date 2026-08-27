@@ -26,6 +26,8 @@ const (
 	ReasonExpired          Reason = "expired"
 	ReasonRevoked          Reason = "revoked"
 	ReasonProductMismatch  Reason = "product_mismatch"
+	ReasonActivationLimit  Reason = "activation_limit"
+	ReasonFingerprintRequired Reason = "fingerprint_required"
 	ReasonInvalid          Reason = "invalid"
 )
 
@@ -68,7 +70,7 @@ func (e *LicenseError) Error() string {
 
 func parseReason(s string) Reason {
 	switch Reason(s) {
-	case ReasonNotFound, ReasonExpired, ReasonRevoked, ReasonProductMismatch, ReasonInvalid:
+	case ReasonNotFound, ReasonExpired, ReasonRevoked, ReasonProductMismatch, ReasonActivationLimit, ReasonFingerprintRequired, ReasonInvalid:
 		return Reason(s)
 	default:
 		if s == "" {
