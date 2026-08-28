@@ -270,7 +270,7 @@ On GitHub release publish (SDK tags only — server releases are excluded):
 - Runs `make lint-sdk` and `make test-sdk`
 - Warms the Go module proxy for pkg.go.dev
 
-SDK and server versions are independent. Server tags use a `v` prefix (`v0.2.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
+SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
 
 ## Quality Assurance Requirements
 
