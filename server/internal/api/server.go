@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/clientip"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/harbor"
+	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
+	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/clientip"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/harbor"
-	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
-	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type Server struct {

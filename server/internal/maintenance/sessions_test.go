@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/maintenance"
+	"github.com/alvarorg14/openlicensd/server/internal/maintenance"
 )
 
 type fakeSessionStore struct {
-	mu       sync.Mutex
-	calls    int
-	removed  int64
-	err      error
+	mu      sync.Mutex
+	calls   int
+	removed int64
+	err     error
 }
 
 func (f *fakeSessionStore) DeleteExpiredSessions(ctx context.Context) (int64, error) {

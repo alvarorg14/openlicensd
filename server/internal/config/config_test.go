@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 )
 
 func TestLoadHarborDisabledByDefault(t *testing.T) {

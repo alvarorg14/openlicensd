@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type productResponse struct {
-	ID          uuid.UUID  `json:"id"`
-	Name        string     `json:"name"`
-	Code        string     `json:"code"`
-	Description *string    `json:"description"`
-	ArchivedAt  *string    `json:"archived_at,omitempty"`
-	CreatedAt   string     `json:"created_at"`
-	UpdatedAt   string     `json:"updated_at"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Code        string    `json:"code"`
+	Description *string   `json:"description"`
+	ArchivedAt  *string   `json:"archived_at,omitempty"`
+	CreatedAt   string    `json:"created_at"`
+	UpdatedAt   string    `json:"updated_at"`
 }
 
 type createProductRequest struct {

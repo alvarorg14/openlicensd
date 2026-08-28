@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/api"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/api"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 type testEnv struct {

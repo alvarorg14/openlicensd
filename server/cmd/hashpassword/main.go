@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/openlicensd/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
 )
 
 func main() {

@@ -13,11 +13,11 @@ import (
 )
 
 type Config struct {
-	IssuerURL       string
-	ClientID        string
-	ClientSecret    string
-	RedirectURL     string
-	Scopes          []string
+	IssuerURL          string
+	ClientID           string
+	ClientSecret       string
+	RedirectURL        string
+	Scopes             []string
 	InsecureSkipVerify bool
 }
 

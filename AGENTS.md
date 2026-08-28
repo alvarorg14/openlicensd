@@ -20,7 +20,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Backend (Go)
 
 - **Location**: `server/cmd/openlicensd/` (main entry), `server/internal/` (core logic)
-- **Module**: `github.com/openlicensd/openlicensd/server`
+- **Module**: `github.com/alvarorg14/openlicensd/server`
 - **Go version**: 1.26+
 - **Key dependencies**: `go-chi/chi`, `golang-jwt/jwt`, `jackc/pgx`, `google/uuid`
 

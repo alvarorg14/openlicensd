@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/license"
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/license"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 type validateRequest struct {

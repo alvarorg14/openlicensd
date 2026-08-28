@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/license"
+	"github.com/alvarorg14/openlicensd/server/internal/license"
 )
 
 func TestAPIIntegration(t *testing.T) {

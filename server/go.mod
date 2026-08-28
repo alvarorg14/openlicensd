@@ -1,4 +1,4 @@
-module github.com/openlicensd/openlicensd/server
+module github.com/alvarorg14/openlicensd/server
 
 go 1.26.0
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/openlicensd/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 )
 
 func BootstrapAdmin(ctx context.Context, st *Store, cfg *config.Config) error {

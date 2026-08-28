@@ -15,29 +15,29 @@ import (
 var migrationsFS embed.FS
 
 type License struct {
-	ID               uuid.UUID
-	Label            string
-	KeyHash          string
-	KeyPrefix        string
-	ProductID        uuid.UUID
-	PolicyID         uuid.UUID
-	ExpiresAt        *time.Time
-	ActivatedAt      *time.Time
-	Revoked          bool
-	CreatedAt        time.Time
-	LastValidatedAt  *time.Time
-	ValidationCount  int64
-	MaxActivations   *int
-	ActivationCount  int64
-	ProductCode      string
-	ProductName      string
-	PolicyName       string
-	GracePeriodDays  int
-	ExpirationBasis  ExpirationBasis
-	DurationDays     *int
-	CreatedBy        *uuid.UUID
-	CreatedByName    *string
-	CreatedByEmail   *string
+	ID              uuid.UUID
+	Label           string
+	KeyHash         string
+	KeyPrefix       string
+	ProductID       uuid.UUID
+	PolicyID        uuid.UUID
+	ExpiresAt       *time.Time
+	ActivatedAt     *time.Time
+	Revoked         bool
+	CreatedAt       time.Time
+	LastValidatedAt *time.Time
+	ValidationCount int64
+	MaxActivations  *int
+	ActivationCount int64
+	ProductCode     string
+	ProductName     string
+	PolicyName      string
+	GracePeriodDays int
+	ExpirationBasis ExpirationBasis
+	DurationDays    *int
+	CreatedBy       *uuid.UUID
+	CreatedByName   *string
+	CreatedByEmail  *string
 }
 
 type Store struct {
