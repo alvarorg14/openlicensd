@@ -47,6 +47,9 @@ curl -s -b cookies.txt "http://localhost:8080/api/v1/licenses?page=1&page_size=2
 
 # License status counts (unfiltered)
 curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/stats
+
+# Single license by ID
+curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/{id}
 ```
 
 List endpoints for licenses, products, and policies return a paginated envelope:
@@ -152,6 +155,7 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `POST` | `/api/v1/auth/password` | any authenticated user |
 | `GET` | `/api/v1/licenses/stats` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/licenses` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/licenses/{id}` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/products` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/policies` | `viewer`, `operator`, or `admin` |
 | `POST` | `/api/v1/licenses` | `operator` or `admin` |

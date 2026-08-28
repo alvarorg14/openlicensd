@@ -46,9 +46,14 @@ func TestListEndpointsPagination(t *testing.T) {
 	}
 	policyID := policy["id"].(string)
 
+	searchLabel := fmt.Sprintf("license-search-%d", time.Now().UnixNano())
 	for i := range 3 {
+		label := fmt.Sprintf("license-%d", i)
+		if i == 0 {
+			label = searchLabel
+		}
 		createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
-			"label":      fmt.Sprintf("license-%d", i),
+			"label":      label,
 			"product_id": productID,
 			"policy_id":  policyID,
 		}, cookies)
@@ -81,7 +86,7 @@ func TestListEndpointsPagination(t *testing.T) {
 		t.Fatalf("expected 2 items, got %+v", page["items"])
 	}
 
-	searchResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses?search=license-0", nil, cookies)
+	searchResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses?search="+searchLabel, nil, cookies)
 	if searchResp.Code != http.StatusOK {
 		t.Fatalf("search licenses status=%d", searchResp.Code)
 	}

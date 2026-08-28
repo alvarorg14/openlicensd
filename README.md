@@ -140,6 +140,7 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `POST` | `/api/v1/licenses` | Session | Create a license |
 | `GET` | `/api/v1/licenses` | Session | List licenses (paginated; supports `status`, `product_id`, `policy_id`, `search`, `sort`, `order`) |
 | `GET` | `/api/v1/licenses/stats` | Session | License status counts (total, active, expired, revoked) |
+| `GET` | `/api/v1/licenses/{id}` | Session | Get a license by ID |
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |

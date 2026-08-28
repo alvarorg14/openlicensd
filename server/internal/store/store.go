@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"time"
 
@@ -113,7 +114,14 @@ func (s *Store) GetLicenseByID(ctx context.Context, id uuid.UUID) (*License, err
 	`
 
 	row := s.pool.QueryRow(ctx, q, id)
-	return scanLicense(row)
+	lic, err := scanLicense(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return lic, nil
 }
 
 func (s *Store) ListLicenses(ctx context.Context, params LicenseListParams) ([]License, int64, error) {
