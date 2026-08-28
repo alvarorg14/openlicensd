@@ -119,7 +119,7 @@ erDiagram
 | `revoked` | `BOOLEAN` | Whether the license is revoked |
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
-| `validation_count` | `BIGINT` | Total validation count |
+| `validation_count` | `BIGINT` | Successful validation count |
 | `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited |
 
 ### `license_machines` table
@@ -183,15 +183,17 @@ sequenceDiagram
   opt on_first_validation and not yet activated
     API->>Store: ActivateLicense(id, expires_at)
   end
-  API->>Store: RecordValidation(id)
   API->>License: Validate(expires_at, grace, product)
   opt valid and max_activations set
     API->>Store: RecordActivation(license_id, fingerprint)
   end
+  opt result.Valid
+    API->>Store: RecordValidation(id)
+  end
   API-->>Client: 200 {valid, product, policy, reason?, activation_count?, max_activations?}
 ```
 
-Validation always returns HTTP 200. When the key is found (even if expired or revoked), `last_validated_at` and `validation_count` are updated. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
+Validation always returns HTTP 200. When validation succeeds (`valid: true`), `last_validated_at` and `validation_count` are updated. Failed lookups (not found, revoked, expired, product mismatch, fingerprint required, activation limit) do not increment usage. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
 
 ### Harbor registry credentials
 

@@ -127,8 +127,8 @@ func TestAPIIntegration(t *testing.T) {
 		item := lic.(map[string]any)
 		if item["id"] == licenseID {
 			found = true
-			if count, ok := item["validation_count"].(float64); !ok || count < 2 {
-				t.Fatalf("expected validation_count >= 2, got %+v", item["validation_count"])
+			if count, ok := item["validation_count"].(float64); !ok || count != 1 {
+				t.Fatalf("expected validation_count == 1, got %+v", item["validation_count"])
 			}
 			if item["last_validated_at"] == nil {
 				t.Fatalf("expected last_validated_at to be set")
@@ -355,6 +355,184 @@ func TestAPIIntegration(t *testing.T) {
 	listPoliciesResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies?product_id="+productID, nil, cookies)
 	if listPoliciesResp.Code != http.StatusOK {
 		t.Fatalf("list policies status=%d", listPoliciesResp.Code)
+	}
+}
+
+func getLicenseValidationCount(t *testing.T, handler http.Handler, licenseID string, cookies []*http.Cookie) int64 {
+	t.Helper()
+	resp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID, nil, cookies)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("get license status=%d body=%s", resp.Code, resp.Body.String())
+	}
+	var lic map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &lic); err != nil {
+		t.Fatalf("decode license: %v", err)
+	}
+	count, ok := lic["validation_count"].(float64)
+	if !ok {
+		t.Fatalf("expected validation_count number, got %+v", lic["validation_count"])
+	}
+	return int64(count)
+}
+
+func TestValidationCountOnlyOnSuccess(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("validation-count-product-%d", time.Now().UnixNano())
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Validation Count Product",
+		"code": productCode,
+	}, cookies)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product: %v", err)
+	}
+	productID := product["id"].(string)
+
+	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "Perpetual",
+		"expiration_basis": "on_creation",
+	}, cookies)
+	if policyResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
+	}
+	var policy map[string]any
+	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy: %v", err)
+	}
+
+	licenseResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "validation-count-license",
+		"product_id": productID,
+		"policy_id":  policy["id"],
+	}, cookies)
+	if licenseResp.Code != http.StatusCreated {
+		t.Fatalf("create license status=%d body=%s", licenseResp.Code, licenseResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(licenseResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode license: %v", err)
+	}
+	rawKey := created["key"].(string)
+	licenseID := created["id"].(string)
+
+	validate := func(body map[string]string) license.ValidationResult {
+		t.Helper()
+		resp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", body, nil)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("validate status=%d body=%s", resp.Code, resp.Body.String())
+		}
+		var result license.ValidationResult
+		if err := json.Unmarshal(resp.Body.Bytes(), &result); err != nil {
+			t.Fatalf("decode validate: %v", err)
+		}
+		return result
+	}
+
+	assertCount := func(want int64) {
+		t.Helper()
+		if got := getLicenseValidationCount(t, handler, licenseID, cookies); got != want {
+			t.Fatalf("expected validation_count %d, got %d", want, got)
+		}
+	}
+
+	result := validate(map[string]string{"key": rawKey, "product": productCode})
+	if !result.Valid {
+		t.Fatalf("expected valid license, got %+v", result)
+	}
+	assertCount(1)
+
+	mismatch := validate(map[string]string{"key": rawKey, "product": "wrong-product"})
+	if mismatch.Valid || mismatch.Reason != "product_mismatch" {
+		t.Fatalf("expected product_mismatch, got %+v", mismatch)
+	}
+	assertCount(1)
+
+	revokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/revoke", nil, cookies)
+	if revokeResp.Code != http.StatusOK {
+		t.Fatalf("revoke license status=%d", revokeResp.Code)
+	}
+	revoked := validate(map[string]string{"key": rawKey})
+	if revoked.Valid || revoked.Reason != "revoked" {
+		t.Fatalf("expected revoked, got %+v", revoked)
+	}
+	assertCount(1)
+
+	activateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/activate", nil, cookies)
+	if activateResp.Code != http.StatusOK {
+		t.Fatalf("activate license status=%d", activateResp.Code)
+	}
+	reactivated := validate(map[string]string{"key": rawKey, "product": productCode})
+	if !reactivated.Valid {
+		t.Fatalf("expected valid after activate, got %+v", reactivated)
+	}
+	assertCount(2)
+
+	expiredResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "expired-validation-count",
+		"product_id": productID,
+		"policy_id":  policy["id"],
+		"expires_at": time.Now().Add(-time.Hour).UTC().Format(time.RFC3339),
+	}, cookies)
+	if expiredResp.Code != http.StatusCreated {
+		t.Fatalf("create expired license status=%d", expiredResp.Code)
+	}
+	var expiredCreated map[string]any
+	if err := json.Unmarshal(expiredResp.Body.Bytes(), &expiredCreated); err != nil {
+		t.Fatalf("decode expired license: %v", err)
+	}
+	expiredKey := expiredCreated["key"].(string)
+	expiredID := expiredCreated["id"].(string)
+
+	expired := validate(map[string]string{"key": expiredKey})
+	if expired.Valid || expired.Reason != "expired" {
+		t.Fatalf("expected expired, got %+v", expired)
+	}
+	if got := getLicenseValidationCount(t, handler, expiredID, cookies); got != 0 {
+		t.Fatalf("expected expired license validation_count 0, got %d", got)
+	}
+
+	fpPolicyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "One seat",
+		"expiration_basis": "on_creation",
+		"max_activations":  1,
+	}, cookies)
+	if fpPolicyResp.Code != http.StatusCreated {
+		t.Fatalf("create fingerprint policy status=%d body=%s", fpPolicyResp.Code, fpPolicyResp.Body.String())
+	}
+	var fpPolicy map[string]any
+	if err := json.Unmarshal(fpPolicyResp.Body.Bytes(), &fpPolicy); err != nil {
+		t.Fatalf("decode fingerprint policy: %v", err)
+	}
+
+	fpLicenseResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "fingerprint-required-license",
+		"product_id": productID,
+		"policy_id":  fpPolicy["id"],
+	}, cookies)
+	if fpLicenseResp.Code != http.StatusCreated {
+		t.Fatalf("create fingerprint license status=%d body=%s", fpLicenseResp.Code, fpLicenseResp.Body.String())
+	}
+	var fpCreated map[string]any
+	if err := json.Unmarshal(fpLicenseResp.Body.Bytes(), &fpCreated); err != nil {
+		t.Fatalf("decode fingerprint license: %v", err)
+	}
+	fpKey := fpCreated["key"].(string)
+	fpLicenseID := fpCreated["id"].(string)
+
+	noFp := validate(map[string]string{"key": fpKey, "product": productCode})
+	if noFp.Valid || noFp.Reason != "fingerprint_required" {
+		t.Fatalf("expected fingerprint_required, got %+v", noFp)
+	}
+	if got := getLicenseValidationCount(t, handler, fpLicenseID, cookies); got != 0 {
+		t.Fatalf("expected fingerprint-required license validation_count 0, got %d", got)
 	}
 }
 
