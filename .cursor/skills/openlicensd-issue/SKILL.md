@@ -157,7 +157,7 @@ Out of scope (and why):
 - [ ] <ordered implementation to-do, one per logical unit>
 - [ ] Run `make lint`, `make build`, `make test`
 - [ ] Assign and relabel issue #<N>
-- [ ] Open PR with `Closes #<N>` and one policy label
+- [ ] Open PR with `Closes #<N>`, one policy label, and body per `smart-commit-and-pr` template
 ```
 
 Plan-specific notes:
@@ -250,9 +250,18 @@ Derive it from the issue's type label. When several could apply, pick by precede
 `dependencies` > `ci`. Add the matching `area/*` labels to the PR too — they are not enforced but keep
 the release drafter accurate.
 
-5. **PR description** should call out, when applicable: the migration and the need for
-   `make dev-db-reset`, any new env var and its default, breaking changes with a migration path, and
-   which gates were run.
+5. **PR description** must follow the structured template in the `smart-commit-and-pr` skill — read
+   `~/.cursor/skills/smart-commit-and-pr/pr-template.md` before writing the body. Fill every section
+   from the diff against `main` (`git diff main...HEAD`); remove a section only when it truly does not
+   apply. Weave these OpenLicensd-specific details into the template sections:
+
+   | Template section | OpenLicensd additions |
+   |------------------|----------------------|
+   | **TL;DR** | Include `Closes #<N>`. |
+   | **Context & Purpose** | Link the issue URL; state the milestone phase from `ROADMAP.md`. |
+   | **Solution & Approach** | New env vars with defaults; migration file numbers; SDK or OpenAPI changes. |
+   | **Testing, Risks & Rollout** | `make dev-db-reset` when a migration was added; breaking changes with a migration path; which gates ran (`make lint`, `make build`, `make test`, and `make test-sdk` / `make vuln` when applicable). |
+   | **Reviewer Focus** | Files that need careful review (auth, rate limiting, store queries, migrations). |
 
 Finally, report: branch name, commits, PR URL, gate results, and anything left for a follow-up issue.
 
@@ -262,7 +271,7 @@ Finally, report: branch name, commits, PR URL, gate results, and anything left f
 - [ ] Tests added or updated for new logic
 - [ ] Every documentation obligation from Step 2 satisfied
 - [ ] Issue assigned, correctly labeled, and in the right milestone
-- [ ] PR opened with `Closes #<N>` and exactly one policy label
+- [ ] PR opened with `Closes #<N>`, exactly one policy label, and structured description per `smart-commit-and-pr` template
 - [ ] Anything discovered but deliberately out of scope reported to the user as a follow-up
 
 ## Edge Cases

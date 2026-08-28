@@ -186,7 +186,7 @@ jobs:
           node-version: "24"
 
       - name: Assert OpenAPI version placeholder
-        run: grep -q 'version: 0.0.0-dev' docs/openapi.yaml
+        run: "grep -q 'version: 0.0.0-dev' docs/openapi.yaml"
 
       - name: Lint OpenAPI spec
         run: npx @redocly/cli@latest lint docs/openapi.yaml --config docs/redocly.yaml
