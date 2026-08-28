@@ -92,7 +92,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 
 > **New here?** See [QUICKSTART.md](QUICKSTART.md) for a step-by-step get-running guide.
 
-Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (tags: `vX.Y.Z`, `X.Y`, `latest`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
+Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (image tags: `X.Y.Z`, `X.Y`, `latest`; git tags: `vX.Y.Z`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
 
 ```bash
 helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
