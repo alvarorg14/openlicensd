@@ -201,9 +201,14 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("expected revoked license, got %+v", revokedValidation)
 	}
 
-	activateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/activate", nil, cookies)
-	if activateResp.Code != http.StatusOK {
-		t.Fatalf("activate license status=%d", activateResp.Code)
+	unrevokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/unrevoke", nil, cookies)
+	if unrevokeResp.Code != http.StatusOK {
+		t.Fatalf("unrevoke license status=%d", unrevokeResp.Code)
+	}
+
+	removedActivateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/activate", nil, cookies)
+	if removedActivateResp.Code != http.StatusNotFound {
+		t.Fatalf("expected removed activate endpoint status=404, got %d", removedActivateResp.Code)
 	}
 
 	reactivatedValidate := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{"key": rawKey}, nil)
@@ -212,7 +217,7 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("decode reactivated validate response: %v", err)
 	}
 	if !reactivatedValidation.Valid {
-		t.Fatalf("expected valid license after activate, got %+v", reactivatedValidation)
+		t.Fatalf("expected valid license after unrevoke, got %+v", reactivatedValidation)
 	}
 
 	deleteProductResp := doJSON(t, handler, http.MethodDelete, "/api/v1/products/"+productID, nil, cookies)
@@ -464,13 +469,13 @@ func TestValidationCountOnlyOnSuccess(t *testing.T) {
 	}
 	assertCount(1)
 
-	activateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/activate", nil, cookies)
-	if activateResp.Code != http.StatusOK {
-		t.Fatalf("activate license status=%d", activateResp.Code)
+	unrevokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/unrevoke", nil, cookies)
+	if unrevokeResp.Code != http.StatusOK {
+		t.Fatalf("unrevoke license status=%d", unrevokeResp.Code)
 	}
 	reactivated := validate(map[string]string{"key": rawKey, "product": productCode})
 	if !reactivated.Valid {
-		t.Fatalf("expected valid after activate, got %+v", reactivated)
+		t.Fatalf("expected valid after unrevoke, got %+v", reactivated)
 	}
 	assertCount(2)
 

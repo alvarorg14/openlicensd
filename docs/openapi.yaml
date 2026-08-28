@@ -1032,20 +1032,24 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/v1/licenses/{id}/activate:
+  /api/v1/licenses/{id}/unrevoke:
     parameters:
       - $ref: "#/components/parameters/LicenseId"
     patch:
       tags: [Licenses]
-      summary: Activate a revoked license
+      summary: Unrevoke a license
       description: |
+        Clears the license `revoked` flag so validation succeeds again. This does not create a
+        machine activation or set `activated_at` (those are separate: machine seats via
+        validation fingerprints, and first-validation policy via `activated_at`).
+
         **Required role:** `operator` or `admin`.
-      operationId: activateLicense
+      operationId: unrevokeLicense
       security:
         - sessionAuth: []
       responses:
         "200":
-          description: License activated
+          description: License unrevoked
           content:
             application/json:
               schema:

@@ -265,7 +265,7 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate license |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke license |
 | `*` | All other paths | None | Embedded SPA |
 
 ## Related

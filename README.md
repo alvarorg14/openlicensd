@@ -144,7 +144,7 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate a license |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke a license |
 | `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |

@@ -96,8 +96,8 @@ export const useApi = () => {
       method: 'PATCH'
     })
 
-  const activateLicense = (id: string) =>
-    authFetch<License>(`/api/v1/licenses/${id}/activate`, {
+  const unrevokeLicense = (id: string) =>
+    authFetch<License>(`/api/v1/licenses/${id}/unrevoke`, {
       method: 'PATCH'
     })
 
@@ -194,7 +194,7 @@ export const useApi = () => {
     createLicense,
     updateLicense,
     revokeLicense,
-    activateLicense,
+    unrevokeLicense,
     deleteLicense,
     listLicenseMachines,
     updateLicenseMachine,
