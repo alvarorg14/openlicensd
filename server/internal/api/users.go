@@ -48,6 +48,16 @@ type changePasswordRequest struct {
 
 const minPasswordLength = 8
 
+func validatePassword(password string) string {
+	if password == "" {
+		return "password is required"
+	}
+	if len(password) < minPasswordLength {
+		return "password must be at least 8 characters"
+	}
+	return ""
+}
+
 func userToResponse(u *store.User) userResponse {
 	resp := userResponse{
 		ID:           u.ID,
@@ -108,8 +118,8 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -193,8 +203,8 @@ func (s *Server) handleSetUserPassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -330,12 +340,8 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusBadRequest, "current password is required")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
-		return
-	}
-	if len(req.Password) < minPasswordLength {
-		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 

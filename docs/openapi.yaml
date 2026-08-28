@@ -298,7 +298,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         "400":
-          description: Invalid request body (missing email, name, or password; or invalid role)
+          description: Invalid request body (missing email, name, or password; invalid role; or password too short)
           content:
             application/json:
               schema:
@@ -393,7 +393,7 @@ paths:
       summary: Set user password
       description: |
         Sets or resets the password for a user (admin action). Does not require the current
-        password and does not enforce a minimum length. Store failures return `404`.
+        password. Minimum length is 8 characters. Store failures return `404`.
 
         **Required role:** `admin`.
       operationId: setUserPassword
@@ -409,7 +409,7 @@ paths:
         "204":
           description: Password set successfully
         "400":
-          description: Invalid user ID or missing password
+          description: Invalid user ID, missing password, or password too short
           content:
             application/json:
               schema:
@@ -1567,6 +1567,8 @@ components:
         password:
           type: string
           format: password
+          minLength: 8
+          description: Password (minimum 8 characters)
         role:
           $ref: "#/components/schemas/Role"
 
@@ -1589,7 +1591,8 @@ components:
         password:
           type: string
           format: password
-          description: New password (non-empty; no minimum length enforced for admin resets)
+          minLength: 8
+          description: New password (minimum 8 characters)
 
     ChangePasswordRequest:
       type: object

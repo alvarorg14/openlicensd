@@ -210,7 +210,7 @@ CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 # List all users
 curl -s -b cookies.txt http://localhost:8080/api/v1/users | jq
 
-# Create a user
+# Create a user (password must be at least 8 characters)
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \
@@ -223,7 +223,7 @@ curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID" \
   -H "X-CSRF-Token: $CSRF" \
   -d '{"email":"operator@example.com","name":"Updated Name","role":"viewer"}'
 
-# Set or reset a user's password (admin action; no minimum length)
+# Set or reset a user's password (admin action; minimum 8 characters)
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/password" \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \
