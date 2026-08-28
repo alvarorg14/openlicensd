@@ -49,6 +49,14 @@ jobs:
       - name: Set release tag
         run: echo "GORELEASER_CURRENT_TAG=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
 
+      - name: Stamp OpenAPI version
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${VERSION#v}"
+          sed -i "s/^  version: 0.0.0-dev$/  version: ${VERSION}/" docs/openapi.yaml
+          grep -q "^  version: ${VERSION}$" docs/openapi.yaml
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
