@@ -115,6 +115,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 				r.Get("/licenses/stats", s.handleLicenseStats)
 				r.Get("/licenses", s.handleListLicenses)
+				r.Get("/licenses/{id}", s.handleGetLicense)
 				r.Get("/licenses/{id}/machines", s.handleListLicenseMachines)
 				r.Get("/products", s.handleListProducts)
 				r.Get("/policies", s.handleListPolicies)

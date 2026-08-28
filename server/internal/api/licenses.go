@@ -236,6 +236,26 @@ func (s *Server) handleLicenseStats(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleGetLicense(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid license id")
+		return
+	}
+
+	lic, err := s.store.GetLicenseByID(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load license")
+		return
+	}
+	if lic == nil {
+		writeError(w, http.StatusNotFound, "license not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
+}
+
 func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {

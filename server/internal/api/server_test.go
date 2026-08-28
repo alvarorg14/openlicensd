@@ -139,6 +139,27 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("created license not found in list")
 	}
 
+	getResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID, nil, cookies)
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("get license status=%d body=%s", getResp.Code, getResp.Body.String())
+	}
+	var fetched map[string]any
+	if err := json.Unmarshal(getResp.Body.Bytes(), &fetched); err != nil {
+		t.Fatalf("decode get license response: %v", err)
+	}
+	if fetched["id"] != licenseID {
+		t.Fatalf("expected license id %s, got %+v", licenseID, fetched["id"])
+	}
+	if fetched["label"] != "integration-test" {
+		t.Fatalf("expected label integration-test, got %+v", fetched["label"])
+	}
+	if fetched["product_id"] != productID {
+		t.Fatalf("expected product_id %s, got %+v", productID, fetched["product_id"])
+	}
+	if _, hasKey := fetched["key"]; hasKey {
+		t.Fatalf("expected key to be omitted from get response")
+	}
+
 	updateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID, map[string]any{
 		"label": "updated-label",
 	}, cookies)
@@ -157,6 +178,18 @@ func TestAPIIntegration(t *testing.T) {
 	revokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/revoke", nil, cookies)
 	if revokeResp.Code != http.StatusOK {
 		t.Fatalf("revoke license status=%d", revokeResp.Code)
+	}
+
+	revokedGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID, nil, cookies)
+	if revokedGetResp.Code != http.StatusOK {
+		t.Fatalf("get revoked license status=%d body=%s", revokedGetResp.Code, revokedGetResp.Body.String())
+	}
+	var revokedFetched map[string]any
+	if err := json.Unmarshal(revokedGetResp.Body.Bytes(), &revokedFetched); err != nil {
+		t.Fatalf("decode revoked get license response: %v", err)
+	}
+	if revoked, ok := revokedFetched["revoked"].(bool); !ok || !revoked {
+		t.Fatalf("expected revoked license, got %+v", revokedFetched["revoked"])
 	}
 
 	revokedValidate := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{"key": rawKey}, nil)
@@ -445,5 +478,74 @@ func TestActivationLimits(t *testing.T) {
 	}
 	if !after.Valid {
 		t.Fatalf("expected valid activation after release, got %+v", after)
+	}
+}
+
+func TestGetLicense(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("get-license-product-%d", time.Now().UnixNano())
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Get License Product",
+		"code": productCode,
+	}, cookies)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product response: %v", err)
+	}
+	productID := product["id"].(string)
+
+	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "Perpetual",
+		"expiration_basis": "on_creation",
+	}, cookies)
+	if policyResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
+	}
+	var policy map[string]any
+	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy response: %v", err)
+	}
+	policyID := policy["id"].(string)
+
+	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "get-license-test",
+		"product_id": productID,
+		"policy_id":  policyID,
+	}, cookies)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("create license status=%d body=%s", createResp.Code, createResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	licenseID := created["id"].(string)
+
+	badIDResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/not-a-uuid", nil, cookies)
+	if badIDResp.Code != http.StatusBadRequest {
+		t.Fatalf("invalid license id status=%d want 400", badIDResp.Code)
+	}
+
+	missingID := "00000000-0000-0000-0000-000000000000"
+	notFoundResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+missingID, nil, cookies)
+	if notFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing license status=%d want 404", notFoundResp.Code)
+	}
+
+	unauthResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID, nil, nil)
+	if unauthResp.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated get license status=%d want 401", unauthResp.Code)
+	}
+
+	machinesNotFoundResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+missingID+"/machines", nil, cookies)
+	if machinesNotFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing license machines status=%d want 404", machinesNotFoundResp.Code)
 	}
 }
