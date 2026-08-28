@@ -334,7 +334,7 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }
 
-func (s *Server) handleActivateLicense(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleUnrevokeLicense(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid license id")
@@ -343,7 +343,7 @@ func (s *Server) handleActivateLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.SetLicenseRevoked(r.Context(), id, false)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to activate license")
+		writeError(w, http.StatusInternalServerError, "failed to unrevoke license")
 		return
 	}
 	if lic == nil {

@@ -286,7 +286,7 @@ const {
   listLicenses,
   getLicenseStats,
   revokeLicense,
-  activateLicense,
+  unrevokeLicense,
   deleteLicense
 } = useApi()
 const { canWrite } = useAuth()
@@ -334,7 +334,7 @@ const detailsLicense = ref<License | null>(null)
 const machinesLicense = ref<License | null>(null)
 const confirmTarget = ref<License | null>(null)
 const actionId = ref<string | null>(null)
-const actionType = ref<'revoke' | 'activate' | 'delete' | null>(null)
+const actionType = ref<'revoke' | 'unrevoke' | 'delete' | null>(null)
 
 const statusFilterOptions = [
   { label: 'All statuses', value: 'all' },
@@ -536,10 +536,10 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
     })
   } else {
     menuItems.push({
-      label: 'Activate',
+      label: 'Unrevoke',
       icon: 'i-lucide-check',
       color: 'success',
-      onSelect: () => activate(license.id)
+      onSelect: () => unrevoke(license.id)
     })
   }
 
@@ -626,14 +626,14 @@ const confirmDelete = async () => {
   }
 }
 
-const activate = async (id: string) => {
+const unrevoke = async (id: string) => {
   actionId.value = id
-  actionType.value = 'activate'
+  actionType.value = 'unrevoke'
   try {
-    await activateLicense(id)
+    await unrevokeLicense(id)
     await reload()
   } catch {
-    error.value = 'Failed to activate license'
+    error.value = 'Failed to unrevoke license'
   } finally {
     actionId.value = null
     actionType.value = null

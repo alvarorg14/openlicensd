@@ -128,7 +128,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Patch("/licenses/{id}", s.handleUpdateLicense)
 				r.Delete("/licenses/{id}", s.handleDeleteLicense)
 				r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
-				r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
+				r.Patch("/licenses/{id}/unrevoke", s.handleUnrevokeLicense)
 				r.Patch("/licenses/{id}/machines/{machineId}", s.handleUpdateLicenseMachine)
 				r.Delete("/licenses/{id}/machines/{machineId}", s.handleReleaseLicenseMachine)
 

@@ -162,7 +162,7 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `PATCH` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | `operator` or `admin` |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | `operator` or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | `operator` or `admin` |
 | `GET` | `/api/v1/licenses/{id}/machines` | `viewer`, `operator`, or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
