@@ -1728,10 +1728,6 @@ components:
           type: string
         description:
           type: ["string", "null"]
-        archived_at:
-          type: string
-          format: date-time
-          description: Present when the product is archived; omitted otherwise
         created_at:
           type: string
           format: date-time
@@ -1793,10 +1789,6 @@ components:
         max_activations:
           type: ["integer", "null"]
           description: Null means unlimited concurrent machine activations
-        archived_at:
-          type: string
-          format: date-time
-          description: Present when the policy is archived; omitted otherwise
         created_at:
           type: string
           format: date-time

@@ -14,7 +14,6 @@ type productResponse struct {
 	Name        string    `json:"name"`
 	Code        string    `json:"code"`
 	Description *string   `json:"description"`
-	ArchivedAt  *string   `json:"archived_at,omitempty"`
 	CreatedAt   string    `json:"created_at"`
 	UpdatedAt   string    `json:"updated_at"`
 }
@@ -32,7 +31,7 @@ type updateProductRequest struct {
 }
 
 func productToResponse(p *store.Product) productResponse {
-	resp := productResponse{
+	return productResponse{
 		ID:          p.ID,
 		Name:        p.Name,
 		Code:        p.Code,
@@ -40,11 +39,6 @@ func productToResponse(p *store.Product) productResponse {
 		CreatedAt:   p.CreatedAt.Format(timeRFC3339),
 		UpdatedAt:   p.UpdatedAt.Format(timeRFC3339),
 	}
-	if p.ArchivedAt != nil {
-		formatted := p.ArchivedAt.Format(timeRFC3339)
-		resp.ArchivedAt = &formatted
-	}
-	return resp
 }
 
 const timeRFC3339 = "2006-01-02T15:04:05Z07:00"

@@ -33,7 +33,6 @@ export interface Product {
   name: string
   code: string
   description: string | null
-  archived_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -48,7 +47,6 @@ export interface Policy {
   expiration_basis: ExpirationBasis
   grace_period_days: number
   max_activations: number | null
-  archived_at?: string | null
   created_at: string
   updated_at: string
 }

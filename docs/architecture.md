@@ -88,7 +88,6 @@ erDiagram
 | `name` | `TEXT` | Display name |
 | `code` | `TEXT` | Unique machine identifier (sent by clients on validation) |
 | `description` | `TEXT` | Optional description |
-| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `policies` table
@@ -103,7 +102,6 @@ erDiagram
 | `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation` |
 | `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds |
 | `max_activations` | `INTEGER` | Null = unlimited concurrent machine activations |
-| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `licenses` table
