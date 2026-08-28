@@ -73,6 +73,19 @@ This document provides context and guidelines for AI coding assistants working o
 - **Location**: `charts/openlicensd/`
 - Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
+- Source `Chart.yaml` `version` / `appVersion` are `0.0.0-dev` placeholders; `.github/workflows/release.yml` stamps the packaged OCI chart from the git tag (`helm package --version/--app-version`)
+
+### Version placeholders
+
+Like the Go binary's `"dev"` default (`server/internal/version/version.go`), source-tree metadata versions are placeholders stamped at release:
+
+| File | Git value | Stamped at release |
+|------|-----------|-------------------|
+| `charts/openlicensd/Chart.yaml` | `0.0.0-dev` | Helm chart job (`helm package --version/--app-version`) |
+| `docs/openapi.yaml` `info.version` | `0.0.0-dev` | Release job (`sed` + GoReleaser `extra_files`) |
+| Go `version.Version` | `"dev"` | ldflags (Makefile / GoReleaser) |
+
+Do not commit version bumps to `main` after each publish.
 
 ## Data Flow
 
@@ -247,7 +260,8 @@ SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/s
 On GitHub release publish (server tags only — SDK releases are excluded):
 
 - GoReleaser builds binaries and pushes `ghcr.io/alvarorg14/openlicensd` (amd64 + arm64)
-- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts`
+- Release job stamps `docs/openapi.yaml` `info.version` from the tag and attaches it to the GitHub release
+- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts` (separate job; `--version/--app-version` from tag)
 
 ### SDK Release (`.github/workflows/sdk-release.yml`)
 

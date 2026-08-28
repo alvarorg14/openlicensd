@@ -44,6 +44,8 @@ changelog:
 release:
   mode: keep-existing
   prerelease: auto
+  extra_files:
+    - glob: docs/openapi.yaml
 
 dockers_v2:
   - images:
