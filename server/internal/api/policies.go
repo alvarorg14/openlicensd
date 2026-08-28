@@ -19,7 +19,6 @@ type policyResponse struct {
 	ExpirationBasis string    `json:"expiration_basis"`
 	GracePeriodDays int       `json:"grace_period_days"`
 	MaxActivations  *int      `json:"max_activations"`
-	ArchivedAt      *string   `json:"archived_at,omitempty"`
 	CreatedAt       string    `json:"created_at"`
 	UpdatedAt       string    `json:"updated_at"`
 }
@@ -44,7 +43,7 @@ type updatePolicyRequest struct {
 }
 
 func policyToResponse(p *store.Policy) policyResponse {
-	resp := policyResponse{
+	return policyResponse{
 		ID:              p.ID,
 		ProductID:       p.ProductID,
 		ProductName:     p.ProductName,
@@ -57,11 +56,6 @@ func policyToResponse(p *store.Policy) policyResponse {
 		CreatedAt:       p.CreatedAt.Format(timeRFC3339),
 		UpdatedAt:       p.UpdatedAt.Format(timeRFC3339),
 	}
-	if p.ArchivedAt != nil {
-		formatted := p.ArchivedAt.Format(timeRFC3339)
-		resp.ArchivedAt = &formatted
-	}
-	return resp
 }
 
 func parseExpirationBasis(value string) (store.ExpirationBasis, bool) {
