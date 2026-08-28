@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/openlicensd/openlicensd/server/internal/clientip"
+	"github.com/alvarorg14/openlicensd/server/internal/clientip"
 )
 
 func TestNewResolverInvalidEntry(t *testing.T) {

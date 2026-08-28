@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/version"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 )
 
 func TestRolePermissions(t *testing.T) {

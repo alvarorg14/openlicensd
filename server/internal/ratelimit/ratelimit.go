@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"golang.org/x/time/rate"
 )
 

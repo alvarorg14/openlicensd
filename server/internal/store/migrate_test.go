@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 func TestMigrateConcurrent(t *testing.T) {

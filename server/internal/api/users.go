@@ -5,23 +5,23 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/store"
-	"github.com/openlicensd/openlicensd/server/internal/version"
 )
 
 type userResponse struct {
-	ID           uuid.UUID  `json:"id"`
-	Email        string     `json:"email"`
-	Name         string     `json:"name"`
-	Role         string     `json:"role"`
-	AuthProvider string     `json:"auth_provider"`
-	DisabledAt   *string    `json:"disabled_at,omitempty"`
-	LastLoginAt  *string    `json:"last_login_at,omitempty"`
-	CreatedAt    string     `json:"created_at"`
-	UpdatedAt    string     `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	Email        string    `json:"email"`
+	Name         string    `json:"name"`
+	Role         string    `json:"role"`
+	AuthProvider string    `json:"auth_provider"`
+	DisabledAt   *string   `json:"disabled_at,omitempty"`
+	LastLoginAt  *string   `json:"last_login_at,omitempty"`
+	CreatedAt    string    `json:"created_at"`
+	UpdatedAt    string    `json:"updated_at"`
 }
 
 type createUserRequest struct {
