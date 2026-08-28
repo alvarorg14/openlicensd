@@ -55,8 +55,6 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 		}
 	}
 
-	_ = s.store.RecordValidation(ctx, lic.ID)
-
 	result := license.Validate(
 		lic.ExpiresAt,
 		lic.GracePeriodDays,
@@ -116,6 +114,7 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 	}
 
 	s.setActivationFields(&result, lic)
+	_ = s.store.RecordValidation(ctx, lic.ID)
 	return lic, result, nil
 }
 

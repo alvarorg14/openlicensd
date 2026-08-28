@@ -1917,9 +1917,11 @@ components:
         last_validated_at:
           type: ["string", "null"]
           format: date-time
+          description: Timestamp of the last successful validation; omitted when never validated successfully
         validation_count:
           type: integer
           format: int64
+          description: Number of successful validations; failed lookups do not increment this counter
         max_activations:
           type: ["integer", "null"]
           description: Snapshotted activation limit; null means unlimited
