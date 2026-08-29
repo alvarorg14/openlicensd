@@ -68,7 +68,7 @@ Git tracks a self-contained placeholder `index.html` so `go build` on a fresh cl
 
 In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`).
 
-The admin UI has a left sidebar with pages for **Licenses**, **Products**, and **Policies**.
+The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, and **Users** (admin only). Admins can reset user passwords from the Users page.
 
 ## Data model
 

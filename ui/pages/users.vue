@@ -115,6 +115,8 @@
 
     <UserFormModal v-model:open="showForm" :user="editingUser" @saved="refresh" />
 
+    <ResetUserPasswordModal v-model:open="showReset" :user="resetTarget" />
+
     <DetailsModal
       v-model:open="showDetails"
       :title="detailsUser?.name ?? 'User details'"
@@ -166,8 +168,10 @@ const {
 
 const showForm = ref(false)
 const showDetails = ref(false)
+const showReset = ref(false)
 const editingUser = ref<User | null>(null)
 const detailsUser = ref<User | null>(null)
+const resetTarget = ref<User | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<User | null>(null)
 const actionId = ref<string | null>(null)
@@ -226,12 +230,18 @@ const openDelete = (user: User) => {
   showDeleteConfirm.value = true
 }
 
+const openReset = (user: User) => {
+  resetTarget.value = user
+  showReset.value = true
+}
+
 const isSelf = (user: User) => currentUser.value?.id === user.id
 
 const getActionItems = (user: User): DropdownMenuItem[][] => {
   const menuItems: DropdownMenuItem[] = [
     { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(user) },
-    { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(user) }
+    { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(user) },
+    { label: 'Reset password', icon: 'i-lucide-key-round', onSelect: () => openReset(user) }
   ]
 
   if (!isSelf(user)) {
