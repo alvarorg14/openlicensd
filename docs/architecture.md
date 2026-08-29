@@ -66,7 +66,7 @@ ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
 
 Git tracks a self-contained placeholder `index.html` so `go build` on a fresh clone serves a working page. Run `make ui` (or `make build`) locally, or rely on GoReleaser's pre-build hook, to embed the full Nuxt SPA.
 
-In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`).
+In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`). All HTTP responses — including the embedded UI, API, and health probes — pass through security-header middleware that sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options`; `Strict-Transport-Security` is added when `OPENLICENSD_COOKIE_SECURE=true`.
 
 The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, and **Users** (admin only). Admins can reset user passwords from the Users page.
 

@@ -56,12 +56,13 @@ When deploying OpenLicensd:
 4. **Updates**: Keep OpenLicensd updated to the latest release.
 5. **Password hashing**: Use `make hash-password` to generate bcrypt hashes. Do not store plaintext admin passwords.
 6. **Harbor credentials**: Harbor admin credentials are the highest-value secret in a Harbor-enabled deployment. Use Kubernetes Secrets or External Secrets Operator.
+7. **Browser security headers**: The server sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options` on all HTTP responses. When `OPENLICENSD_COOKIE_SECURE=true`, it also sets `Strict-Transport-Security`. Keep `OPENLICENSD_COOKIE_SECURE=false` for local HTTP development so browsers do not pin HSTS.
 
 ### Known Security Considerations
 
 - **Public endpoints**: `/api/v1/validate`, `/api/v1/registry-credentials`, `/api/v1/auth/login`, and OIDC login/callback are unauthenticated. These endpoints are rate limited per client IP (token bucket). Configure `OPENLICENSD_TRUSTED_PROXIES` when running behind a reverse proxy so limits apply per client rather than per proxy. Limits are per process; with multiple replicas, effective throughput scales with replica count.
 - **License key storage**: Full license keys are never stored. Only SHA-256 hashes and a 5-character prefix are persisted.
-- **Sessions**: Admin sessions use httpOnly cookies with CSRF protection on unsafe methods. Set `OPENLICENSD_COOKIE_SECURE=true` in production.
+- **Sessions**: Admin sessions use httpOnly cookies with CSRF protection on unsafe methods. Set `OPENLICENSD_COOKIE_SECURE=true` in production (also enables HSTS response headers).
 - **Harbor integration**: When enabled, anyone with a valid license key can obtain short-lived Harbor pull credentials. Robot accounts have pull-only access to configured projects.
 - **TLS verification**: `OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY=true` disables TLS certificate verification for Harbor. Use only in development or trusted internal networks.
 - **Container security**: Production images use a distroless base and run as non-root (UID 65532) with a read-only root filesystem.

@@ -9,6 +9,10 @@ info:
     Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
     Unauthenticated endpoints are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
 
+    All responses include browser security headers: `Content-Security-Policy`, `X-Frame-Options`,
+    and `X-Content-Type-Options`. When `OPENLICENSD_COOKIE_SECURE=true`, responses also include
+    `Strict-Transport-Security`.
+
     The `/api/v1/registry-credentials` endpoint is only available when
     `OPENLICENSD_HARBOR_ENABLED=true` on the server.
 

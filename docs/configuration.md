@@ -15,7 +15,7 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | No | Interval for deleting expired/revoked sessions (`0` disables) |
-| `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies |
+| `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies; when `true`, also enables `Strict-Transport-Security` response headers |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
 
 ### Rate limiting
