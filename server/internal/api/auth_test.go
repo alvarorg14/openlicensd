@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/version"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 )
 
 func TestRolePermissions(t *testing.T) {
@@ -32,6 +32,53 @@ func TestRolePermissions(t *testing.T) {
 	listResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses", nil, viewerCookies)
 	if listResp.Code != http.StatusOK {
 		t.Fatalf("viewer list licenses status=%d", listResp.Code)
+	}
+
+	productCode := fmt.Sprintf("viewer-license-%d", time.Now().UnixNano())
+	createProduct := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Viewer License Product",
+		"code": productCode,
+	}, adminCookies)
+	if createProduct.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", createProduct.Code, createProduct.Body.String())
+	}
+	var product map[string]any
+	if err := json.Unmarshal(createProduct.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product response: %v", err)
+	}
+	productID := product["id"].(string)
+
+	createPolicy := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "Perpetual",
+		"expiration_basis": "on_creation",
+	}, adminCookies)
+	if createPolicy.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", createPolicy.Code, createPolicy.Body.String())
+	}
+	var policy map[string]any
+	if err := json.Unmarshal(createPolicy.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy response: %v", err)
+	}
+	policyID := policy["id"].(string)
+
+	createLicense := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "viewer-get-test",
+		"product_id": productID,
+		"policy_id":  policyID,
+	}, adminCookies)
+	if createLicense.Code != http.StatusCreated {
+		t.Fatalf("create license status=%d body=%s", createLicense.Code, createLicense.Body.String())
+	}
+	var license map[string]any
+	if err := json.Unmarshal(createLicense.Body.Bytes(), &license); err != nil {
+		t.Fatalf("decode license response: %v", err)
+	}
+	licenseID := license["id"].(string)
+
+	getResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses/"+licenseID, nil, viewerCookies)
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("viewer get license status=%d body=%s", getResp.Code, getResp.Body.String())
 	}
 
 	writeResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{

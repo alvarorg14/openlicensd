@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 const (

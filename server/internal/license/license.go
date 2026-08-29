@@ -52,14 +52,14 @@ func ComputeExpiry(durationDays *int, from time.Time) *time.Time {
 }
 
 type ValidationResult struct {
-	Valid            bool       `json:"valid"`
-	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
-	Reason           string     `json:"reason,omitempty"`
-	Product          string     `json:"product,omitempty"`
-	Policy           string     `json:"policy,omitempty"`
-	InGracePeriod    bool       `json:"in_grace_period,omitempty"`
-	ActivationCount  *int64     `json:"activation_count,omitempty"`
-	MaxActivations   *int       `json:"max_activations,omitempty"`
+	Valid           bool       `json:"valid"`
+	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
+	Reason          string     `json:"reason,omitempty"`
+	Product         string     `json:"product,omitempty"`
+	Policy          string     `json:"policy,omitempty"`
+	InGracePeriod   bool       `json:"in_grace_period,omitempty"`
+	ActivationCount *int64     `json:"activation_count,omitempty"`
+	MaxActivations  *int       `json:"max_activations,omitempty"`
 }
 
 func Validate(expiresAt *time.Time, gracePeriodDays int, revoked bool, requestedProduct, licenseProduct string, now time.Time) ValidationResult {

@@ -96,8 +96,8 @@ export const useApi = () => {
       method: 'PATCH'
     })
 
-  const activateLicense = (id: string) =>
-    authFetch<License>(`/api/v1/licenses/${id}/activate`, {
+  const unrevokeLicense = (id: string) =>
+    authFetch<License>(`/api/v1/licenses/${id}/unrevoke`, {
       method: 'PATCH'
     })
 
@@ -146,7 +146,8 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
-  const listUsers = () => authFetch<User[]>('/api/v1/users')
+  const listUsers = (params?: ListQueryParams) =>
+    authFetch<Paginated<User>>(`/api/v1/users${buildQuery(params as Record<string, string | number | undefined | null>)}`)
 
   const createUser = (input: CreateUserInput) =>
     authFetch<User>('/api/v1/users', {
@@ -194,7 +195,7 @@ export const useApi = () => {
     createLicense,
     updateLicense,
     revokeLicense,
-    activateLicense,
+    unrevokeLicense,
     deleteLicense,
     listLicenseMachines,
     updateLicenseMachine,

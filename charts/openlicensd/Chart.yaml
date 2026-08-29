@@ -2,8 +2,9 @@ apiVersion: v2
 name: openlicensd
 description: Open source license server for creating and validating license keys
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+# Placeholder; release.yml stamps version/appVersion from the git tag (strip leading v).
+version: 0.0.0-dev
+appVersion: "0.0.0-dev"
 keywords:
   - license
   - licensing

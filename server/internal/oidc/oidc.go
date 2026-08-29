@@ -2,9 +2,7 @@ package oidc
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -13,12 +11,11 @@ import (
 )
 
 type Config struct {
-	IssuerURL       string
-	ClientID        string
-	ClientSecret    string
-	RedirectURL     string
-	Scopes          []string
-	InsecureSkipVerify bool
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	Scopes       []string
 }
 
 type Client struct {
@@ -45,18 +42,6 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 	if cfg.IssuerURL == "" {
 		return nil, fmt.Errorf("issuer url is required")
 	}
-
-	httpClient := http.DefaultClient
-	if cfg.InsecureSkipVerify {
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			MinVersion:         tls.VersionTLS12,
-			InsecureSkipVerify: true, //nolint:gosec // configurable for dev/self-signed IdPs
-		}
-		httpClient = &http.Client{Transport: transport}
-	}
-
-	ctx = gooidc.ClientContext(ctx, httpClient)
 
 	provider, err := gooidc.NewProvider(ctx, cfg.IssuerURL)
 	if err != nil {

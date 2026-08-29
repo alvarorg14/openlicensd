@@ -2,8 +2,11 @@ package static
 
 import (
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -75,5 +78,30 @@ func TestHandler(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+var embeddedAssetRefPattern = regexp.MustCompile(`(?:href|src)="/([^"]+)"`)
+
+func TestEmbeddedIndexAssetsExist(t *testing.T) {
+	indexHTML, err := fs.ReadFile(distFS, "dist/index.html")
+	if err != nil {
+		t.Fatalf("read embedded index.html: %v", err)
+	}
+
+	sub, err := fs.Sub(distFS, "dist")
+	if err != nil {
+		t.Fatalf("sub dist fs: %v", err)
+	}
+
+	for _, match := range embeddedAssetRefPattern.FindAllStringSubmatch(string(indexHTML), -1) {
+		assetPath := match[1]
+		if !strings.HasPrefix(assetPath, "_nuxt/") {
+			continue
+		}
+
+		if _, err := sub.Open(assetPath); err != nil {
+			t.Fatalf("index.html references missing embedded asset %q: %v", assetPath, err)
+		}
 	}
 }

@@ -46,9 +46,14 @@ func TestListEndpointsPagination(t *testing.T) {
 	}
 	policyID := policy["id"].(string)
 
+	searchLabel := fmt.Sprintf("license-search-%d", time.Now().UnixNano())
 	for i := range 3 {
+		label := fmt.Sprintf("license-%d", i)
+		if i == 0 {
+			label = searchLabel
+		}
 		createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
-			"label":      fmt.Sprintf("license-%d", i),
+			"label":      label,
 			"product_id": productID,
 			"policy_id":  policyID,
 		}, cookies)
@@ -81,7 +86,7 @@ func TestListEndpointsPagination(t *testing.T) {
 		t.Fatalf("expected 2 items, got %+v", page["items"])
 	}
 
-	searchResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses?search=license-0", nil, cookies)
+	searchResp := doJSON(t, handler, http.MethodGet, "/api/v1/licenses?search="+searchLabel, nil, cookies)
 	if searchResp.Code != http.StatusOK {
 		t.Fatalf("search licenses status=%d", searchResp.Code)
 	}
@@ -143,5 +148,30 @@ func TestListEndpointsPagination(t *testing.T) {
 	policyItems, ok := policiesPage["items"].([]any)
 	if !ok || len(policyItems) == 0 {
 		t.Fatalf("expected policy items")
+	}
+
+	usersResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?page=1&page_size=2", nil, cookies)
+	if usersResp.Code != http.StatusOK {
+		t.Fatalf("list users status=%d body=%s", usersResp.Code, usersResp.Body.String())
+	}
+	var usersPage map[string]any
+	if err := json.Unmarshal(usersResp.Body.Bytes(), &usersPage); err != nil {
+		t.Fatalf("decode users page: %v", err)
+	}
+	if usersPage["items"] == nil {
+		t.Fatalf("expected users items")
+	}
+	if usersPage["page"].(float64) != 1 {
+		t.Fatalf("expected users page=1, got %+v", usersPage["page"])
+	}
+
+	badUserSortResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?sort=invalid", nil, cookies)
+	if badUserSortResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid user sort, got %d", badUserSortResp.Code)
+	}
+
+	badUserPageResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?page=0", nil, cookies)
+	if badUserPageResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid user page, got %d", badUserPageResp.Code)
 	}
 }

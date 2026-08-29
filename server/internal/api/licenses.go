@@ -5,19 +5,19 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/license"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/license"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type createLicenseRequest struct {
-	Label            string     `json:"label"`
-	ProductID        uuid.UUID  `json:"product_id"`
-	PolicyID         uuid.UUID  `json:"policy_id"`
-	ExpiresAt        *time.Time `json:"expires_at"`
-	MaxActivations   *int       `json:"max_activations"`
+	Label          string     `json:"label"`
+	ProductID      uuid.UUID  `json:"product_id"`
+	PolicyID       uuid.UUID  `json:"policy_id"`
+	ExpiresAt      *time.Time `json:"expires_at"`
+	MaxActivations *int       `json:"max_activations"`
 }
 
 type updateLicenseRequest struct {
@@ -27,26 +27,26 @@ type updateLicenseRequest struct {
 }
 
 type licenseResponse struct {
-	ID               uuid.UUID  `json:"id"`
-	Label            string     `json:"label"`
-	Key              string     `json:"key,omitempty"`
-	KeyPrefix        string     `json:"key_prefix"`
-	ProductID        uuid.UUID  `json:"product_id"`
-	ProductCode      string     `json:"product_code"`
-	ProductName      string     `json:"product_name"`
-	PolicyID         uuid.UUID  `json:"policy_id"`
-	PolicyName       string     `json:"policy_name"`
-	ExpiresAt        *time.Time `json:"expires_at"`
-	ActivatedAt      *time.Time `json:"activated_at"`
-	Revoked          bool       `json:"revoked"`
-	CreatedAt        time.Time  `json:"created_at"`
-	LastValidatedAt  *time.Time `json:"last_validated_at"`
-	ValidationCount  int64      `json:"validation_count"`
-	MaxActivations   *int       `json:"max_activations"`
-	ActivationCount  int64      `json:"activation_count"`
-	CreatedBy        *uuid.UUID `json:"created_by,omitempty"`
-	CreatedByName    *string    `json:"created_by_name,omitempty"`
-	CreatedByEmail   *string    `json:"created_by_email,omitempty"`
+	ID              uuid.UUID  `json:"id"`
+	Label           string     `json:"label"`
+	Key             string     `json:"key,omitempty"`
+	KeyPrefix       string     `json:"key_prefix"`
+	ProductID       uuid.UUID  `json:"product_id"`
+	ProductCode     string     `json:"product_code"`
+	ProductName     string     `json:"product_name"`
+	PolicyID        uuid.UUID  `json:"policy_id"`
+	PolicyName      string     `json:"policy_name"`
+	ExpiresAt       *time.Time `json:"expires_at"`
+	ActivatedAt     *time.Time `json:"activated_at"`
+	Revoked         bool       `json:"revoked"`
+	CreatedAt       time.Time  `json:"created_at"`
+	LastValidatedAt *time.Time `json:"last_validated_at"`
+	ValidationCount int64      `json:"validation_count"`
+	MaxActivations  *int       `json:"max_activations"`
+	ActivationCount int64      `json:"activation_count"`
+	CreatedBy       *uuid.UUID `json:"created_by,omitempty"`
+	CreatedByName   *string    `json:"created_by_name,omitempty"`
+	CreatedByEmail  *string    `json:"created_by_email,omitempty"`
 }
 
 func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
@@ -236,6 +236,26 @@ func (s *Server) handleLicenseStats(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleGetLicense(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid license id")
+		return
+	}
+
+	lic, err := s.store.GetLicenseByID(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load license")
+		return
+	}
+	if lic == nil {
+		writeError(w, http.StatusNotFound, "license not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
+}
+
 func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -314,7 +334,7 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }
 
-func (s *Server) handleActivateLicense(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleUnrevokeLicense(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid license id")
@@ -323,7 +343,7 @@ func (s *Server) handleActivateLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.SetLicenseRevoked(r.Context(), id, false)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to activate license")
+		writeError(w, http.StatusInternalServerError, "failed to unrevoke license")
 		return
 	}
 	if lic == nil {

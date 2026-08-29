@@ -26,12 +26,11 @@ type Policy struct {
 	ExpirationBasis ExpirationBasis
 	GracePeriodDays int
 	MaxActivations  *int
-	ArchivedAt      *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
 
-const policyColumns = `pol.id, pol.product_id, p.name, pol.name, pol.description, pol.duration_days, pol.expiration_basis, pol.grace_period_days, pol.max_activations, pol.archived_at, pol.created_at, pol.updated_at`
+const policyColumns = `pol.id, pol.product_id, p.name, pol.name, pol.description, pol.duration_days, pol.expiration_basis, pol.grace_period_days, pol.max_activations, pol.created_at, pol.updated_at`
 
 const policyFromJoin = `
 	FROM policies pol
@@ -153,7 +152,7 @@ func scanPolicy(row pgx.Row) (*Policy, error) {
 	var expirationBasis string
 	err := row.Scan(
 		&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
-		&p.GracePeriodDays, &p.MaxActivations, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+		&p.GracePeriodDays, &p.MaxActivations, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -172,7 +171,7 @@ func scanPoliciesWithTotal(rows pgx.Rows) ([]Policy, int64, error) {
 		var expirationBasis string
 		if err := rows.Scan(
 			&p.ID, &p.ProductID, &p.ProductName, &p.Name, &p.Description, &p.DurationDays, &expirationBasis,
-			&p.GracePeriodDays, &p.MaxActivations, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+			&p.GracePeriodDays, &p.MaxActivations, &p.CreatedAt, &p.UpdatedAt,
 			&totalCount,
 		); err != nil {
 			return nil, 0, err

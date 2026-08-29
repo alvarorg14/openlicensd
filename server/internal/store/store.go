@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,29 +16,29 @@ import (
 var migrationsFS embed.FS
 
 type License struct {
-	ID               uuid.UUID
-	Label            string
-	KeyHash          string
-	KeyPrefix        string
-	ProductID        uuid.UUID
-	PolicyID         uuid.UUID
-	ExpiresAt        *time.Time
-	ActivatedAt      *time.Time
-	Revoked          bool
-	CreatedAt        time.Time
-	LastValidatedAt  *time.Time
-	ValidationCount  int64
-	MaxActivations   *int
-	ActivationCount  int64
-	ProductCode      string
-	ProductName      string
-	PolicyName       string
-	GracePeriodDays  int
-	ExpirationBasis  ExpirationBasis
-	DurationDays     *int
-	CreatedBy        *uuid.UUID
-	CreatedByName    *string
-	CreatedByEmail   *string
+	ID              uuid.UUID
+	Label           string
+	KeyHash         string
+	KeyPrefix       string
+	ProductID       uuid.UUID
+	PolicyID        uuid.UUID
+	ExpiresAt       *time.Time
+	ActivatedAt     *time.Time
+	Revoked         bool
+	CreatedAt       time.Time
+	LastValidatedAt *time.Time
+	ValidationCount int64
+	MaxActivations  *int
+	ActivationCount int64
+	ProductCode     string
+	ProductName     string
+	PolicyName      string
+	GracePeriodDays int
+	ExpirationBasis ExpirationBasis
+	DurationDays    *int
+	CreatedBy       *uuid.UUID
+	CreatedByName   *string
+	CreatedByEmail  *string
 }
 
 type Store struct {
@@ -113,7 +114,14 @@ func (s *Store) GetLicenseByID(ctx context.Context, id uuid.UUID) (*License, err
 	`
 
 	row := s.pool.QueryRow(ctx, q, id)
-	return scanLicense(row)
+	lic, err := scanLicense(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return lic, nil
 }
 
 func (s *Store) ListLicenses(ctx context.Context, params LicenseListParams) ([]License, int64, error) {

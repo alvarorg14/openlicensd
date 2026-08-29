@@ -22,15 +22,15 @@ type HarborConfig struct {
 }
 
 type OIDCConfig struct {
-	Enabled         bool
-	IssuerURL       string
-	ClientID        string
-	ClientSecret    string
-	RedirectURL     string
-	Scopes          []string
-	DefaultRole     string
-	ProviderName    string
-	AdminEmails     []string
+	Enabled      bool
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	Scopes       []string
+	DefaultRole  string
+	ProviderName string
+	AdminEmails  []string
 }
 
 type BootstrapAdminConfig struct {
@@ -40,12 +40,12 @@ type BootstrapAdminConfig struct {
 }
 
 type RateLimitConfig struct {
-	Enabled          bool
-	PublicPerMinute  int
-	PublicBurst      int
-	LoginPerMinute   int
-	LoginBurst       int
-	IdleMinutes      int
+	Enabled         bool
+	PublicPerMinute int
+	PublicBurst     int
+	LoginPerMinute  int
+	LoginBurst      int
+	IdleMinutes     int
 }
 
 type Config struct {
@@ -76,8 +76,8 @@ func Load() (*Config, error) {
 		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
 		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
-		LocalLoginEnabled: localLoginEnabled,
-		TrustedProxies:  parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
+		LocalLoginEnabled:             localLoginEnabled,
+		TrustedProxies:                parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
 		RateLimit: RateLimitConfig{
 			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
 			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
@@ -98,15 +98,15 @@ func Load() (*Config, error) {
 			Debug:              getBoolEnv("OPENLICENSD_HARBOR_DEBUG", false),
 		},
 		OIDC: OIDCConfig{
-			Enabled:           getBoolEnv("OPENLICENSD_OIDC_ENABLED", false),
-			IssuerURL:         os.Getenv("OPENLICENSD_OIDC_ISSUER_URL"),
-			ClientID:          os.Getenv("OPENLICENSD_OIDC_CLIENT_ID"),
-			ClientSecret:      os.Getenv("OPENLICENSD_OIDC_CLIENT_SECRET"),
-			RedirectURL:       os.Getenv("OPENLICENSD_OIDC_REDIRECT_URL"),
-			Scopes:            parseOIDCScopes(os.Getenv("OPENLICENSD_OIDC_SCOPES")),
-			DefaultRole:       getEnv("OPENLICENSD_OIDC_DEFAULT_ROLE", "viewer"),
-			ProviderName:      getEnv("OPENLICENSD_OIDC_PROVIDER_NAME", "SSO"),
-			AdminEmails:       parseLowerCSV(os.Getenv("OPENLICENSD_OIDC_ADMIN_EMAILS")),
+			Enabled:      getBoolEnv("OPENLICENSD_OIDC_ENABLED", false),
+			IssuerURL:    os.Getenv("OPENLICENSD_OIDC_ISSUER_URL"),
+			ClientID:     os.Getenv("OPENLICENSD_OIDC_CLIENT_ID"),
+			ClientSecret: os.Getenv("OPENLICENSD_OIDC_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("OPENLICENSD_OIDC_REDIRECT_URL"),
+			Scopes:       parseOIDCScopes(os.Getenv("OPENLICENSD_OIDC_SCOPES")),
+			DefaultRole:  getEnv("OPENLICENSD_OIDC_DEFAULT_ROLE", "viewer"),
+			ProviderName: getEnv("OPENLICENSD_OIDC_PROVIDER_NAME", "SSO"),
+			AdminEmails:  parseLowerCSV(os.Getenv("OPENLICENSD_OIDC_ADMIN_EMAILS")),
 		},
 	}
 

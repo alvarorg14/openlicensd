@@ -70,28 +70,49 @@ func (s *Store) CreateUser(ctx context.Context, email, name string, passwordHash
 	return u, nil
 }
 
-func (s *Store) ListUsers(ctx context.Context) ([]User, error) {
-	const q = `
-		SELECT ` + userColumns + `
-		FROM users
-		ORDER BY created_at DESC
-	`
+func (s *Store) ListUsers(ctx context.Context, params ListParams) ([]User, int64, error) {
+	qb := newQueryBuilder()
+	if params.Search != "" {
+		pattern := searchPattern(params.Search)
+		qb.add("(name ILIKE $%d OR email ILIKE $%d)", pattern, pattern)
+	}
 
-	rows, err := s.pool.Query(ctx, q)
+	sortExpr := params.Sort
+	if sortExpr == "" {
+		sortExpr = "created_at"
+	}
+	orderBy := buildOrderBy(sortExpr, params.Order, "id")
+
+	q := `
+		SELECT ` + userColumns + `, COUNT(*) OVER() AS total_count
+		FROM users` + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
+
+	args := append(qb.args, params.Limit, params.Offset)
+	rows, err := s.pool.Query(ctx, q, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var users []User
+	var (
+		users      []User
+		totalCount int64
+	)
 	for rows.Next() {
-		u, err := scanUser(rows)
-		if err != nil {
-			return nil, err
+		var u User
+		var role string
+		if err := rows.Scan(
+			&u.ID, &u.Email, &u.Name, &u.PasswordHash, &role, &u.AuthProvider, &u.ExternalID, &u.PictureURL,
+			&u.DisabledAt, &u.FailedLoginAttempts, &u.LockedUntil, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt,
+			&totalCount,
+		); err != nil {
+			return nil, 0, err
 		}
-		users = append(users, *u)
+		u.Role = Role(role)
+		users = append(users, u)
 	}
-	return users, rows.Err()
+
+	return users, totalCount, rows.Err()
 }
 
 func (s *Store) GetUserByID(ctx context.Context, id uuid.UUID) (*User, error) {

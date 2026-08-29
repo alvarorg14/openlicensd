@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/api"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/maintenance"
-	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
-	"github.com/openlicensd/openlicensd/server/internal/static"
-	"github.com/openlicensd/openlicensd/server/internal/store"
-	"github.com/openlicensd/openlicensd/server/internal/version"
+	"github.com/alvarorg14/openlicensd/server/internal/api"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/maintenance"
+	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
+	"github.com/alvarorg14/openlicensd/server/internal/static"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 )
 
 func main() {

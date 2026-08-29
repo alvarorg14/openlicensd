@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 func TestDeleteProductForeignKey(t *testing.T) {

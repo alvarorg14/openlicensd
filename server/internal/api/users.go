@@ -5,23 +5,23 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/store"
-	"github.com/openlicensd/openlicensd/server/internal/version"
 )
 
 type userResponse struct {
-	ID           uuid.UUID  `json:"id"`
-	Email        string     `json:"email"`
-	Name         string     `json:"name"`
-	Role         string     `json:"role"`
-	AuthProvider string     `json:"auth_provider"`
-	DisabledAt   *string    `json:"disabled_at,omitempty"`
-	LastLoginAt  *string    `json:"last_login_at,omitempty"`
-	CreatedAt    string     `json:"created_at"`
-	UpdatedAt    string     `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	Email        string    `json:"email"`
+	Name         string    `json:"name"`
+	Role         string    `json:"role"`
+	AuthProvider string    `json:"auth_provider"`
+	DisabledAt   *string   `json:"disabled_at,omitempty"`
+	LastLoginAt  *string   `json:"last_login_at,omitempty"`
+	CreatedAt    string    `json:"created_at"`
+	UpdatedAt    string    `json:"updated_at"`
 }
 
 type createUserRequest struct {
@@ -47,6 +47,16 @@ type changePasswordRequest struct {
 }
 
 const minPasswordLength = 8
+
+func validatePassword(password string) string {
+	if password == "" {
+		return "password is required"
+	}
+	if len(password) < minPasswordLength {
+		return "password must be at least 8 characters"
+	}
+	return ""
+}
 
 func userToResponse(u *store.User) userResponse {
 	resp := userResponse{
@@ -79,7 +89,22 @@ func parseRole(role string) (store.Role, bool) {
 }
 
 func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := s.store.ListUsers(r.Context())
+	params, err := parseListParams(r, userSorts)
+	if err != nil {
+		if writeListParamError(w, err) {
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid list parameters")
+		return
+	}
+
+	users, total, err := s.store.ListUsers(r.Context(), store.ListParams{
+		Search: params.Search,
+		Sort:   params.Sort,
+		Order:  params.Order,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list users")
 		return
@@ -90,7 +115,7 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, userToResponse(&u))
 	}
 
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -108,8 +133,8 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -193,8 +218,8 @@ func (s *Server) handleSetUserPassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -330,12 +355,8 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusBadRequest, "current password is required")
 		return
 	}
-	if req.Password == "" {
-		writeError(w, http.StatusBadRequest, "password is required")
-		return
-	}
-	if len(req.Password) < minPasswordLength {
-		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
+	if msg := validatePassword(req.Password); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
