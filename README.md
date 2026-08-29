@@ -148,7 +148,7 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |
-| `GET` | `/api/v1/users` | Session (admin) | List users |
+| `GET` | `/api/v1/users` | Session (admin) | List users (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
 | `POST` | `/api/v1/users` | Session (admin) | Create a user |
 
 See [docs/api.md](docs/api.md) for authentication flow and curl examples.

@@ -252,21 +252,29 @@ paths:
       tags: [Users]
       summary: List users
       description: |
-        Returns all users as an unpaginated array, ordered by `created_at` descending.
-
         **Required role:** `admin`.
       operationId: listUsers
       security:
         - sessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/UserSort"
+        - $ref: "#/components/parameters/Order"
       responses:
         "200":
-          description: List of users
+          description: Paginated list of users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/PaginatedUsers"
+        "400":
+          description: Invalid list parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1404,6 +1412,15 @@ components:
         enum: [created_at, first_seen_at, last_seen_at, validation_count, fingerprint]
         default: created_at
       description: Sort field for license machines
+    UserSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, updated_at, name, email, role, last_login_at]
+        default: created_at
+      description: Sort field for users
     Order:
       name: order
       in: query
@@ -1591,6 +1608,24 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    PaginatedUsers:
+      type: object
+      required: [items, page, page_size, total, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
 
     CreateUserRequest:
       type: object

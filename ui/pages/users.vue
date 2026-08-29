@@ -16,15 +16,16 @@
       </UButton>
     </div>
 
-    <UAlert v-if="loadError" color="error" variant="subtle" :title="loadError" class="animate-fade-in" />
+    <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
 
     <UCard class="shadow-app border-0 ring-1 ring-default overflow-hidden">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center border-b border-default pb-4 mb-4">
         <UInput
-          v-model="searchQuery"
+          :model-value="search"
           icon="i-lucide-search"
           placeholder="Search by name or email..."
           class="sm:flex-1"
+          @update:model-value="setSearch"
         />
       </div>
 
@@ -33,74 +34,86 @@
       </div>
 
       <div
-        v-else-if="filteredUsers.length === 0"
+        v-else-if="items.length === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
         <h3 class="text-lg font-medium tracking-brand text-highlighted mb-1">
-          {{ users.length === 0 ? 'No users yet' : 'No matching users' }}
+          {{ total === 0 && !search ? 'No users yet' : 'No matching users' }}
         </h3>
         <p class="text-sm text-muted mb-6">
           Create users to grant access to the admin console.
         </p>
-        <UButton v-if="users.length === 0" color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton v-if="total === 0 && !search" color="primary" icon="i-lucide-plus" @click="openCreate">
           Create user
         </UButton>
       </div>
 
-      <UTable
-        v-else
-        :columns="columns"
-        :data="filteredUsers"
-        class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-muted [&_tbody_tr]:cursor-pointer"
-        @select="(_e, row) => openDetails(row.original)"
-      >
-        <template #name-cell="{ row }">
-          <span class="font-medium text-highlighted">{{ row.original.name }}</span>
-        </template>
+      <template v-else>
+        <UTable
+          v-model:sorting="sorting"
+          :columns="columns"
+          :data="items"
+          :sorting-options="{ manualSorting: true }"
+          class="[&_tbody_tr]:transition-app [&_tbody_tr:hover]:bg-muted [&_tbody_tr]:cursor-pointer"
+          @select="(_e, row) => openDetails(row.original)"
+        >
+          <template #name-cell="{ row }">
+            <span class="font-medium text-highlighted">{{ row.original.name }}</span>
+          </template>
 
-        <template #email-cell="{ row }">
-          <span class="text-toned">{{ row.original.email }}</span>
-        </template>
+          <template #email-cell="{ row }">
+            <span class="text-toned">{{ row.original.email }}</span>
+          </template>
 
-        <template #role-cell="{ row }">
-          <UBadge color="neutral" variant="subtle" size="sm" class="capitalize">{{ row.original.role }}</UBadge>
-        </template>
+          <template #role-cell="{ row }">
+            <UBadge color="neutral" variant="subtle" size="sm" class="capitalize">{{ row.original.role }}</UBadge>
+          </template>
 
-        <template #auth_provider-cell="{ row }">
-          <UBadge color="neutral" variant="outline" size="sm" class="capitalize">
-            {{ row.original.auth_provider }}
-          </UBadge>
-        </template>
+          <template #auth_provider-cell="{ row }">
+            <UBadge color="neutral" variant="outline" size="sm" class="capitalize">
+              {{ row.original.auth_provider }}
+            </UBadge>
+          </template>
 
-        <template #status-cell="{ row }">
-          <UBadge
-            :color="row.original.disabled_at ? 'error' : 'success'"
-            variant="subtle"
-            size="sm"
-          >
-            {{ row.original.disabled_at ? 'Disabled' : 'Active' }}
-          </UBadge>
-        </template>
-
-        <template #last_login_at-cell="{ row }">
-          <span>{{ row.original.last_login_at ? formatDate(row.original.last_login_at) : '—' }}</span>
-        </template>
-
-        <template #actions-cell="{ row }">
-          <UDropdownMenu :items="getActionItems(row.original)">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-ellipsis-vertical"
+          <template #status-cell="{ row }">
+            <UBadge
+              :color="row.original.disabled_at ? 'error' : 'success'"
+              variant="subtle"
               size="sm"
-              :loading="actionId === row.original.id"
-            />
-          </UDropdownMenu>
-        </template>
-      </UTable>
+            >
+              {{ row.original.disabled_at ? 'Disabled' : 'Active' }}
+            </UBadge>
+          </template>
+
+          <template #last_login_at-cell="{ row }">
+            <span>{{ row.original.last_login_at ? formatDate(row.original.last_login_at) : '—' }}</span>
+          </template>
+
+          <template #actions-cell="{ row }">
+            <UDropdownMenu :items="getActionItems(row.original)">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-ellipsis-vertical"
+                size="sm"
+                :loading="actionId === row.original.id"
+              />
+            </UDropdownMenu>
+          </template>
+        </UTable>
+
+        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-default mt-4">
+          <UPagination
+            :page="page"
+            :items-per-page="pageSize"
+            :total="total"
+            @update:page="setPage"
+          />
+        </div>
+      </template>
     </UCard>
 
-    <UserFormModal v-model:open="showForm" :user="editingUser" @saved="fetchUsers" />
+    <UserFormModal v-model:open="showForm" :user="editingUser" @saved="refresh" />
 
     <DetailsModal
       v-model:open="showDetails"
@@ -134,10 +147,23 @@ definePageMeta({
 const { listUsers, deleteUser, disableUser, enableUser } = useApi()
 const { user: currentUser } = useAuth()
 
-const users = ref<User[]>([])
-const loading = ref(true)
-const loadError = ref('')
-const searchQuery = ref('')
+const {
+  page,
+  pageSize,
+  search,
+  items,
+  total,
+  totalPages,
+  loading,
+  error,
+  sorting,
+  refresh,
+  setSearch,
+  setPage
+} = usePaginatedList<User>({
+  fetcher: (params) => listUsers(params)
+})
+
 const showForm = ref(false)
 const showDetails = ref(false)
 const editingUser = ref<User | null>(null)
@@ -148,27 +174,16 @@ const actionId = ref<string | null>(null)
 const deleting = ref(false)
 
 const columns = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'email', header: 'Email' },
-  { accessorKey: 'role', header: 'Role' },
+  { accessorKey: 'name', header: 'Name', enableSorting: true },
+  { accessorKey: 'email', header: 'Email', enableSorting: true },
+  { accessorKey: 'role', header: 'Role', enableSorting: true },
   { accessorKey: 'auth_provider', header: 'Provider' },
   { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'last_login_at', header: 'Last login' },
+  { accessorKey: 'last_login_at', header: 'Last login', enableSorting: true },
   { id: 'actions', header: '' }
 ]
 
 const formatDate = (value: string) => new Date(value).toLocaleString()
-
-const filteredUsers = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
-    return users.value
-  }
-  return users.value.filter((user) =>
-    user.name.toLowerCase().includes(query)
-    || user.email.toLowerCase().includes(query)
-  )
-})
 
 const detailsItems = computed((): DetailItem[] => {
   const user = detailsUser.value
@@ -214,20 +229,20 @@ const openDelete = (user: User) => {
 const isSelf = (user: User) => currentUser.value?.id === user.id
 
 const getActionItems = (user: User): DropdownMenuItem[][] => {
-  const items: DropdownMenuItem[] = [
+  const menuItems: DropdownMenuItem[] = [
     { label: 'View details', icon: 'i-lucide-info', onSelect: () => openDetails(user) },
     { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => openEdit(user) }
   ]
 
   if (!isSelf(user)) {
     if (user.disabled_at) {
-      items.push({
+      menuItems.push({
         label: 'Enable',
         icon: 'i-lucide-user-check',
         onSelect: () => toggleDisabled(user, false)
       })
     } else {
-      items.push({
+      menuItems.push({
         label: 'Disable',
         icon: 'i-lucide-user-x',
         color: 'warning',
@@ -246,19 +261,7 @@ const getActionItems = (user: User): DropdownMenuItem[][] => {
     })
   }
 
-  return destructive.length > 0 ? [items, destructive] : [items]
-}
-
-const fetchUsers = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    users.value = await listUsers()
-  } catch {
-    loadError.value = 'Failed to load users'
-  } finally {
-    loading.value = false
-  }
+  return destructive.length > 0 ? [menuItems, destructive] : [menuItems]
 }
 
 const toggleDisabled = async (user: User, disable: boolean) => {
@@ -269,9 +272,9 @@ const toggleDisabled = async (user: User, disable: boolean) => {
     } else {
       await enableUser(user.id)
     }
-    await fetchUsers()
+    await refresh()
   } catch {
-    loadError.value = disable ? 'Failed to disable user' : 'Failed to enable user'
+    error.value = disable ? 'Failed to disable user' : 'Failed to enable user'
   } finally {
     actionId.value = null
   }
@@ -286,15 +289,13 @@ const confirmDelete = async () => {
   try {
     await deleteUser(deleteTarget.value.id)
     showDeleteConfirm.value = false
-    await fetchUsers()
+    await refresh()
   } catch {
-    loadError.value = 'Failed to delete user'
+    error.value = 'Failed to delete user'
   } finally {
     actionId.value = null
     deleting.value = false
     deleteTarget.value = null
   }
 }
-
-onMounted(fetchUsers)
 </script>

@@ -52,7 +52,7 @@ curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/stats
 curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/{id}
 ```
 
-List endpoints for licenses, products, and policies return a paginated envelope:
+List endpoints for licenses, products, policies, and users return a paginated envelope:
 
 ```json
 {
@@ -73,6 +73,7 @@ Allowed `sort` values vary by resource:
 | Licenses | `created_at`, `label`, `expires_at`, `product_name`, `policy_name`, `last_validated_at`, `validation_count`, `activation_count`, `max_activations` |
 | Policies | `created_at`, `name`, `product_name`, `grace_period_days`, `max_activations` |
 | Products | `created_at`, `updated_at`, `name`, `code` |
+| Users | `created_at`, `updated_at`, `name`, `email`, `role`, `last_login_at` |
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
@@ -206,13 +207,11 @@ See the [endpoint access matrix](#endpoint-access-matrix) for role requirements 
 
 ## User management (admin only)
 
-`GET /api/v1/users` returns an **unpaginated array** of users (not the paginated envelope used by licenses, products, and policies).
-
 ```bash
 CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 
-# List all users
-curl -s -b cookies.txt http://localhost:8080/api/v1/users | jq
+# List users (paginated)
+curl -s -b cookies.txt "http://localhost:8080/api/v1/users?page=1&page_size=25&sort=created_at&order=desc" | jq
 
 # Create a user (password must be at least 8 characters)
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/users \

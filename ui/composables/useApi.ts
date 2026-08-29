@@ -146,7 +146,8 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
-  const listUsers = () => authFetch<User[]>('/api/v1/users')
+  const listUsers = (params?: ListQueryParams) =>
+    authFetch<Paginated<User>>(`/api/v1/users${buildQuery(params as Record<string, string | number | undefined | null>)}`)
 
   const createUser = (input: CreateUserInput) =>
     authFetch<User>('/api/v1/users', {
