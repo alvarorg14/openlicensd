@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -46,9 +46,9 @@ type Principal struct {
 }
 
 type Service struct {
-	store          *store.Store
-	sessionTTL     time.Duration
-	cookieSecure   bool
+	store        *store.Store
+	sessionTTL   time.Duration
+	cookieSecure bool
 }
 
 func NewService(st *store.Store, sessionTTL time.Duration, cookieSecure bool) *Service {

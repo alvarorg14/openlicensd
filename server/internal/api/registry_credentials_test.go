@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/api"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/api"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 func TestRegistryCredentialsRouteDisabled(t *testing.T) {
@@ -29,9 +29,9 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 
 	cfg := &config.Config{
 		Addr:              ":8080",
-		DatabaseURL:     databaseURL,
-		SessionTTLHours: 24,
-		CookieSecure:    false,
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
 		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{
 			Email:        fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano()),
@@ -98,9 +98,9 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 
 	cfg := &config.Config{
 		Addr:              ":8080",
-		DatabaseURL:     databaseURL,
-		SessionTTLHours: 24,
-		CookieSecure:    false,
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
 		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{
 			Email:        email,

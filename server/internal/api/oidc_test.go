@@ -13,14 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/api"
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/go-jose/go-jose/v4"
 	josejwt "github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/api"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type mockOIDCProvider struct {

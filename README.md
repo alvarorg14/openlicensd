@@ -92,7 +92,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 
 > **New here?** See [QUICKSTART.md](QUICKSTART.md) for a step-by-step get-running guide.
 
-Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (tags: `vX.Y.Z`, `X.Y`, `latest`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
+Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (image tags: `X.Y.Z`, `X.Y`, `latest`; git tags: `vX.Y.Z`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
 
 ```bash
 helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
@@ -140,14 +140,15 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `POST` | `/api/v1/licenses` | Session | Create a license |
 | `GET` | `/api/v1/licenses` | Session | List licenses (paginated; supports `status`, `product_id`, `policy_id`, `search`, `sort`, `order`) |
 | `GET` | `/api/v1/licenses/stats` | Session | License status counts (total, active, expired, revoked) |
+| `GET` | `/api/v1/licenses/{id}` | Session | Get a license by ID |
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate a license |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke a license |
 | `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |
-| `GET` | `/api/v1/users` | Session (admin) | List users |
+| `GET` | `/api/v1/users` | Session (admin) | List users (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
 | `POST` | `/api/v1/users` | Session (admin) | Create a user |
 
 See [docs/api.md](docs/api.md) for authentication flow and curl examples.
@@ -182,7 +183,7 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
-| `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies (`false` for local HTTP) |
+| `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies and enable HSTS headers (`false` for local HTTP) |
 
 Rate limiting and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
 

@@ -18,7 +18,7 @@ Each milestone has a tracking issue with linked sub-issues. See the [Issues](htt
 
 ## v0.6.0 — Fix the foundations
 
-Correctness and consistency before adding scope: a working embedded UI from a fresh clone, a canonical Go module path, normalized release tags, consolidated password policy, and small API gaps (`GET /licenses/{id}`, user pagination, admin password reset in the UI).
+Correctness and consistency before adding scope: a working embedded UI from a fresh clone, a canonical Go module path, normalized release tags, consolidated password policy, and small API gaps (`GET /licenses/{id}`, admin password reset in the UI).
 
 ## v0.7.0 — Make it operable
 

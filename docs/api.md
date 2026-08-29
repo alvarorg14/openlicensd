@@ -47,9 +47,12 @@ curl -s -b cookies.txt "http://localhost:8080/api/v1/licenses?page=1&page_size=2
 
 # License status counts (unfiltered)
 curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/stats
+
+# Single license by ID
+curl -s -b cookies.txt http://localhost:8080/api/v1/licenses/{id}
 ```
 
-List endpoints for licenses, products, and policies return a paginated envelope:
+List endpoints for licenses, products, policies, and users return a paginated envelope:
 
 ```json
 {
@@ -70,6 +73,7 @@ Allowed `sort` values vary by resource:
 | Licenses | `created_at`, `label`, `expires_at`, `product_name`, `policy_name`, `last_validated_at`, `validation_count`, `activation_count`, `max_activations` |
 | Policies | `created_at`, `name`, `product_name`, `grace_period_days`, `max_activations` |
 | Products | `created_at`, `updated_at`, `name`, `code` |
+| Users | `created_at`, `updated_at`, `name`, `email`, `role`, `last_login_at` |
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
@@ -152,13 +156,14 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `POST` | `/api/v1/auth/password` | any authenticated user |
 | `GET` | `/api/v1/licenses/stats` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/licenses` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/licenses/{id}` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/products` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/policies` | `viewer`, `operator`, or `admin` |
 | `POST` | `/api/v1/licenses` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | `operator` or `admin` |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | `operator` or `admin` |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | `operator` or `admin` |
 | `GET` | `/api/v1/licenses/{id}/machines` | `viewer`, `operator`, or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | `operator` or `admin` |
@@ -202,15 +207,13 @@ See the [endpoint access matrix](#endpoint-access-matrix) for role requirements 
 
 ## User management (admin only)
 
-`GET /api/v1/users` returns an **unpaginated array** of users (not the paginated envelope used by licenses, products, and policies).
-
 ```bash
 CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 
-# List all users
-curl -s -b cookies.txt http://localhost:8080/api/v1/users | jq
+# List users (paginated)
+curl -s -b cookies.txt "http://localhost:8080/api/v1/users?page=1&page_size=25&sort=created_at&order=desc" | jq
 
-# Create a user
+# Create a user (password must be at least 8 characters)
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \
@@ -223,7 +226,7 @@ curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID" \
   -H "X-CSRF-Token: $CSRF" \
   -d '{"email":"operator@example.com","name":"Updated Name","role":"viewer"}'
 
-# Set or reset a user's password (admin action; no minimum length)
+# Set or reset a user's password (admin action; minimum 8 characters)
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/password" \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \

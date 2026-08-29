@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/harbor"
+	"github.com/alvarorg14/openlicensd/server/internal/harbor"
 )
 
 func TestCreateEphemeralRobot(t *testing.T) {

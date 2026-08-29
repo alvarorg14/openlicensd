@@ -49,7 +49,7 @@ dev-ui: ## Run the Nuxt dev server
 ui: ## Build static UI into server/internal/static/dist
 	cd ui && npm run generate
 
-VERSION_LDFLAGS := -X github.com/openlicensd/openlicensd/server/internal/version.Version=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION_LDFLAGS := -X github.com/alvarorg14/openlicensd/server/internal/version.Version=$(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
 server: ## Build binary to bin/openlicensd
 	cd server && go build -ldflags "$(VERSION_LDFLAGS)" -o ../bin/openlicensd ./cmd/openlicensd

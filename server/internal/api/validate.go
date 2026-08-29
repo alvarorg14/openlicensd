@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/license"
-	"github.com/openlicensd/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/license"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
 type validateRequest struct {
@@ -54,8 +54,6 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 			}
 		}
 	}
-
-	_ = s.store.RecordValidation(ctx, lic.ID)
 
 	result := license.Validate(
 		lic.ExpiresAt,
@@ -116,6 +114,7 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 	}
 
 	s.setActivationFields(&result, lic)
+	_ = s.store.RecordValidation(ctx, lic.ID)
 	return lic, result, nil
 }
 

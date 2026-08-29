@@ -115,15 +115,15 @@ func writeListParamError(w http.ResponseWriter, err error) bool {
 }
 
 var licenseSorts = map[string]string{
-	"created_at":          "l.created_at",
-	"label":               "l.label",
-	"expires_at":          "l.expires_at",
-	"product_name":        "p.name",
-	"policy_name":         "pol.name",
-	"last_validated_at":   "l.last_validated_at",
-	"validation_count":    "l.validation_count",
-	"activation_count":    "activation_count",
-	"max_activations":     "l.max_activations",
+	"created_at":        "l.created_at",
+	"label":             "l.label",
+	"expires_at":        "l.expires_at",
+	"product_name":      "p.name",
+	"policy_name":       "pol.name",
+	"last_validated_at": "l.last_validated_at",
+	"validation_count":  "l.validation_count",
+	"activation_count":  "activation_count",
+	"max_activations":   "l.max_activations",
 }
 
 var machineSorts = map[string]string{
@@ -147,4 +147,13 @@ var policySorts = map[string]string{
 	"product_name":      "p.name",
 	"grace_period_days": "pol.grace_period_days",
 	"max_activations":   "pol.max_activations",
+}
+
+var userSorts = map[string]string{
+	"created_at":    "created_at",
+	"updated_at":    "updated_at",
+	"name":          "name",
+	"email":         "email",
+	"role":          "role",
+	"last_login_at": "last_login_at",
 }

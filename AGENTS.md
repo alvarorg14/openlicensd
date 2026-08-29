@@ -20,7 +20,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Backend (Go)
 
 - **Location**: `server/cmd/openlicensd/` (main entry), `server/internal/` (core logic)
-- **Module**: `github.com/openlicensd/openlicensd/server`
+- **Module**: `github.com/alvarorg14/openlicensd/server`
 - **Go version**: 1.26+
 - **Key dependencies**: `go-chi/chi`, `golang-jwt/jwt`, `jackc/pgx`, `google/uuid`
 
@@ -73,6 +73,19 @@ This document provides context and guidelines for AI coding assistants working o
 - **Location**: `charts/openlicensd/`
 - Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
+- Source `Chart.yaml` `version` / `appVersion` are `0.0.0-dev` placeholders; `.github/workflows/release.yml` stamps the packaged OCI chart from the git tag (`helm package --version/--app-version`)
+
+### Version placeholders
+
+Like the Go binary's `"dev"` default (`server/internal/version/version.go`), source-tree metadata versions are placeholders stamped at release:
+
+| File | Git value | Stamped at release |
+|------|-----------|-------------------|
+| `charts/openlicensd/Chart.yaml` | `0.0.0-dev` | Helm chart job (`helm package --version/--app-version`) |
+| `docs/openapi.yaml` `info.version` | `0.0.0-dev` | Release job (`sed` + GoReleaser `extra_files`) |
+| Go `version.Version` | `"dev"` | ldflags (Makefile / GoReleaser) |
+
+Do not commit version bumps to `main` after each publish.
 
 ## Data Flow
 
@@ -81,7 +94,7 @@ This document provides context and guidelines for AI coding assistants working o
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
-5. Admin lists resources → GET /api/v1/licenses|products|policies with server-side pagination, search, filters, and sorting
+5. Admin lists resources → GET /api/v1/licenses|products|policies|users with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
 8. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
@@ -247,7 +260,8 @@ SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/s
 On GitHub release publish (server tags only — SDK releases are excluded):
 
 - GoReleaser builds binaries and pushes `ghcr.io/alvarorg14/openlicensd` (amd64 + arm64)
-- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts`
+- Release job stamps `docs/openapi.yaml` `info.version` from the tag and attaches it to the GitHub release
+- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts` (separate job; `--version/--app-version` from tag)
 
 ### SDK Release (`.github/workflows/sdk-release.yml`)
 
@@ -256,7 +270,7 @@ On GitHub release publish (SDK tags only — server releases are excluded):
 - Runs `make lint-sdk` and `make test-sdk`
 - Warms the Go module proxy for pkg.go.dev
 
-SDK and server versions are independent. Server tags use a `v` prefix (`v0.2.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
+SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
 
 ## Quality Assurance Requirements
 

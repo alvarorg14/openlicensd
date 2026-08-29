@@ -107,6 +107,10 @@ const onSubmit = async () => {
     error.value = 'Password is required'
     return
   }
+  if (!props.user && form.password.length < 8) {
+    error.value = 'Password must be at least 8 characters'
+    return
+  }
 
   loading.value = true
   error.value = ''

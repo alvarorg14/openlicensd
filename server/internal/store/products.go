@@ -17,12 +17,11 @@ type Product struct {
 	Name        string
 	Code        string
 	Description *string
-	ArchivedAt  *time.Time
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-const productColumns = `id, name, code, description, archived_at, created_at, updated_at`
+const productColumns = `id, name, code, description, created_at, updated_at`
 
 func (s *Store) CreateProduct(ctx context.Context, name, code string, description *string) (*Product, error) {
 	const q = `
@@ -69,7 +68,7 @@ func (s *Store) ListProducts(ctx context.Context, params ListParams) ([]Product,
 	for rows.Next() {
 		var p Product
 		if err := rows.Scan(
-			&p.ID, &p.Name, &p.Code, &p.Description, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.Name, &p.Code, &p.Description, &p.CreatedAt, &p.UpdatedAt,
 			&totalCount,
 		); err != nil {
 			return nil, 0, err
@@ -150,7 +149,7 @@ func (s *Store) DeleteProduct(ctx context.Context, id uuid.UUID) (bool, error) {
 func scanProduct(row pgx.Row) (*Product, error) {
 	var p Product
 	err := row.Scan(
-		&p.ID, &p.Name, &p.Code, &p.Description, &p.ArchivedAt, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID, &p.Name, &p.Code, &p.Description, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err

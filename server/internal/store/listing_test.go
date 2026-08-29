@@ -5,8 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 func TestListProductsPaginationAndSearch(t *testing.T) {
@@ -50,6 +51,55 @@ func TestListProductsPaginationAndSearch(t *testing.T) {
 	}
 	if products[0].ID != productA.ID {
 		t.Fatalf("expected first product by name sort to be alpha")
+	}
+}
+
+func TestListUsersPaginationAndSearch(t *testing.T) {
+	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("OPENLICENSD_DATABASE_URL not set")
+	}
+
+	ctx := context.Background()
+	st, err := store.New(ctx, databaseURL)
+	if err != nil {
+		t.Skip(err)
+	}
+	t.Cleanup(st.Close)
+
+	suffix := uuid.NewString()
+	hash, err := auth.HashPassword("test-password")
+	if err != nil {
+		t.Fatalf("hash password: %v", err)
+	}
+
+	userA, err := st.CreateUser(ctx, "alpha-"+suffix+"@example.com", "Alpha User "+suffix, &hash, store.RoleViewer, store.AuthProviderLocal, nil)
+	if err != nil {
+		t.Fatalf("create user a: %v", err)
+	}
+	_, err = st.CreateUser(ctx, "beta-"+suffix+"@example.com", "Beta User "+suffix, &hash, store.RoleViewer, store.AuthProviderLocal, nil)
+	if err != nil {
+		t.Fatalf("create user b: %v", err)
+	}
+
+	users, total, err := st.ListUsers(ctx, store.ListParams{
+		Search: suffix,
+		Sort:   "name",
+		Order:  "asc",
+		Limit:  1,
+		Offset: 0,
+	})
+	if err != nil {
+		t.Fatalf("list users: %v", err)
+	}
+	if total < 2 {
+		t.Fatalf("expected total >= 2, got %d", total)
+	}
+	if len(users) != 1 {
+		t.Fatalf("expected 1 user, got %d", len(users))
+	}
+	if users[0].ID != userA.ID {
+		t.Fatalf("expected first user by name sort to be alpha")
 	}
 }
 

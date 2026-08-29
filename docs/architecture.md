@@ -66,9 +66,9 @@ ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
 
 Git tracks a self-contained placeholder `index.html` so `go build` on a fresh clone serves a working page. Run `make ui` (or `make build`) locally, or rely on GoReleaser's pre-build hook, to embed the full Nuxt SPA.
 
-In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`).
+In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`). All HTTP responses — including the embedded UI, API, and health probes — pass through security-header middleware that sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options`; `Strict-Transport-Security` is added when `OPENLICENSD_COOKIE_SECURE=true`.
 
-The admin UI has a left sidebar with pages for **Licenses**, **Products**, and **Policies**.
+The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, and **Users** (admin only). Admins can reset user passwords from the Users page.
 
 ## Data model
 
@@ -88,7 +88,6 @@ erDiagram
 | `name` | `TEXT` | Display name |
 | `code` | `TEXT` | Unique machine identifier (sent by clients on validation) |
 | `description` | `TEXT` | Optional description |
-| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `policies` table
@@ -103,7 +102,6 @@ erDiagram
 | `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation` |
 | `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds |
 | `max_activations` | `INTEGER` | Null = unlimited concurrent machine activations |
-| `archived_at` | `TIMESTAMPTZ` | Soft-delete marker (reserved) |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `licenses` table
@@ -121,7 +119,7 @@ erDiagram
 | `revoked` | `BOOLEAN` | Whether the license is revoked |
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
-| `validation_count` | `BIGINT` | Total validation count |
+| `validation_count` | `BIGINT` | Successful validation count |
 | `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited |
 
 ### `license_machines` table
@@ -185,15 +183,17 @@ sequenceDiagram
   opt on_first_validation and not yet activated
     API->>Store: ActivateLicense(id, expires_at)
   end
-  API->>Store: RecordValidation(id)
   API->>License: Validate(expires_at, grace, product)
   opt valid and max_activations set
     API->>Store: RecordActivation(license_id, fingerprint)
   end
+  opt result.Valid
+    API->>Store: RecordValidation(id)
+  end
   API-->>Client: 200 {valid, product, policy, reason?, activation_count?, max_activations?}
 ```
 
-Validation always returns HTTP 200. When the key is found (even if expired or revoked), `last_validated_at` and `validation_count` are updated. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
+Validation always returns HTTP 200. When validation succeeds (`valid: true`), `last_validated_at` and `validation_count` are updated. Failed lookups (not found, revoked, expired, product mismatch, fingerprint required, activation limit) do not increment usage. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
 
 ### Harbor registry credentials
 
@@ -261,10 +261,12 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `POST` | `/api/v1/licenses` | Session | Create license |
 | `GET` | `/api/v1/licenses` | Session | List licenses (paginated) |
 | `GET` | `/api/v1/licenses/stats` | Session | License status counts |
+| `GET` | `/api/v1/licenses/{id}` | Session | Get license by ID |
 | `PATCH` | `/api/v1/licenses/{id}` | Session | Update license |
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
-| `PATCH` | `/api/v1/licenses/{id}/activate` | Session | Re-activate license |
+| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke license |
+| `GET` | `/api/v1/users` | Session (admin) | List users (paginated) |
 | `*` | All other paths | None | Embedded SPA |
 
 ## Related

@@ -5,18 +5,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 )
 
 func testRateLimitConfig() config.RateLimitConfig {
 	return config.RateLimitConfig{
-		Enabled:          true,
-		PublicPerMinute:  60,
-		PublicBurst:      2,
-		LoginPerMinute:   30,
-		LoginBurst:       1,
-		IdleMinutes:      1,
+		Enabled:         true,
+		PublicPerMinute: 60,
+		PublicBurst:     2,
+		LoginPerMinute:  30,
+		LoginBurst:      1,
+		IdleMinutes:     1,
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
+	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 )
 
 func (s *Server) rateLimit(scope ratelimit.Scope) func(http.Handler) http.Handler {

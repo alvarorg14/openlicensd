@@ -161,6 +161,9 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v5
 
+      - name: Assert chart version placeholder
+        run: grep -q '0.0.0-dev' charts/openlicensd/Chart.yaml
+
       - name: Lint chart
         run: helm lint charts/openlicensd -f charts/openlicensd/ci/test-values.yaml
 
@@ -181,6 +184,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
+
+      - name: Assert OpenAPI version placeholder
+        run: "grep -q 'version: 0.0.0-dev' docs/openapi.yaml"
 
       - name: Lint OpenAPI spec
         run: npx @redocly/cli@latest lint docs/openapi.yaml --config docs/redocly.yaml

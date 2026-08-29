@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/clientip"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/harbor"
+	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
+	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/clientip"
-	"github.com/openlicensd/openlicensd/server/internal/config"
-	"github.com/openlicensd/openlicensd/server/internal/harbor"
-	appoidc "github.com/openlicensd/openlicensd/server/internal/oidc"
-	"github.com/openlicensd/openlicensd/server/internal/ratelimit"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 type Server struct {
@@ -81,6 +81,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(securityHeaders(s.cfg.CookieSecure))
 
 	r.Get("/healthz", s.handleHealthz)
 	r.Get("/readyz", s.handleReadyz)
@@ -115,6 +116,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 				r.Get("/licenses/stats", s.handleLicenseStats)
 				r.Get("/licenses", s.handleListLicenses)
+				r.Get("/licenses/{id}", s.handleGetLicense)
 				r.Get("/licenses/{id}/machines", s.handleListLicenseMachines)
 				r.Get("/products", s.handleListProducts)
 				r.Get("/policies", s.handleListPolicies)
@@ -127,7 +129,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Patch("/licenses/{id}", s.handleUpdateLicense)
 				r.Delete("/licenses/{id}", s.handleDeleteLicense)
 				r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
-				r.Patch("/licenses/{id}/activate", s.handleActivateLicense)
+				r.Patch("/licenses/{id}/unrevoke", s.handleUnrevokeLicense)
 				r.Patch("/licenses/{id}/machines/{machineId}", s.handleUpdateLicenseMachine)
 				r.Delete("/licenses/{id}/machines/{machineId}", s.handleReleaseLicenseMachine)
 

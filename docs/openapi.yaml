@@ -9,6 +9,10 @@ info:
     Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
     Unauthenticated endpoints are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
 
+    All responses include browser security headers: `Content-Security-Policy`, `X-Frame-Options`,
+    and `X-Content-Type-Options`. When `OPENLICENSD_COOKIE_SECURE=true`, responses also include
+    `Strict-Transport-Security`.
+
     The `/api/v1/registry-credentials` endpoint is only available when
     `OPENLICENSD_HARBOR_ENABLED=true` on the server.
 
@@ -25,7 +29,7 @@ info:
 
     Any authenticated user (any role) may call `/api/v1/auth/me`, `/api/v1/auth/logout`, and
     `/api/v1/auth/password`.
-  version: 0.1.0
+  version: 0.0.0-dev
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
@@ -252,21 +256,29 @@ paths:
       tags: [Users]
       summary: List users
       description: |
-        Returns all users as an unpaginated array, ordered by `created_at` descending.
-
         **Required role:** `admin`.
       operationId: listUsers
       security:
         - sessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/UserSort"
+        - $ref: "#/components/parameters/Order"
       responses:
         "200":
-          description: List of users
+          description: Paginated list of users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/PaginatedUsers"
+        "400":
+          description: Invalid list parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -298,7 +310,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         "400":
-          description: Invalid request body (missing email, name, or password; or invalid role)
+          description: Invalid request body (missing email, name, or password; invalid role; or password too short)
           content:
             application/json:
               schema:
@@ -393,7 +405,7 @@ paths:
       summary: Set user password
       description: |
         Sets or resets the password for a user (admin action). Does not require the current
-        password and does not enforce a minimum length. Store failures return `404`.
+        password. Minimum length is 8 characters. Store failures return `404`.
 
         **Required role:** `admin`.
       operationId: setUserPassword
@@ -409,7 +421,7 @@ paths:
         "204":
           description: Password set successfully
         "400":
-          description: Invalid user ID or missing password
+          description: Invalid user ID, missing password, or password too short
           content:
             application/json:
               schema:
@@ -902,6 +914,39 @@ paths:
     parameters:
       - $ref: "#/components/parameters/LicenseId"
 
+    get:
+      tags: [Licenses]
+      summary: Get a license
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
+
+        Returns a single license by ID. The raw license key is not included (it is only
+        returned once at creation).
+      operationId: getLicense
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: License details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+        "400":
+          description: Invalid license ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
     patch:
       tags: [Licenses]
       summary: Update a license
@@ -999,20 +1044,24 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/v1/licenses/{id}/activate:
+  /api/v1/licenses/{id}/unrevoke:
     parameters:
       - $ref: "#/components/parameters/LicenseId"
     patch:
       tags: [Licenses]
-      summary: Activate a revoked license
+      summary: Unrevoke a license
       description: |
+        Clears the license `revoked` flag so validation succeeds again. This does not create a
+        machine activation or set `activated_at` (those are separate: machine seats via
+        validation fingerprints, and first-validation policy via `activated_at`).
+
         **Required role:** `operator` or `admin`.
-      operationId: activateLicense
+      operationId: unrevokeLicense
       security:
         - sessionAuth: []
       responses:
         "200":
-          description: License activated
+          description: License unrevoked
           content:
             application/json:
               schema:
@@ -1367,6 +1416,15 @@ components:
         enum: [created_at, first_seen_at, last_seen_at, validation_count, fingerprint]
         default: created_at
       description: Sort field for license machines
+    UserSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, updated_at, name, email, role, last_login_at]
+        default: created_at
+      description: Sort field for users
     Order:
       name: order
       in: query
@@ -1555,6 +1613,24 @@ components:
           type: string
           format: date-time
 
+    PaginatedUsers:
+      type: object
+      required: [items, page, page_size, total, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+
     CreateUserRequest:
       type: object
       required: [email, name, password, role]
@@ -1567,6 +1643,8 @@ components:
         password:
           type: string
           format: password
+          minLength: 8
+          description: Password (minimum 8 characters)
         role:
           $ref: "#/components/schemas/Role"
 
@@ -1589,7 +1667,8 @@ components:
         password:
           type: string
           format: password
-          description: New password (non-empty; no minimum length enforced for admin resets)
+          minLength: 8
+          description: New password (minimum 8 characters)
 
     ChangePasswordRequest:
       type: object
@@ -1725,10 +1804,6 @@ components:
           type: string
         description:
           type: ["string", "null"]
-        archived_at:
-          type: string
-          format: date-time
-          description: Present when the product is archived; omitted otherwise
         created_at:
           type: string
           format: date-time
@@ -1790,10 +1865,6 @@ components:
         max_activations:
           type: ["integer", "null"]
           description: Null means unlimited concurrent machine activations
-        archived_at:
-          type: string
-          format: date-time
-          description: Present when the policy is archived; omitted otherwise
         created_at:
           type: string
           format: date-time
@@ -1889,9 +1960,11 @@ components:
         last_validated_at:
           type: ["string", "null"]
           format: date-time
+          description: Timestamp of the last successful validation; omitted when never validated successfully
         validation_count:
           type: integer
           format: int64
+          description: Number of successful validations; failed lookups do not increment this counter
         max_activations:
           type: ["integer", "null"]
           description: Snapshotted activation limit; null means unlimited

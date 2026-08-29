@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 func TestRecordActivationEnforcesLimit(t *testing.T) {

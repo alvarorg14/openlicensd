@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/google/uuid"
-	"github.com/openlicensd/openlicensd/server/internal/auth"
-	"github.com/openlicensd/openlicensd/server/internal/store"
 )
 
 func TestOIDCUserLookupAndLink(t *testing.T) {
