@@ -148,3 +148,12 @@ var policySorts = map[string]string{
 	"grace_period_days": "pol.grace_period_days",
 	"max_activations":   "pol.max_activations",
 }
+
+var userSorts = map[string]string{
+	"created_at":    "created_at",
+	"updated_at":    "updated_at",
+	"name":          "name",
+	"email":         "email",
+	"role":          "role",
+	"last_login_at": "last_login_at",
+}

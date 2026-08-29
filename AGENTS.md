@@ -94,7 +94,7 @@ Do not commit version bumps to `main` after each publish.
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
-5. Admin lists resources → GET /api/v1/licenses|products|policies with server-side pagination, search, filters, and sorting
+5. Admin lists resources → GET /api/v1/licenses|products|policies|users with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
 8. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)

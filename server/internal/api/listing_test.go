@@ -149,4 +149,29 @@ func TestListEndpointsPagination(t *testing.T) {
 	if !ok || len(policyItems) == 0 {
 		t.Fatalf("expected policy items")
 	}
+
+	usersResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?page=1&page_size=2", nil, cookies)
+	if usersResp.Code != http.StatusOK {
+		t.Fatalf("list users status=%d body=%s", usersResp.Code, usersResp.Body.String())
+	}
+	var usersPage map[string]any
+	if err := json.Unmarshal(usersResp.Body.Bytes(), &usersPage); err != nil {
+		t.Fatalf("decode users page: %v", err)
+	}
+	if usersPage["items"] == nil {
+		t.Fatalf("expected users items")
+	}
+	if usersPage["page"].(float64) != 1 {
+		t.Fatalf("expected users page=1, got %+v", usersPage["page"])
+	}
+
+	badUserSortResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?sort=invalid", nil, cookies)
+	if badUserSortResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid user sort, got %d", badUserSortResp.Code)
+	}
+
+	badUserPageResp := doJSON(t, handler, http.MethodGet, "/api/v1/users?page=0", nil, cookies)
+	if badUserPageResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid user page, got %d", badUserPageResp.Code)
+	}
 }
