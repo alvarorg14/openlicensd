@@ -64,6 +64,8 @@ helm install openlicensd ./charts/openlicensd \
 | config.harbor.robotNamePrefix | string | `"openlicensd"` | Prefix for generated robot account names (maps to OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX) |
 | config.harbor.url | string | `""` | Harbor base URL (maps to OPENLICENSD_HARBOR_URL) |
 | config.localLoginEnabled | bool | `true` |  |
+| config.log.format | string | `"json"` | Log output format: json or text (maps to OPENLICENSD_LOG_FORMAT) |
+| config.log.level | string | `"info"` | Log level: debug, info, warn, or error (maps to OPENLICENSD_LOG_LEVEL) |
 | config.oidc.adminEmails | string | `""` | Comma-separated admin emails on first SSO login (maps to OPENLICENSD_OIDC_ADMIN_EMAILS) |
 | config.oidc.clientId | string | `""` | OAuth client ID (maps to OPENLICENSD_OIDC_CLIENT_ID) |
 | config.oidc.defaultRole | string | `"viewer"` | Default role for new SSO users (maps to OPENLICENSD_OIDC_DEFAULT_ROLE) |

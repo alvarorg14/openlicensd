@@ -69,6 +69,11 @@ config:
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
   localLoginEnabled: true
+  log:
+    # -- Log level: debug, info, warn, or error (maps to OPENLICENSD_LOG_LEVEL)
+    level: info
+    # -- Log output format: json or text (maps to OPENLICENSD_LOG_FORMAT)
+    format: json
   # -- Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES)
   trustedProxies: ""
   rateLimit:
