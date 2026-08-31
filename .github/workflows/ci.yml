@@ -183,6 +183,9 @@ jobs:
       - name: Template chart with NetworkPolicy enabled
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set networkPolicy.enabled=true > /dev/null
 
+      - name: Template chart with topologySpreadConstraints
+        run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set-json 'topologySpreadConstraints=[{"maxSkew":1,"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway","labelSelector":{"matchLabels":{"app.kubernetes.io/name":"openlicensd"}}}]' > /dev/null
+
       - name: Package chart
         run: helm package charts/openlicensd
 
