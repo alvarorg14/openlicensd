@@ -103,6 +103,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "requestTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
         "sessionCleanupIntervalMinutes": {
           "type": "integer",
           "minimum": 0

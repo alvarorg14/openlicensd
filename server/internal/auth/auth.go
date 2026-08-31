@@ -192,6 +192,10 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		principal, err := s.authenticateRequest(r)
 		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				writeGatewayTimeout(w)
+				return
+			}
 			writeAuthError(w, "invalid session")
 			return
 		}
@@ -209,12 +213,24 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 
 	tokenHash := hashToken(cookie.Value)
 	sess, err := s.store.GetSessionByTokenHash(r.Context(), tokenHash)
-	if err != nil || sess == nil {
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, err
+		}
+		return nil, errors.New("invalid session")
+	}
+	if sess == nil {
 		return nil, errors.New("invalid session")
 	}
 
 	user, err := s.store.GetUserByID(r.Context(), sess.UserID)
-	if err != nil || user == nil || user.DisabledAt != nil {
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, err
+		}
+		return nil, errors.New("invalid session")
+	}
+	if user == nil || user.DisabledAt != nil {
 		return nil, errors.New("invalid session")
 	}
 
@@ -327,6 +343,12 @@ func writeAuthError(w http.ResponseWriter, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte(`{"error":"` + message + `"}`))
+}
+
+func writeGatewayTimeout(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusGatewayTimeout)
+	_, _ = w.Write([]byte(`{"error":"request timeout"}`))
 }
 
 func HashPassword(password string) (string, error) {

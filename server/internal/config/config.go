@@ -70,6 +70,7 @@ type Config struct {
 	DatabaseURL                   string
 	Database                      DatabaseConfig
 	BootstrapAdmin                BootstrapAdminConfig
+	RequestTimeoutSeconds         int
 	SessionTTLHours               int
 	SessionCleanupIntervalMinutes int
 	CookieSecure                  bool
@@ -99,6 +100,7 @@ func Load() (*Config, error) {
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
 			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
 		},
+		RequestTimeoutSeconds:         getIntEnv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", 30),
 		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
 		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
@@ -147,6 +149,9 @@ func Load() (*Config, error) {
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("OPENLICENSD_DATABASE_URL is required")
 	}
+	if cfg.RequestTimeoutSeconds < 0 {
+		return nil, fmt.Errorf("OPENLICENSD_REQUEST_TIMEOUT_SECONDS must be 0 or greater")
+	}
 	if cfg.SessionTTLHours < 1 {
 		return nil, fmt.Errorf("OPENLICENSD_SESSION_TTL_HOURS must be at least 1")
 	}
@@ -184,6 +189,10 @@ func Load() (*Config, error) {
 
 func (c *Config) SessionCleanupInterval() time.Duration {
 	return time.Duration(c.SessionCleanupIntervalMinutes) * time.Minute
+}
+
+func (c *Config) RequestTimeout() time.Duration {
+	return time.Duration(c.RequestTimeoutSeconds) * time.Second
 }
 
 func (o OIDCConfig) IsAdminEmail(email string) bool {

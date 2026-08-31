@@ -7,6 +7,7 @@ metadata:
 data:
   OPENLICENSD_ADDR: {{ .Values.config.addr | quote }}
   OPENLICENSD_SESSION_TTL_HOURS: {{ .Values.config.sessionTTLHours | quote }}
+  OPENLICENSD_REQUEST_TIMEOUT_SECONDS: {{ .Values.config.requestTimeoutSeconds | quote }}
   OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
   OPENLICENSD_COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
   OPENLICENSD_LOCAL_LOGIN_ENABLED: {{ .Values.config.localLoginEnabled | quote }}

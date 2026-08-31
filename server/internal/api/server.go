@@ -95,6 +95,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(logging.RequestLogger(s.logger))
+	r.Use(requestTimeout(s.cfg.RequestTimeout()))
 	if s.metrics != nil {
 		r.Use(appmetrics.Middleware(s.metrics))
 	}
@@ -216,6 +217,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, tokens, err := s.auth.Login(r.Context(), req.Email, req.Password, userAgent, clientIP)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
 		writeError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -261,6 +266,11 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 func writeInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		logging.FromContext(r.Context()).Warn(message, slog.Any("err", err))
+		writeError(w, http.StatusGatewayTimeout, "request timeout")
+		return
+	}
 	logging.FromContext(r.Context()).Error(message, slog.Any("err", err))
 	writeError(w, http.StatusInternalServerError, message)
 }

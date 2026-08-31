@@ -86,6 +86,7 @@ helm install openlicensd ./charts/openlicensd \
 | config.rateLimit.loginPerMinute | int | `30` | Sustained request rate for login and OIDC endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE) |
 | config.rateLimit.publicBurst | int | `60` | Burst capacity for public endpoints (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_BURST) |
 | config.rateLimit.publicPerMinute | int | `600` | Sustained request rate for /validate and /registry-credentials (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE) |
+| config.requestTimeoutSeconds | int | `30` | Per-request context deadline in seconds; 0 disables (maps to OPENLICENSD_REQUEST_TIMEOUT_SECONDS) |
 | config.sessionCleanupIntervalMinutes | int | `60` | Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES) |
 | config.sessionTTLHours | int | `24` | Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS) |
 | config.trustedProxies | string | `""` | Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES) |
