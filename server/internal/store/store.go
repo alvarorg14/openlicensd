@@ -93,14 +93,24 @@ func (s *Store) PoolStat() *pgxpool.Stat {
 	return s.pool.Stat()
 }
 
-const licenseColumns = `
+const licenseColumnsBase = `
 	l.id, l.label, l.key_hash, l.key_prefix, l.product_id, l.policy_id,
 	l.expires_at, l.activated_at, l.revoked, l.created_at, l.last_validated_at, l.validation_count,
 	l.max_activations,
-	(SELECT COUNT(*)::bigint FROM license_machines lm WHERE lm.license_id = l.id AND lm.deactivated_at IS NULL) AS activation_count,
+`
+
+const licenseActivationCountSubquery = `(SELECT COUNT(*)::bigint FROM license_machines lm WHERE lm.license_id = l.id AND lm.deactivated_at IS NULL) AS activation_count`
+
+const licenseColumnsJoinTail = `
 	p.code, p.name, pol.name, pol.grace_period_days, pol.expiration_basis, pol.duration_days,
 	l.created_by, cb.name, cb.email
 `
+
+const licenseColumns = licenseColumnsBase + licenseActivationCountSubquery + `,` + licenseColumnsJoinTail
+
+const licenseActivationCountJoinExpr = `COALESCE(ac.activation_count, 0) AS activation_count`
+
+const licenseColumnsList = licenseColumnsBase + licenseActivationCountJoinExpr + `,` + licenseColumnsJoinTail
 
 const licenseFromJoin = `
 	FROM licenses l
@@ -108,6 +118,17 @@ const licenseFromJoin = `
 	JOIN policies pol ON pol.id = l.policy_id
 	LEFT JOIN users cb ON cb.id = l.created_by
 `
+
+const licenseActivationCountJoin = `
+	LEFT JOIN (
+		SELECT license_id, COUNT(*)::bigint AS activation_count
+		FROM license_machines
+		WHERE deactivated_at IS NULL
+		GROUP BY license_id
+	) ac ON ac.license_id = l.id
+`
+
+const licenseFromJoinList = licenseFromJoin + licenseActivationCountJoin
 
 func (s *Store) CreateLicense(ctx context.Context, label, keyHash, keyPrefix string, productID, policyID uuid.UUID, expiresAt *time.Time, maxActivations *int, createdBy *uuid.UUID) (*License, error) {
 	const q = `
@@ -172,7 +193,7 @@ func (s *Store) ListLicenses(ctx context.Context, params LicenseListParams) ([]L
 	orderBy := buildOrderBy(sortExpr, params.Order, "l.id")
 
 	q := `
-		SELECT ` + licenseColumns + `, COUNT(*) OVER() AS total_count` + licenseFromJoin + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
+		SELECT ` + licenseColumnsList + `, COUNT(*) OVER() AS total_count` + licenseFromJoinList + qb.whereClause() + orderBy + limitOffsetClause(len(qb.args)+1)
 
 	args := append(qb.args, params.Limit, params.Offset)
 	rows, err := s.pool.Query(ctx, q, args...)

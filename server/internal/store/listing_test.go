@@ -172,6 +172,131 @@ func TestListLicensesStatusAndStats(t *testing.T) {
 	}
 }
 
+func TestListLicensesActivationCount(t *testing.T) {
+	ctx := context.Background()
+	st := openTestStore(t)
+
+	suffix := uuid.NewString()
+	product, err := st.CreateProduct(ctx, "Act Count Product "+suffix, "act-"+suffix, nil)
+	if err != nil {
+		t.Fatalf("create product: %v", err)
+	}
+	policy, err := st.CreatePolicy(ctx, product.ID, "Policy", nil, nil, store.ExpirationOnCreation, 0, nil)
+	if err != nil {
+		t.Fatalf("create policy: %v", err)
+	}
+
+	licWithMachines, err := st.CreateLicense(ctx, "with-machines-"+suffix, "hash-wm-"+suffix, "WMCH1", product.ID, policy.ID, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("create license with machines: %v", err)
+	}
+	licEmpty, err := st.CreateLicense(ctx, "empty-"+suffix, "hash-empty-"+suffix, "EMPT1", product.ID, policy.ID, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("create empty license: %v", err)
+	}
+
+	for _, fp := range []string{"machine-a", "machine-b"} {
+		_, allowed, err := st.RecordActivation(ctx, licWithMachines.ID, fp, "host-"+fp, "127.0.0.1", nil)
+		if err != nil {
+			t.Fatalf("RecordActivation %s: %v", fp, err)
+		}
+		if !allowed {
+			t.Fatalf("expected activation %s to succeed", fp)
+		}
+	}
+
+	licenses, _, err := st.ListLicenses(ctx, store.LicenseListParams{
+		ListParams: store.ListParams{
+			Search: suffix,
+			Sort:   "l.created_at",
+			Order:  "asc",
+			Limit:  10,
+			Offset: 0,
+		},
+	})
+	if err != nil {
+		t.Fatalf("list licenses: %v", err)
+	}
+
+	counts := make(map[uuid.UUID]int64, len(licenses))
+	for _, lic := range licenses {
+		counts[lic.ID] = lic.ActivationCount
+	}
+	if counts[licWithMachines.ID] != 2 {
+		t.Fatalf("expected activation_count 2 for license with machines, got %d", counts[licWithMachines.ID])
+	}
+	if counts[licEmpty.ID] != 0 {
+		t.Fatalf("expected activation_count 0 for empty license, got %d", counts[licEmpty.ID])
+	}
+
+	licenses, _, err = st.ListLicenses(ctx, store.LicenseListParams{
+		ListParams: store.ListParams{
+			Search: suffix,
+			Sort:   "COALESCE(ac.activation_count, 0)",
+			Order:  "desc",
+			Limit:  10,
+			Offset: 0,
+		},
+	})
+	if err != nil {
+		t.Fatalf("list licenses by activation_count: %v", err)
+	}
+	if len(licenses) < 2 || licenses[0].ID != licWithMachines.ID {
+		t.Fatalf("expected license with machines first when sorting by activation_count desc")
+	}
+
+	machines, _, err := st.ListLicenseMachines(ctx, store.MachineListParams{
+		ListParams: store.ListParams{
+			Limit:  10,
+			Offset: 0,
+		},
+		LicenseID: licWithMachines.ID,
+		Status:    "active",
+	})
+	if err != nil {
+		t.Fatalf("list machines: %v", err)
+	}
+	if len(machines) == 0 {
+		t.Fatal("expected at least one active machine")
+	}
+
+	if _, err := st.DeactivateMachine(ctx, licWithMachines.ID, machines[0].ID, nil); err != nil {
+		t.Fatalf("deactivate machine: %v", err)
+	}
+
+	licenses, _, err = st.ListLicenses(ctx, store.LicenseListParams{
+		ListParams: store.ListParams{
+			Search: suffix,
+			Sort:   "l.created_at",
+			Order:  "asc",
+			Limit:  10,
+			Offset: 0,
+		},
+	})
+	if err != nil {
+		t.Fatalf("list licenses after deactivate: %v", err)
+	}
+
+	counts = make(map[uuid.UUID]int64, len(licenses))
+	for _, lic := range licenses {
+		counts[lic.ID] = lic.ActivationCount
+	}
+	if counts[licWithMachines.ID] != 1 {
+		t.Fatalf("expected activation_count 1 after deactivate, got %d", counts[licWithMachines.ID])
+	}
+
+	byID, err := st.GetLicenseByID(ctx, licWithMachines.ID)
+	if err != nil {
+		t.Fatalf("get license by id: %v", err)
+	}
+	if byID == nil {
+		t.Fatal("expected license by id")
+	}
+	if byID.ActivationCount != 1 {
+		t.Fatalf("expected get-by-id activation_count 1, got %d", byID.ActivationCount)
+	}
+}
+
 func TestListPoliciesWithProductName(t *testing.T) {
 	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
 	if databaseURL == "" {
