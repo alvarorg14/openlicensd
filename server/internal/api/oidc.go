@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -101,12 +103,20 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 
 	claims, err := s.oidc.Exchange(r.Context(), code, verifierCookie.Value, nonceCookie.Value)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
 		redirectSSOError(w, r, "exchange_failed")
 		return
 	}
 
 	user, err := s.resolveOIDCUser(r, claims)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
 		redirectSSOError(w, r, "user_resolution_failed")
 		return
 	}
@@ -116,6 +126,10 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := s.auth.CreateSessionForUser(r.Context(), user, store.AuthProviderOIDC, userAgent, clientIP)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
 		redirectSSOError(w, r, "session_creation_failed")
 		return
 	}
