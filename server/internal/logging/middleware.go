@@ -8,6 +8,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+func isProbePath(path string) bool {
+	return path == "/healthz" || path == "/readyz"
+}
+
 // RequestLogger logs one line per HTTP request and injects a request-scoped logger into the context.
 func RequestLogger(base *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -30,9 +34,12 @@ func RequestLogger(base *slog.Logger) func(http.Handler) http.Handler {
 				slog.String("remote_addr", r.RemoteAddr),
 			}
 
-			if ww.Status() >= 500 {
+			switch {
+			case ww.Status() >= 500:
 				logger.Warn("request completed", attrs...)
-			} else {
+			case isProbePath(r.URL.Path):
+				logger.Debug("request completed", attrs...)
+			default:
 				logger.Info("request completed", attrs...)
 			}
 		})

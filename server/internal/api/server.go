@@ -245,10 +245,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleHealthz is the Kubernetes liveness probe. It must not check external
+// dependencies: a failed database ping must not restart the process.
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleReadyz is the Kubernetes readiness probe. It verifies that PostgreSQL
+// is reachable before the pod receives traffic.
 func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
