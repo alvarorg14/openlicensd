@@ -118,6 +118,7 @@ Do not commit version bumps to `main` after each publish.
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |

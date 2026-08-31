@@ -336,6 +336,7 @@ Common status codes:
 | `429` | Rate limit exceeded (unauthenticated endpoints; includes `Retry-After` header) |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
+| `504` | Request deadline exceeded (`OPENLICENSD_REQUEST_TIMEOUT_SECONDS`) |
 
 ## Viewing the OpenAPI spec
 
