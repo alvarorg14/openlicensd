@@ -187,12 +187,31 @@ make dev-db
 
 ## Health checks
 
+OpenLicensd splits liveness and readiness the way Kubernetes expects:
+
 | Endpoint | Purpose | Success | Failure |
 |----------|---------|---------|---------|
-| `GET /healthz` | Liveness | `200` | — |
-| `GET /readyz` | Readiness (DB ping) | `200` | `503` |
+| `GET /healthz` | Liveness — process answered HTTP | `200` | — |
+| `GET /readyz` | Readiness — PostgreSQL reachable | `200` | `503` |
 
-The Helm chart configures Kubernetes probes against these endpoints.
+**Do not put the database on liveness.** If `/healthz` pinged Postgres, a brief database outage would restart every pod instead of only removing them from the Service endpoints. `/readyz` is the meaningful check: it runs `Store.Ping` with a 2-second timeout and returns `503 {"error":"database unavailable"}` when the pool cannot reach the server.
+
+The Helm chart maps probes as follows:
+
+| Kubernetes probe | Path |
+|------------------|------|
+| Liveness | `/healthz` |
+| Readiness | `/readyz` |
+| Startup | `/readyz` (allows migrations to finish before liveness begins) |
+
+Successful probe requests are logged at `debug` when `OPENLICENSD_LOG_LEVEL=debug`; failed readiness checks (`503`) still emit a `warn` line at the default `info` level.
+
+Verify locally:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" localhost:8080/healthz
+curl -s -o /dev/null -w "%{http_code}\n" localhost:8080/readyz
+```
 
 ## Releases
 

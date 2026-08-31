@@ -35,6 +35,46 @@ func TestHealthzSecurityHeaders(t *testing.T) {
 	}
 }
 
+func TestReadyzOk(t *testing.T) {
+	env := setupTestEnv(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	rec := httptest.NewRecorder()
+	env.Handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+func TestHealthzIndependentOfDatabase(t *testing.T) {
+	env := setupTestEnv(t)
+
+	env.Store.Close()
+
+	healthReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	healthRec := httptest.NewRecorder()
+	env.Handler.ServeHTTP(healthRec, healthReq)
+	if healthRec.Code != http.StatusOK {
+		t.Fatalf("healthz status = %d, want %d", healthRec.Code, http.StatusOK)
+	}
+
+	readyReq := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	readyRec := httptest.NewRecorder()
+	env.Handler.ServeHTTP(readyRec, readyReq)
+	if readyRec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("readyz status = %d, want %d", readyRec.Code, http.StatusServiceUnavailable)
+	}
+
+	var body map[string]string
+	if err := json.Unmarshal(readyRec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode readyz body: %v", err)
+	}
+	if body["error"] != "database unavailable" {
+		t.Fatalf("readyz error = %q, want %q", body["error"], "database unavailable")
+	}
+}
+
 func TestAPIIntegration(t *testing.T) {
 	env := setupTestEnv(t)
 	handler := env.Handler

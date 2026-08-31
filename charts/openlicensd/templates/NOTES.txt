@@ -29,6 +29,7 @@ Verify the deployment:
 Health endpoints:
   liveness:  /healthz
   readiness: /readyz
+  startup:   /readyz
 
 {{- if eq .Values.secret.mode "create" }}
 Remember to set secret values before deploying to production. This chart expects an external PostgreSQL database via OPENLICENSD_DATABASE_URL.

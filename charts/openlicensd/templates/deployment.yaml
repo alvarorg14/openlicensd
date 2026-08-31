@@ -70,6 +70,12 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
           {{- with .Values.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

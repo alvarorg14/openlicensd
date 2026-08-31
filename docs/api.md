@@ -192,8 +192,8 @@ These endpoints do not require authentication:
 | `GET` | `/api/v1/auth/providers` | List enabled login methods |
 | `GET` | `/api/v1/auth/oidc/login` | Start OIDC login (when enabled) |
 | `GET` | `/api/v1/auth/oidc/callback` | OIDC callback (when enabled) |
-| `GET` | `/healthz` | Liveness probe |
-| `GET` | `/readyz` | Readiness probe (checks database) |
+| `GET` | `/healthz` | Liveness probe (no dependency checks) |
+| `GET` | `/readyz` | Readiness probe (PostgreSQL ping) |
 
 ## Authenticated endpoints (session required)
 

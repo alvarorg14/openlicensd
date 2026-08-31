@@ -67,16 +67,18 @@ paths:
     get:
       tags: [Health]
       summary: Liveness probe
+      description: Returns 200 when the HTTP server is accepting requests. Does not check external dependencies; use `/readyz` for database readiness.
       operationId: healthz
       responses:
         "200":
-          description: Server is alive
+          description: Server is alive (no dependency checks)
       security: []
 
   /readyz:
     get:
       tags: [Health]
       summary: Readiness probe
+      description: Pings PostgreSQL via the connection pool (2-second timeout). Returns 503 when the database is unreachable.
       operationId: readyz
       responses:
         "200":
