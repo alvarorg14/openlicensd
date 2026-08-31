@@ -116,6 +116,17 @@
         "trustedProxies": {
           "type": "string"
         },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "addr": {
+              "type": "string"
+            }
+          }
+        },
         "rateLimit": {
           "type": "object",
           "properties": {

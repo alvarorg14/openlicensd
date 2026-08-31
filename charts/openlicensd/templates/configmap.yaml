@@ -12,6 +12,8 @@ data:
   OPENLICENSD_LOCAL_LOGIN_ENABLED: {{ .Values.config.localLoginEnabled | quote }}
   OPENLICENSD_LOG_LEVEL: {{ .Values.config.log.level | quote }}
   OPENLICENSD_LOG_FORMAT: {{ .Values.config.log.format | quote }}
+  OPENLICENSD_METRICS_ENABLED: {{ .Values.config.metrics.enabled | quote }}
+  OPENLICENSD_METRICS_ADDR: {{ .Values.config.metrics.addr | quote }}
   OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
   OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
   OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}

@@ -86,6 +86,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - Single binary distribution with embedded UI
 - PostgreSQL storage with automatic migrations
+- Prometheus metrics on a dedicated listener (`/metrics` on `:9090` by default)
 - Helm chart for Kubernetes deployment
 
 ## 🚀 Quick Start
@@ -185,9 +186,11 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
 | `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |
+| `OPENLICENSD_METRICS_ENABLED` | `true` | Enable Prometheus `/metrics` on a dedicated listener |
+| `OPENLICENSD_METRICS_ADDR` | `:9090` | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies and enable HSTS headers (`false` for local HTTP) |
 
-Rate limiting and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
+Rate limiting, metrics, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_METRICS_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog.
 
 Generate a password hash:
 

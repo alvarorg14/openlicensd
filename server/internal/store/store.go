@@ -78,6 +78,10 @@ func (s *Store) Ping(ctx context.Context) error {
 	return s.pool.Ping(ctx)
 }
 
+func (s *Store) PoolStat() *pgxpool.Stat {
+	return s.pool.Stat()
+}
+
 const licenseColumns = `
 	l.id, l.label, l.key_hash, l.key_prefix, l.product_id, l.policy_id,
 	l.expires_at, l.activated_at, l.revoked, l.created_at, l.last_validated_at, l.validation_count,

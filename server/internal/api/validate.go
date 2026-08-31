@@ -150,6 +150,9 @@ func (s *Server) logValidationOutcome(r *http.Request, lic *store.License, rawKe
 		slog.Bool("valid", result.Valid),
 		slog.String("reason", result.Reason),
 	)
+	if s.metrics != nil {
+		s.metrics.RecordValidation(result.Valid, result.Reason)
+	}
 }
 
 func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {

@@ -13,9 +13,11 @@ import (
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/harbor"
 	"github.com/alvarorg14/openlicensd/server/internal/logging"
+	appmetrics "github.com/alvarorg14/openlicensd/server/internal/metrics"
 	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
 	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -29,6 +31,7 @@ type Server struct {
 	limiter  *ratelimit.Limiter
 	clientIP *clientip.Resolver
 	logger   *slog.Logger
+	metrics  *appmetrics.Metrics
 }
 
 func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.Logger) (*Server, error) {
@@ -76,6 +79,14 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.
 		srv.oidc = client
 	}
 
+	if cfg.Metrics.Enabled {
+		var poolStat func() *appmetrics.PoolStat
+		if st != nil {
+			poolStat = st.PoolStat
+		}
+		srv.metrics = appmetrics.New(version.Version, poolStat)
+	}
+
 	return srv, nil
 }
 
@@ -84,6 +95,9 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(logging.RequestLogger(s.logger))
+	if s.metrics != nil {
+		r.Use(appmetrics.Middleware(s.metrics))
+	}
 	r.Use(middleware.Recoverer)
 	r.Use(securityHeaders(s.cfg.CookieSecure))
 
@@ -166,6 +180,14 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	}
 
 	return r
+}
+
+// MetricsHandler returns the Prometheus /metrics handler, or nil when metrics are disabled.
+func (s *Server) MetricsHandler() http.Handler {
+	if s.metrics == nil {
+		return nil
+	}
+	return s.metrics.Handler()
 }
 
 type loginRequest struct {

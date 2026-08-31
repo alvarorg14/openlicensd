@@ -53,6 +53,11 @@ type LogConfig struct {
 	Format string
 }
 
+type MetricsConfig struct {
+	Enabled bool
+	Addr    string
+}
+
 type Config struct {
 	Addr                          string
 	DatabaseURL                   string
@@ -63,6 +68,7 @@ type Config struct {
 	LocalLoginEnabled             bool
 	TrustedProxies                []string
 	Log                           LogConfig
+	Metrics                       MetricsConfig
 	RateLimit                     RateLimitConfig
 	Harbor                        HarborConfig
 	OIDC                          OIDCConfig
@@ -87,6 +93,10 @@ func Load() (*Config, error) {
 		Log: LogConfig{
 			Level:  getEnv("OPENLICENSD_LOG_LEVEL", "info"),
 			Format: getEnv("OPENLICENSD_LOG_FORMAT", "json"),
+		},
+		Metrics: MetricsConfig{
+			Enabled: getBoolEnv("OPENLICENSD_METRICS_ENABLED", true),
+			Addr:    getEnv("OPENLICENSD_METRICS_ADDR", ":9090"),
 		},
 		RateLimit: RateLimitConfig{
 			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
@@ -135,6 +145,9 @@ func Load() (*Config, error) {
 	if err := cfg.Log.validate(); err != nil {
 		return nil, err
 	}
+	if err := cfg.Metrics.validate(cfg.Addr); err != nil {
+		return nil, err
+	}
 	if err := cfg.RateLimit.validate(); err != nil {
 		return nil, err
 	}
@@ -164,6 +177,19 @@ func (o OIDCConfig) IsAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+func (m MetricsConfig) validate(apiAddr string) error {
+	if !m.Enabled {
+		return nil
+	}
+	if strings.TrimSpace(m.Addr) == "" {
+		return fmt.Errorf("OPENLICENSD_METRICS_ADDR must not be empty when OPENLICENSD_METRICS_ENABLED is true")
+	}
+	if m.Addr == apiAddr {
+		return fmt.Errorf("OPENLICENSD_METRICS_ADDR must differ from OPENLICENSD_ADDR")
+	}
+	return nil
 }
 
 func (l LogConfig) validate() error {
