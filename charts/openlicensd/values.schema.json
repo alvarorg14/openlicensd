@@ -158,6 +158,10 @@
             "enabled": {
               "type": "boolean"
             },
+            "backend": {
+              "type": "string",
+              "enum": ["memory", "postgres"]
+            },
             "publicPerMinute": {
               "type": "integer",
               "minimum": 1

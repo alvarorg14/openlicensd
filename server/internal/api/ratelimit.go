@@ -19,7 +19,7 @@ func (s *Server) rateLimit(scope ratelimit.Scope) func(http.Handler) http.Handle
 			}
 
 			clientIP := s.clientIP.From(r)
-			allowed, retryAfter := s.limiter.Allow(scope, clientIP)
+			allowed, retryAfter := s.limiter.Allow(r.Context(), scope, clientIP)
 			if allowed {
 				next.ServeHTTP(w, r)
 				return

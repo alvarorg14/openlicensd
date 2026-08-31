@@ -21,6 +21,7 @@ data:
   OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS: {{ .Values.config.database.statementTimeoutSeconds | quote }}
   OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
   OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
+  OPENLICENSD_RATE_LIMIT_BACKEND: {{ .Values.config.rateLimit.backend | quote }}
   OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}
   OPENLICENSD_RATE_LIMIT_PUBLIC_BURST: {{ .Values.config.rateLimit.publicBurst | quote }}
   OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE: {{ .Values.config.rateLimit.loginPerMinute | quote }}

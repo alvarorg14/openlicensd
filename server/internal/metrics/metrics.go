@@ -18,10 +18,11 @@ const namespace = "openlicensd"
 type Metrics struct {
 	registry *prometheus.Registry
 
-	httpRequests *prometheus.CounterVec
-	httpDuration *prometheus.HistogramVec
-	validations  *prometheus.CounterVec
-	buildInfo    *prometheus.GaugeVec
+	httpRequests    *prometheus.CounterVec
+	httpDuration    *prometheus.HistogramVec
+	validations     *prometheus.CounterVec
+	rateLimitErrors *prometheus.CounterVec
+	buildInfo       *prometheus.GaugeVec
 }
 
 // New builds a metrics registry with the standard OpenLicensd collectors.
@@ -51,6 +52,11 @@ func New(version string, poolStat func() *PoolStat) *Metrics {
 			Name:      "license_validations_total",
 			Help:      "Total license validation attempts.",
 		}, []string{"result", "reason"}),
+		rateLimitErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "rate_limit_errors_total",
+			Help:      "Rate limit backend failures that caused fail-open behavior.",
+		}, []string{"scope"}),
 		buildInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "build_info",
@@ -62,6 +68,7 @@ func New(version string, poolStat func() *PoolStat) *Metrics {
 		m.httpRequests,
 		m.httpDuration,
 		m.validations,
+		m.rateLimitErrors,
 		m.buildInfo,
 	)
 
@@ -84,6 +91,16 @@ func (m *Metrics) Gatherer() prometheus.Gatherer {
 }
 
 // RecordValidation increments the license validation counter.
+func (m *Metrics) RecordRateLimitError(scope string) {
+	if m == nil {
+		return
+	}
+	if scope == "" {
+		scope = "unknown"
+	}
+	m.rateLimitErrors.WithLabelValues(scope).Inc()
+}
+
 func (m *Metrics) RecordValidation(valid bool, reason string) {
 	result := "invalid"
 	if valid {

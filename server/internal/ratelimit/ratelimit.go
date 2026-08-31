@@ -18,9 +18,38 @@ const (
 	ScopeLogin  Scope = "login"
 )
 
+// Limiter enforces per-scope, per-key token bucket limits.
+type Limiter interface {
+	Allow(ctx context.Context, scope Scope, key string) (bool, time.Duration)
+	Run(ctx context.Context)
+}
+
+// ErrorRecorder records rate limit backend failures for observability.
+type ErrorRecorder interface {
+	RecordRateLimitError(scope string)
+}
+
+// BucketStore persists shared rate limit buckets for multi-replica deployments.
+type BucketStore interface {
+	TakeRateLimitToken(ctx context.Context, scope, key string, burst, refillPerSecond float64) (available float64, err error)
+	DeleteIdleRateLimitBuckets(ctx context.Context, idle time.Duration) (int64, error)
+}
+
+// Deps supplies optional dependencies for distributed backends.
+type Deps struct {
+	Buckets BucketStore
+	Logger  *slog.Logger
+	Metrics ErrorRecorder
+}
+
 type scopeConfig struct {
 	limit rate.Limit
 	burst int
+}
+
+type memoryScopeConfig struct {
+	burst           int
+	refillPerSecond float64
 }
 
 type bucket struct {
@@ -28,8 +57,7 @@ type bucket struct {
 	lastSeen time.Time
 }
 
-// Limiter enforces per-scope, per-key token bucket limits.
-type Limiter struct {
+type memoryLimiter struct {
 	enabled bool
 	scopes  map[Scope]scopeConfig
 	idle    time.Duration
@@ -37,13 +65,23 @@ type Limiter struct {
 	buckets map[string]*bucket
 }
 
-// New builds a limiter from configuration.
-func New(cfg config.RateLimitConfig) *Limiter {
+// New builds a limiter from configuration and optional dependencies.
+func New(cfg config.RateLimitConfig, deps Deps) Limiter {
+	switch cfg.Backend {
+	case "postgres":
+		return NewPostgres(cfg, deps)
+	default:
+		return NewMemory(cfg)
+	}
+}
+
+// NewMemory builds an in-process limiter from configuration.
+func NewMemory(cfg config.RateLimitConfig) Limiter {
 	if !cfg.Enabled {
-		return &Limiter{enabled: false}
+		return &memoryLimiter{enabled: false}
 	}
 
-	return &Limiter{
+	return &memoryLimiter{
 		enabled: true,
 		scopes: map[Scope]scopeConfig{
 			ScopePublic: {
@@ -62,7 +100,7 @@ func New(cfg config.RateLimitConfig) *Limiter {
 
 // Allow reports whether a request is allowed for the given scope and key.
 // When denied, the second return value is the suggested retry delay.
-func (l *Limiter) Allow(scope Scope, key string) (bool, time.Duration) {
+func (l *memoryLimiter) Allow(_ context.Context, scope Scope, key string) (bool, time.Duration) {
 	if l == nil || !l.enabled {
 		return true, 0
 	}
@@ -98,7 +136,7 @@ func (l *Limiter) Allow(scope Scope, key string) (bool, time.Duration) {
 }
 
 // Run periodically evicts idle buckets until the context is canceled.
-func (l *Limiter) Run(ctx context.Context) {
+func (l *memoryLimiter) Run(ctx context.Context) {
 	if l == nil || !l.enabled {
 		return
 	}
@@ -122,7 +160,7 @@ func (l *Limiter) Run(ctx context.Context) {
 	}
 }
 
-func (l *Limiter) evict(now time.Time) {
+func (l *memoryLimiter) evict(now time.Time) {
 	cutoff := now.Add(-l.idle)
 
 	l.mu.Lock()
@@ -151,10 +189,15 @@ func LogStartup(logger *slog.Logger, cfg config.RateLimitConfig) {
 		return
 	}
 	logger.Info("rate limiting enabled",
+		slog.String("backend", cfg.Backend),
 		slog.Int("public_per_minute", cfg.PublicPerMinute),
 		slog.Int("public_burst", cfg.PublicBurst),
 		slog.Int("login_per_minute", cfg.LoginPerMinute),
 		slog.Int("login_burst", cfg.LoginBurst),
 		slog.Int("idle_minutes", cfg.IdleMinutes),
 	)
+}
+
+func perMinuteToRefillPerSecond(perMinute int) float64 {
+	return float64(perMinute) / 60.0
 }
