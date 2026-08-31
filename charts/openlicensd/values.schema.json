@@ -93,6 +93,43 @@
     "affinity": {
       "type": "object"
     },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetCPUUtilizationPercentage": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 100 },
+            { "type": "string" }
+          ]
+        },
+        "targetMemoryUtilizationPercentage": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 100 },
+            { "type": "string" }
+          ]
+        },
+        "behavior": {
+          "type": "object"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "pdb": {
       "type": "object",
       "properties": {

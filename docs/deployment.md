@@ -111,6 +111,24 @@ pdb:
 
 The default `maxUnavailable: 1` is safe even with a single replica. Avoid `minAvailable: 1` when `replicaCount: 1` — it blocks all voluntary disruptions. Use `minAvailable` only when running at least two replicas (for example `minAvailable: 1` with `replicaCount: 2` keeps one pod up during drains).
 
+To autoscale based on CPU utilization, enable the optional HorizontalPodAutoscaler. The cluster must have [metrics-server](https://github.com/kubernetes-sigs/metrics-server) (or another metrics API provider) installed so the HPA can read resource usage:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+pdb:
+  enabled: true
+  maxUnavailable: 1
+config:
+  rateLimit:
+    backend: postgres
+```
+
+When `autoscaling.enabled` is true, the chart omits `spec.replicas` on the Deployment so the HPA owns replica count. Set `config.rateLimit.backend: postgres` whenever running more than one pod so rate limits are shared across replicas.
+
 ### Upgrade
 
 ```bash
