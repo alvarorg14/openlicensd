@@ -23,7 +23,16 @@ scrape_configs:
     metrics_path: /metrics
 ```
 
-In Kubernetes, scrape the `metrics` container port (see the Helm chart). A `ServiceMonitor` template is tracked in [issue #96](https://github.com/alvarorg14/openlicensd/issues/96).
+In Kubernetes, scrape the `metrics` Service port (see the Helm chart). Enable the optional ServiceMonitor when Prometheus Operator is installed:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+```
+
+Set `serviceMonitor.labels` to match your Prometheus `serviceMonitorSelector` when required.
 
 ## Exported metrics
 

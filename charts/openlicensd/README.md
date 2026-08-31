@@ -123,13 +123,13 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | ingress.hosts | list | `[{"host":"openlicensd.local","paths":[{"path":"/","pathType":"Prefix"}]}]` | Ingress host rules |
 | ingress.tls | list | `[]` | Ingress TLS configuration |
 | nameOverride | string | `""` | Override the chart name used in labels and resource names |
-| nodeSelector | object | `{}` | Node labels for pod assignment |
 | networkPolicy.allowExternal | bool | `true` | Allow ingress from any source to the HTTP and metrics ports |
 | networkPolicy.allowExternalEgress | bool | `true` | Allow egress to any destination (required for external PostgreSQL, OIDC, and Harbor) |
 | networkPolicy.annotations | object | `{}` | Annotations to add to the NetworkPolicy |
 | networkPolicy.enabled | bool | `false` | Create a NetworkPolicy for OpenLicensd pods |
 | networkPolicy.extraEgress | list | `[]` | Additional egress rules appended to the policy |
 | networkPolicy.extraIngress | list | `[]` | Additional ingress rules appended to the policy |
+| nodeSelector | object | `{}` | Node labels for pod assignment |
 | pdb.annotations | object | `{}` | Annotations to add to the PodDisruptionBudget |
 | pdb.enabled | bool | `false` | Create a PodDisruptionBudget for OpenLicensd pods |
 | pdb.maxUnavailable | int | `1` | Maximum pods that may be unavailable during voluntary disruptions. Used when minAvailable is empty. |
@@ -158,6 +158,14 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount |
 | serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount for OpenLicensd |
 | serviceAccount.name | string | `""` | ServiceAccount name. Generated from the release fullname when empty and create is true |
+| serviceMonitor.annotations | object | `{}` | Annotations to add to the ServiceMonitor |
+| serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor for /metrics scraping |
+| serviceMonitor.honorLabels | bool | `false` | Honor labels from the scraped metrics |
+| serviceMonitor.interval | string | `"30s"` | Scrape interval |
+| serviceMonitor.labels | object | `{}` | Extra labels for Prometheus Operator serviceMonitorSelector matching |
+| serviceMonitor.metricRelabelings | list | `[]` | Relabeling rules applied to scraped metrics |
+| serviceMonitor.relabelings | list | `[]` | Relabeling rules applied before ingestion |
+| serviceMonitor.scrapeTimeout | string | `""` | Scrape timeout. Leave empty to omit. |
 | tolerations | list | `[]` | Tolerations for pod assignment |
 | topologySpreadConstraints | list | `[]` | Topology spread constraints for pod assignment |
 
