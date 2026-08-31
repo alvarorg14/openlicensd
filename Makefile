@@ -9,6 +9,7 @@ GOVULNCHECK_VERSION ?= v1.7.0
 
 TOOLS_BIN := $(CURDIR)/bin
 GOLANGCI_LINT := $(TOOLS_BIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
+COMPOSE_ENV_FILES ?= /dev/null
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(TOOLS_BIN)
@@ -29,14 +30,14 @@ dev-db-reset: ## Reset local PostgreSQL volume and start fresh
 	$(MAKE) dev-db
 
 stack-up: ## Start Postgres + openlicensd from the published image
-	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml pull
-	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml up -d
+	COMPOSE_ENV_FILES=$(COMPOSE_ENV_FILES) docker compose -f docker-compose.stack.yml pull
+	COMPOSE_ENV_FILES=$(COMPOSE_ENV_FILES) docker compose -f docker-compose.stack.yml up -d
 
 stack-down: ## Stop the full stack (add ARGS=-v to drop its data)
-	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml down $(ARGS)
+	COMPOSE_ENV_FILES=$(COMPOSE_ENV_FILES) docker compose -f docker-compose.stack.yml down $(ARGS)
 
 stack-logs: ## Tail full stack logs
-	COMPOSE_ENV_FILES=/dev/null docker compose -f docker-compose.stack.yml logs -f
+	COMPOSE_ENV_FILES=$(COMPOSE_ENV_FILES) docker compose -f docker-compose.stack.yml logs -f
 
 dev-server: dev-db ## Run the API server (loads .env)
 	@test -f .env || (echo "Missing .env. Copy from .env.example: cp .env.example .env" && exit 1)

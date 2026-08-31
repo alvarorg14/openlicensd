@@ -39,5 +39,13 @@ export default defineNuxtConfig({
       }
     }
   },
+  icon: {
+    provider: 'none',
+    clientBundle: {
+      scan: {
+        globInclude: ['**/*.{vue,jsx,tsx,md,mdc,mdx,yml,yaml,ts,js}']
+      }
+    }
+  },
   compatibilityDate: '2025-01-01'
 })

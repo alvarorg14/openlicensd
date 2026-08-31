@@ -104,6 +104,8 @@ make stack-up
 
 Open http://localhost:8080 and sign in with `admin@example.com` / `admin`. This uses the default bootstrap credentials and is intended for evaluation only — change the password hash before any real use.
 
+[`docker-compose.stack.yml`](../docker-compose.stack.yml) exposes the full `.env.example` variable set with stack-safe defaults. To override settings, use a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`; do not copy `.env` or `.env.example` verbatim — keep `OPENLICENSD_DATABASE_URL` pointed at the `postgres` Compose service (the compose file sets this for you).
+
 Stop with `make stack-down` (add `ARGS=-v` to drop the stack's database volume). The stack runs under a separate Compose project (`openlicensd-stack`) from the dev database (`docker-compose.yml`), so `make dev-db-reset` does not affect it.
 
 ### Single container
