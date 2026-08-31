@@ -55,7 +55,7 @@ spec:
               protocol: TCP
             {{- if .Values.config.metrics.enabled }}
             - name: metrics
-              containerPort: {{ (split ":" .Values.config.metrics.addr | last) | int }}
+              containerPort: {{ last (splitList ":" .Values.config.metrics.addr) | int }}
               protocol: TCP
             {{- end }}
           livenessProbe:
