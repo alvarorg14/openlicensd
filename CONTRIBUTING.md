@@ -62,7 +62,7 @@ The Go SDK uses `sdk/go/vX.Y.Z` or `sdk/go/vX.Y.Z-rc.N`, independent of the serv
 2. Review the stable or prerelease draft (tag format: `vX.Y.Z` or `vX.Y.Z-rc.N`).
 3. Publish the draft when ready.
 
-Publishing triggers `.github/workflows/release.yml`, which builds binaries and container images via GoReleaser and publishes the Helm chart in a separate workflow job. The release job stamps `docs/openapi.yaml` `info.version` from the git tag (strip leading `v`) and attaches the spec to the GitHub release.
+Publishing triggers `.github/workflows/release.yml`, which builds binaries and container images via GoReleaser and publishes the Helm chart in a separate workflow job. The release job stamps `docs/openapi.yaml` `info.version` from the git tag (strip leading `v`) and attaches the stamped copy to the GitHub release. The stamp is publish-time only — git keeps the `0.0.0-dev` placeholder, and the workflow marks the file skip-worktree so GoReleaser still sees a clean worktree.
 
 `charts/openlicensd/Chart.yaml` and `docs/openapi.yaml` keep `0.0.0-dev` placeholders in git (like the Go binary's `"dev"` default). Do not bump these on every release — the workflow stamps published artifacts from the tag. Install from OCI with `--version X.Y.Z`; when installing from the source chart, set `image.tag` explicitly.
 

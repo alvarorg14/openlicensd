@@ -183,7 +183,7 @@ Replace `vX.Y.Z` with the version tag (for example `v0.5.0`). The release workfl
 
 GoReleaser builds Linux amd64/arm64 binaries and pushes Docker images to `ghcr.io/alvarorg14/openlicensd` (image tags are semver without the `v` prefix, e.g. `0.5.0`). The Helm chart is packaged and pushed to `oci://ghcr.io/alvarorg14/charts` in a separate workflow job; `helm package --version/--app-version` stamps the chart from the tag. `charts/openlicensd/Chart.yaml` in git is a `0.0.0-dev` placeholder — use `--version X.Y.Z` when installing from OCI, or set `image.tag` when installing from source.
 
-The release job also stamps `docs/openapi.yaml` `info.version` from the tag and attaches the spec to the GitHub release.
+The release job also stamps `docs/openapi.yaml` `info.version` from the tag and attaches the stamped copy to the GitHub release. The stamp is publish-time only — git keeps the `0.0.0-dev` placeholder, and the workflow marks the file skip-worktree so GoReleaser still sees a clean worktree.
 
 ## Related
 
