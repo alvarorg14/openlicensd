@@ -59,6 +59,22 @@ tolerations: []
 # -- Affinity rules for pod assignment
 affinity: {}
 
+autoscaling:
+  # -- Create a HorizontalPodAutoscaler for OpenLicensd pods
+  enabled: false
+  # -- Minimum replicas when autoscaling is enabled
+  minReplicas: 1
+  # -- Maximum replicas when autoscaling is enabled
+  maxReplicas: 5
+  # -- Target average CPU utilization percentage. Leave empty to omit the CPU metric.
+  targetCPUUtilizationPercentage: 80
+  # -- Target average memory utilization percentage. Leave empty to omit the memory metric.
+  targetMemoryUtilizationPercentage: ""
+  # -- HPA scaling behavior (scaleUp/scaleDown policies)
+  behavior: {}
+  # -- Annotations to add to the HorizontalPodAutoscaler
+  annotations: {}
+
 pdb:
   # -- Create a PodDisruptionBudget for OpenLicensd pods
   enabled: false

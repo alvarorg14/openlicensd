@@ -64,6 +64,13 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity rules for pod assignment |
+| autoscaling.annotations | object | `{}` | Annotations to add to the HorizontalPodAutoscaler |
+| autoscaling.behavior | object | `{}` | HPA scaling behavior (scaleUp/scaleDown policies) |
+| autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler for OpenLicensd pods |
+| autoscaling.maxReplicas | int | `5` | Maximum replicas when autoscaling is enabled |
+| autoscaling.minReplicas | int | `1` | Minimum replicas when autoscaling is enabled |
+| autoscaling.targetCPUUtilizationPercentage | int | `80` | Target average CPU utilization percentage. Leave empty to omit the CPU metric. |
+| autoscaling.targetMemoryUtilizationPercentage | string | `""` | Target average memory utilization percentage. Leave empty to omit the memory metric. |
 | config.addr | string | `":8080"` | HTTP listen address (maps to OPENLICENSD_ADDR) |
 | config.bootstrapAdmin.email | string | `""` | Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL) |
 | config.bootstrapAdmin.name | string | `"Administrator"` | Display name for the bootstrap admin (maps to OPENLICENSD_BOOTSTRAP_ADMIN_NAME) |
