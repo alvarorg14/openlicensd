@@ -88,6 +88,18 @@ curl -s localhost:9090/metrics | head
 
 See [metrics.md](metrics.md) for the full metric catalog.
 
+### Multiple replicas
+
+The default rate limit backend (`memory`) keeps buckets in process memory, so each replica enforces its own per-IP budget. When scaling beyond one pod (for example with an HPA), set `config.rateLimit.backend: postgres` so replicas share limits via PostgreSQL:
+
+```yaml
+config:
+  rateLimit:
+    backend: postgres
+```
+
+This adds a database write on each rate-limited request. A full HA and scaling guide is tracked in [issue #99](https://github.com/alvarorg14/openlicensd/issues/99).
+
 ### Upgrade
 
 ```bash

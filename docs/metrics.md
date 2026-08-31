@@ -46,6 +46,12 @@ Unmatched routes (static SPA assets, 404s) are labeled `route="other"`.
 
 `result` is `valid` or `invalid`. `reason` is one of: `ok`, `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, `activation_limit`, or `unknown`.
 
+### Rate limiting
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `openlicensd_rate_limit_errors_total` | Counter | `scope` | Postgres backend failures that caused fail-open behavior (`public` or `login`) |
+
 ### Database pool
 
 | Metric | Type | Description |

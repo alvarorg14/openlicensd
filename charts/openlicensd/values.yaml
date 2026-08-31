@@ -95,6 +95,8 @@ config:
   rateLimit:
     # -- Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED)
     enabled: true
+    # -- Rate limit backend: memory (per-replica) or postgres (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND)
+    backend: memory
     # -- Sustained request rate for /validate and /registry-credentials (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE)
     publicPerMinute: 600
     # -- Burst capacity for public endpoints (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_BURST)

@@ -195,7 +195,7 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_METRICS_ADDR` | `:9090` | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies and enable HSTS headers (`false` for local HTTP) |
 
-Rate limiting, metrics, database pool, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_METRICS_*`, `OPENLICENSD_DATABASE_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog.
+Rate limiting, metrics, database pool, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, including optional `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` for multi-replica deployments, `OPENLICENSD_METRICS_*`, `OPENLICENSD_DATABASE_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog.
 
 Generate a password hash:
 

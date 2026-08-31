@@ -81,6 +81,7 @@ helm install openlicensd ./charts/openlicensd \
 | config.oidc.redirectUrl | string | `""` | Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL) |
 | config.oidc.scopes | string | `"openid,profile,email"` | Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES) |
 | config.rateLimit.enabled | bool | `true` | Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED) |
+| config.rateLimit.backend | string | `"memory"` | Rate limit backend: `memory` (per-replica) or `postgres` (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND) |
 | config.rateLimit.idleMinutes | int | `10` | Minutes before unused per-IP buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES) |
 | config.rateLimit.loginBurst | int | `10` | Burst capacity for login endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_BURST) |
 | config.rateLimit.loginPerMinute | int | `30` | Sustained request rate for login and OIDC endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE) |

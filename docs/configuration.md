@@ -73,13 +73,14 @@ The connection URL is parsed first (`pool_*` query parameters are supported). No
 |----------|---------|----------|-------------|
 | `OPENLICENSD_TRUSTED_PROXIES` | — | No | Comma-separated trusted proxy IPs or CIDRs. When the direct peer matches, `X-Forwarded-For` is used to resolve the client IP |
 | `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | No | Enable per-IP rate limiting on unauthenticated endpoints |
+| `OPENLICENSD_RATE_LIMIT_BACKEND` | `memory` | No | Backend: `memory` (per-replica buckets) or `postgres` (shared buckets across replicas) |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | No | Sustained request rate for `/validate` and `/registry-credentials` |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` | `60` | No | Burst capacity for public endpoints |
 | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` | `30` | No | Sustained request rate for `/auth/login` and OIDC login/callback |
 | `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` | `10` | No | Burst capacity for login endpoints |
-| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted from memory |
+| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted (`memory`: from process memory; `postgres`: from the database) |
 
-Limits are per process. With multiple replicas, effective throughput scales with replica count. Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer.
+With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global per-IP budget; this adds a database write on each rate-limited request (fail-open on backend errors; see `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md)). Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer.
 
 ### OIDC SSO (optional)
 
@@ -158,6 +159,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |
 | `config.rateLimit.enabled` | `OPENLICENSD_RATE_LIMIT_ENABLED` |
+| `config.rateLimit.backend` | `OPENLICENSD_RATE_LIMIT_BACKEND` |
 | `config.rateLimit.publicPerMinute` | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` |
 | `config.rateLimit.publicBurst` | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` |
 | `config.rateLimit.loginPerMinute` | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` |
