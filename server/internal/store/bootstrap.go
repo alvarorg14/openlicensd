@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 )
@@ -26,5 +27,6 @@ func BootstrapAdmin(ctx context.Context, st *Store, cfg *config.Config) error {
 		return fmt.Errorf("create bootstrap admin: %w", err)
 	}
 
+	slog.Default().Info("bootstrap admin seeded", slog.String("email", cfg.BootstrapAdmin.Email))
 	return nil
 }

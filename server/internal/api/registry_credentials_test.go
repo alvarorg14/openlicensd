@@ -54,7 +54,10 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 	handler := srv.Router(nil)
 
 	resp := doJSON(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
@@ -140,7 +143,10 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 		}
 	}
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 	handler := srv.Router(nil)
 	cookies := login(t, handler, email, "test-password")
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"sort"
 	"strings"
 )
@@ -45,6 +46,7 @@ func (s *Store) Migrate(ctx context.Context) error {
 	}
 	sort.Strings(names)
 
+	appliedCount := 0
 	for _, name := range names {
 		var applied bool
 		if err := conn.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1)`, name).Scan(&applied); err != nil {
@@ -77,6 +79,15 @@ func (s *Store) Migrate(ctx context.Context) error {
 		if err := tx.Commit(ctx); err != nil {
 			return fmt.Errorf("commit migration %s: %w", name, err)
 		}
+
+		slog.Default().Info("migration applied", slog.String("version", name))
+		appliedCount++
+	}
+
+	if appliedCount == 0 {
+		slog.Default().Info("schema up to date")
+	} else {
+		slog.Default().Info("migrations complete", slog.Int("applied", appliedCount))
 	}
 
 	return nil

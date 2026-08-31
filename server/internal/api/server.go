@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -12,6 +12,7 @@ import (
 	"github.com/alvarorg14/openlicensd/server/internal/clientip"
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/harbor"
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
 	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
@@ -27,21 +28,23 @@ type Server struct {
 	oidc     *appoidc.Client
 	limiter  *ratelimit.Limiter
 	clientIP *clientip.Resolver
+	logger   *slog.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
+func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.Logger) (*Server, error) {
 	sessionTTL := time.Duration(cfg.SessionTTLHours) * time.Hour
 	clientIP, err := clientip.NewResolver(cfg.TrustedProxies)
 	if err != nil {
-		log.Fatalf("client ip resolver: %v", err)
+		return nil, err
 	}
 
 	srv := &Server{
 		cfg:      cfg,
-		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure),
+		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure, logger),
 		store:    st,
 		limiter:  ratelimit.New(cfg.RateLimit),
 		clientIP: clientIP,
+		logger:   logger,
 	}
 
 	if cfg.Harbor.Enabled {
@@ -51,9 +54,10 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 			cfg.Harbor.AdminPassword,
 			cfg.Harbor.InsecureSkipVerify,
 			cfg.Harbor.Debug,
+			logger,
 		)
 		if err != nil {
-			log.Fatalf("harbor client: %v", err)
+			return nil, err
 		}
 		srv.harbor = client
 	}
@@ -67,19 +71,19 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 			Scopes:       cfg.OIDC.Scopes,
 		})
 		if err != nil {
-			log.Fatalf("oidc client: %v", err)
+			return nil, err
 		}
 		srv.oidc = client
 	}
 
-	return srv
+	return srv, nil
 }
 
 func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
-	r.Use(middleware.Logger)
+	r.Use(logging.RequestLogger(s.logger))
 	r.Use(middleware.Recoverer)
 	r.Use(securityHeaders(s.cfg.CookieSecure))
 
@@ -232,6 +236,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func writeInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {
+	logging.FromContext(r.Context()).Error(message, slog.Any("err", err))
+	writeError(w, http.StatusInternalServerError, message)
 }
 
 func writeStoreError(w http.ResponseWriter, err error, notFoundMessage string) bool {

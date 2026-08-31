@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,6 +14,10 @@ import (
 
 	"github.com/alvarorg14/openlicensd/server/internal/harbor"
 )
+
+func testHarborLogger() *slog.Logger {
+	return slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
+}
 
 func TestCreateEphemeralRobot(t *testing.T) {
 	t.Parallel()
@@ -45,7 +50,7 @@ func TestCreateEphemeralRobot(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	client, err := harbor.New(server.URL, "admin", "secret", false, false)
+	client, err := harbor.New(server.URL, "admin", "secret", false, false, testHarborLogger())
 	if err != nil {
 		t.Fatalf("new client: %v", err)
 	}
@@ -118,7 +123,7 @@ func TestCreateEphemeralRobotMultipleProjectsUsesSystemLevel(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	client, err := harbor.New(server.URL, "admin", "secret", false, false)
+	client, err := harbor.New(server.URL, "admin", "secret", false, false, testHarborLogger())
 	if err != nil {
 		t.Fatalf("new client: %v", err)
 	}
@@ -165,7 +170,7 @@ func TestCleanupExpiredRobots(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	client, err := harbor.New(server.URL, "admin", "secret", false, false)
+	client, err := harbor.New(server.URL, "admin", "secret", false, false, testHarborLogger())
 	if err != nil {
 		t.Fatalf("new client: %v", err)
 	}

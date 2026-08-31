@@ -43,6 +43,15 @@ func HashKey(raw string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// KeyPrefix returns the first Crockford Base32 group from a license key.
+func KeyPrefix(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	parts := strings.SplitN(raw, "-", 2)
+	return parts[0]
+}
+
 func ComputeExpiry(durationDays *int, from time.Time) *time.Time {
 	if durationDays == nil {
 		return nil

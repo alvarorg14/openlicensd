@@ -122,7 +122,7 @@ func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to create policy")
+		writeInternalError(w, r, err, "failed to create policy")
 		return
 	}
 
@@ -159,7 +159,7 @@ func (s *Server) handleListPolicies(w http.ResponseWriter, r *http.Request) {
 
 	policies, total, err := s.store.ListPolicies(r.Context(), listParams)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list policies")
+		writeInternalError(w, r, err, "failed to list policies")
 		return
 	}
 
@@ -228,7 +228,7 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to update policy")
+		writeInternalError(w, r, err, "failed to update policy")
 		return
 	}
 	if policy == nil {
@@ -251,7 +251,7 @@ func (s *Server) handleDeletePolicy(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to delete policy")
+		writeInternalError(w, r, err, "failed to delete policy")
 		return
 	}
 	if !deleted {

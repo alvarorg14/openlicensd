@@ -2,7 +2,7 @@ package maintenance
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -15,12 +15,14 @@ type SessionStore interface {
 type SessionCleaner struct {
 	store    SessionStore
 	interval time.Duration
+	logger   *slog.Logger
 }
 
-func NewSessionCleaner(store SessionStore, interval time.Duration) *SessionCleaner {
+func NewSessionCleaner(store SessionStore, interval time.Duration, logger *slog.Logger) *SessionCleaner {
 	return &SessionCleaner{
 		store:    store,
 		interval: interval,
+		logger:   logger,
 	}
 }
 
@@ -50,10 +52,10 @@ func (c *SessionCleaner) RunOnce(ctx context.Context) (int64, error) {
 func (c *SessionCleaner) runPass(ctx context.Context) {
 	removed, err := c.RunOnce(ctx)
 	if err != nil {
-		log.Printf("session cleanup: %v", err)
+		c.logger.Error("session cleanup failed", slog.Any("err", err))
 		return
 	}
 	if removed > 0 {
-		log.Printf("session cleanup: removed %d expired sessions", removed)
+		c.logger.Info("session cleanup completed", slog.Int64("removed", removed))
 	}
 }

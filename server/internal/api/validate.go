@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/alvarorg14/openlicensd/server/internal/license"
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
 
@@ -114,7 +115,12 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 	}
 
 	s.setActivationFields(&result, lic)
-	_ = s.store.RecordValidation(ctx, lic.ID)
+	if recordErr := s.store.RecordValidation(ctx, lic.ID); recordErr != nil {
+		logging.FromContext(ctx).Warn("record validation failed",
+			slog.String("license_key_prefix", lic.KeyPrefix),
+			slog.Any("err", recordErr),
+		)
+	}
 	return lic, result, nil
 }
 
@@ -127,6 +133,23 @@ func (s *Server) setActivationFields(result *license.ValidationResult, lic *stor
 		max := *lic.MaxActivations
 		result.MaxActivations = &max
 	}
+}
+
+func (s *Server) logValidationOutcome(r *http.Request, lic *store.License, rawKey, product string, result license.ValidationResult) {
+	keyPrefix := license.KeyPrefix(rawKey)
+	if lic != nil && lic.KeyPrefix != "" {
+		keyPrefix = lic.KeyPrefix
+	}
+	productCode := product
+	if lic != nil && lic.ProductCode != "" {
+		productCode = lic.ProductCode
+	}
+	logging.FromContext(r.Context()).Info("license validated",
+		slog.String("license_key_prefix", keyPrefix),
+		slog.String("product_code", productCode),
+		slog.Bool("valid", result.Valid),
+		slog.String("reason", result.Reason),
+	)
 }
 
 func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
@@ -142,12 +165,13 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientIP := s.clientIP.From(r)
-	_, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product, req.Fingerprint, req.Hostname, clientIP)
+	lic, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product, req.Fingerprint, req.Hostname, clientIP)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to validate license")
+		writeInternalError(w, r, err, "failed to validate license")
 		return
 	}
 
+	s.logValidationOutcome(r, lic, req.Key, req.Product, result)
 	writeJSON(w, http.StatusOK, result)
 }
 
@@ -166,9 +190,11 @@ func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Reques
 	clientIP := s.clientIP.From(r)
 	lic, result, err := s.resolveValidLicense(r.Context(), req.Key, req.Product, req.Fingerprint, req.Hostname, clientIP)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to validate license")
+		writeInternalError(w, r, err, "failed to validate license")
 		return
 	}
+
+	s.logValidationOutcome(r, lic, req.Key, req.Product, result)
 
 	if !result.Valid {
 		reason := result.Reason
@@ -187,7 +213,7 @@ func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Reques
 		lic.KeyPrefix,
 	)
 	if err != nil {
-		log.Printf("registry credentials: harbor create robot failed: %v", err)
+		logging.FromContext(r.Context()).Error("registry credentials harbor create robot failed", slog.Any("err", err))
 		message := "failed to issue registry credentials"
 		if s.cfg.Harbor.Debug {
 			message = fmt.Sprintf("%s: %v", message, err)
@@ -197,7 +223,7 @@ func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := s.harbor.CleanupExpiredRobots(r.Context(), s.cfg.Harbor.RobotNamePrefix); err != nil {
-		log.Printf("registry credentials: harbor cleanup failed: %v", err)
+		logging.FromContext(r.Context()).Warn("registry credentials harbor cleanup failed", slog.Any("err", err))
 	}
 
 	writeJSON(w, http.StatusOK, registryCredentialsResponse{

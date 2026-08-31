@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -49,13 +50,15 @@ type Service struct {
 	store        *store.Store
 	sessionTTL   time.Duration
 	cookieSecure bool
+	logger       *slog.Logger
 }
 
-func NewService(st *store.Store, sessionTTL time.Duration, cookieSecure bool) *Service {
+func NewService(st *store.Store, sessionTTL time.Duration, cookieSecure bool, logger *slog.Logger) *Service {
 	return &Service{
 		store:        st,
 		sessionTTL:   sessionTTL,
 		cookieSecure: cookieSecure,
+		logger:       logger,
 	}
 }
 
@@ -70,26 +73,44 @@ func (s *Service) Login(ctx context.Context, email, password, userAgent, clientI
 		hashToCompare = *user.PasswordHash
 	}
 
+	if user != nil && user.PasswordHash == nil {
+		s.logLoginFailure(email, clientIP, "no_password_set")
+		return nil, nil, errors.New("invalid credentials")
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(hashToCompare), []byte(password)); err != nil {
 		if user != nil {
-			_ = s.store.RecordFailedLogin(ctx, user.ID, maxFailedAttempts, lockoutDuration)
+			if recordErr := s.store.RecordFailedLogin(ctx, user.ID, maxFailedAttempts, lockoutDuration); recordErr != nil {
+				s.logger.Warn("record failed login failed",
+					slog.String("user_id", user.ID.String()),
+					slog.Any("err", recordErr),
+				)
+			} else if updated, fetchErr := s.store.GetUserByID(ctx, user.ID); fetchErr == nil && updated != nil &&
+				updated.LockedUntil != nil && updated.LockedUntil.After(time.Now()) &&
+				updated.FailedLoginAttempts >= maxFailedAttempts {
+				s.logger.Warn("account locked",
+					slog.String("email", email),
+					slog.String("client_ip", clientIP),
+					slog.String("user_id", user.ID.String()),
+				)
+			}
 		}
+		s.logLoginFailure(email, clientIP, "bad_password")
 		return nil, nil, errors.New("invalid credentials")
 	}
 
 	if user == nil {
+		s.logLoginFailure(email, clientIP, "unknown_user")
 		return nil, nil, errors.New("invalid credentials")
 	}
 
 	if user.DisabledAt != nil {
+		s.logLoginFailure(email, clientIP, "user_disabled")
 		return nil, nil, errors.New("invalid credentials")
 	}
 
 	if user.LockedUntil != nil && user.LockedUntil.After(time.Now()) {
-		return nil, nil, errors.New("invalid credentials")
-	}
-
-	if user.PasswordHash == nil {
+		s.logLoginFailure(email, clientIP, "account_locked")
 		return nil, nil, errors.New("invalid credentials")
 	}
 
@@ -102,7 +123,22 @@ func (s *Service) Login(ctx context.Context, email, password, userAgent, clientI
 		return nil, nil, err
 	}
 
+	s.logger.Info("login succeeded",
+		slog.String("user_id", user.ID.String()),
+		slog.String("email", email),
+		slog.String("auth_provider", user.AuthProvider),
+		slog.String("client_ip", clientIP),
+	)
+
 	return user, tokens, nil
+}
+
+func (s *Service) logLoginFailure(email, clientIP, reason string) {
+	s.logger.Warn("login failed",
+		slog.String("email", email),
+		slog.String("client_ip", clientIP),
+		slog.String("reason", reason),
+	)
 }
 
 // CreateSessionForUser creates a session for an already-authenticated user (e.g. OIDC in Phase 2).
@@ -195,7 +231,12 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 
 	if time.Since(sess.LastSeenAt) >= sessionTouchMin {
 		newExpiry := time.Now().Add(s.sessionTTL)
-		_ = s.store.TouchSession(r.Context(), sess.ID, newExpiry)
+		if touchErr := s.store.TouchSession(r.Context(), sess.ID, newExpiry); touchErr != nil {
+			s.logger.Warn("touch session failed",
+				slog.String("session_id", sess.ID.String()),
+				slog.Any("err", touchErr),
+			)
+		}
 	}
 
 	return &Principal{

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/alvarorg14/openlicensd/server/internal/api"
 	"github.com/alvarorg14/openlicensd/server/internal/config"
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	"github.com/alvarorg14/openlicensd/server/internal/maintenance"
 	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 	"github.com/alvarorg14/openlicensd/server/internal/static"
@@ -19,35 +20,52 @@ import (
 )
 
 func main() {
+	bootstrapLogger := logging.NewDefault()
+	slog.SetDefault(bootstrapLogger)
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("config: %v", err)
+		bootstrapLogger.Error("config load failed", slog.Any("err", err))
+		os.Exit(1)
 	}
+
+	logger, err := logging.New(cfg.Log)
+	if err != nil {
+		bootstrapLogger.Error("logger init failed", slog.Any("err", err))
+		os.Exit(1)
+	}
+	slog.SetDefault(logger)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("store: %v", err)
+		logger.Error("store init failed", slog.Any("err", err))
+		os.Exit(1)
 	}
 	defer st.Close()
 
 	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
-		log.Fatalf("bootstrap: %v", err)
+		logger.Error("bootstrap admin failed", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	bgCtx, stopBackground := context.WithCancel(context.Background())
 	defer stopBackground()
 
 	if interval := cfg.SessionCleanupInterval(); interval > 0 {
-		go maintenance.NewSessionCleaner(st, interval).Run(bgCtx)
-		log.Printf("session cleanup every %s", interval)
+		go maintenance.NewSessionCleaner(st, interval, logger).Run(bgCtx)
+		logger.Info("session cleanup enabled", slog.Duration("interval", interval))
 	} else {
-		log.Printf("session cleanup disabled")
+		logger.Info("session cleanup disabled")
 	}
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, logger)
+	if err != nil {
+		logger.Error("api server init failed", slog.Any("err", err))
+		os.Exit(1)
+	}
 	srv.StartBackground(bgCtx)
-	ratelimit.LogStartup(cfg.RateLimit)
+	ratelimit.LogStartup(logger, cfg.RateLimit)
 	staticHandler := static.MustHandler()
 	handler := srv.Router(staticHandler)
 
@@ -58,22 +76,27 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("openlicensd %s listening on %s", version.Version, cfg.Addr)
+		logger.Info("listening", slog.String("version", version.Version), slog.String("addr", cfg.Addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server: %v", err)
+			logger.Error("server failed", slog.Any("err", err))
+			os.Exit(1)
 		}
 	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
+	sig := <-stop
+	logger.Info("shutdown signal received", slog.String("signal", sig.String()))
 
 	stopBackground()
+	logger.Info("background tasks stopped")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("shutdown: %v", err)
+		logger.Error("shutdown failed", slog.Any("err", err))
+		os.Exit(1)
 	}
+	logger.Info("shutdown complete")
 }
