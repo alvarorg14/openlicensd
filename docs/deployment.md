@@ -79,7 +79,19 @@ curl -s localhost:8080/readyz
 
 ### Prometheus metrics
 
-Metrics are served on a **separate listener** (`OPENLICENSD_METRICS_ADDR`, default `:9090`) at `GET /metrics`. This port is not routed by the chart Ingress — scrape it from inside the cluster (e.g. via a `ServiceMonitor` in [issue #96](https://github.com/alvarorg14/openlicensd/issues/96)) or with a port-forward:
+Metrics are served on a **separate listener** (`OPENLICENSD_METRICS_ADDR`, default `:9090`) at `GET /metrics`. This port is not routed by the chart Ingress — scrape it from inside the cluster or with a port-forward.
+
+With [Prometheus Operator](https://prometheus-operator.dev/) (or kube-prometheus-stack) installed, enable the optional ServiceMonitor:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  # Optional: labels for your Prometheus serviceMonitorSelector
+  labels:
+    release: kube-prometheus-stack
+```
+
+The chart also exposes a named `metrics` port on the Service when `config.metrics.enabled` is true (default), so in-cluster scrapes and port-forwards target the metrics listener without routing it through Ingress.
 
 ```bash
 kubectl port-forward -n openlicensd svc/openlicensd 9090:9090

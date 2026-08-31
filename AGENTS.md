@@ -73,7 +73,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Helm Chart
 
 - **Location**: `charts/openlicensd/`
-- Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress, HorizontalPodAutoscaler, PodDisruptionBudget, and NetworkPolicy
+- Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress, HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicy, and ServiceMonitor
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
 - Source `Chart.yaml` `version` / `appVersion` are `0.0.0-dev` placeholders; `.github/workflows/release.yml` stamps the packaged OCI chart from the git tag (`helm package --version/--app-version`)
 

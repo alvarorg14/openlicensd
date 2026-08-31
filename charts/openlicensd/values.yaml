@@ -87,6 +87,24 @@ pdb:
   # -- Annotations to add to the PodDisruptionBudget
   annotations: {}
 
+serviceMonitor:
+  # -- Create a Prometheus Operator ServiceMonitor for /metrics scraping
+  enabled: false
+  # -- Scrape interval
+  interval: 30s
+  # -- Scrape timeout. Leave empty to omit.
+  scrapeTimeout: ""
+  # -- Extra labels for Prometheus Operator serviceMonitorSelector matching
+  labels: {}
+  # -- Annotations to add to the ServiceMonitor
+  annotations: {}
+  # -- Honor labels from the scraped metrics
+  honorLabels: false
+  # -- Relabeling rules applied before ingestion
+  relabelings: []
+  # -- Relabeling rules applied to scraped metrics
+  metricRelabelings: []
+
 networkPolicy:
   # -- Create a NetworkPolicy for OpenLicensd pods
   enabled: false
