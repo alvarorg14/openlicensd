@@ -156,6 +156,38 @@
         }
       }
     },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowExternal": {
+          "type": "boolean"
+        },
+        "allowExternalEgress": {
+          "type": "boolean"
+        },
+        "extraIngress": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "extraEgress": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "config": {
       "type": "object",
       "properties": {

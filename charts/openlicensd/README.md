@@ -124,6 +124,12 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | ingress.tls | list | `[]` | Ingress TLS configuration |
 | nameOverride | string | `""` | Override the chart name used in labels and resource names |
 | nodeSelector | object | `{}` | Node labels for pod assignment |
+| networkPolicy.allowExternal | bool | `true` | Allow ingress from any source to the HTTP and metrics ports |
+| networkPolicy.allowExternalEgress | bool | `true` | Allow egress to any destination (required for external PostgreSQL, OIDC, and Harbor) |
+| networkPolicy.annotations | object | `{}` | Annotations to add to the NetworkPolicy |
+| networkPolicy.enabled | bool | `false` | Create a NetworkPolicy for OpenLicensd pods |
+| networkPolicy.extraEgress | list | `[]` | Additional egress rules appended to the policy |
+| networkPolicy.extraIngress | list | `[]` | Additional ingress rules appended to the policy |
 | pdb.annotations | object | `{}` | Annotations to add to the PodDisruptionBudget |
 | pdb.enabled | bool | `false` | Create a PodDisruptionBudget for OpenLicensd pods |
 | pdb.maxUnavailable | int | `1` | Maximum pods that may be unavailable during voluntary disruptions. Used when minAvailable is empty. |

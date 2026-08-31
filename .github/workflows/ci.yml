@@ -180,6 +180,9 @@ jobs:
       - name: Template chart with HPA enabled
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set autoscaling.enabled=true > /dev/null
 
+      - name: Template chart with NetworkPolicy enabled
+        run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set networkPolicy.enabled=true > /dev/null
+
       - name: Package chart
         run: helm package charts/openlicensd
 

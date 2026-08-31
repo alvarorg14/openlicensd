@@ -85,6 +85,20 @@ pdb:
   # -- Annotations to add to the PodDisruptionBudget
   annotations: {}
 
+networkPolicy:
+  # -- Create a NetworkPolicy for OpenLicensd pods
+  enabled: false
+  # -- Allow ingress from any source to the HTTP and metrics ports
+  allowExternal: true
+  # -- Allow egress to any destination (required for external PostgreSQL, OIDC, and Harbor)
+  allowExternalEgress: true
+  # -- Additional ingress rules appended to the policy
+  extraIngress: []
+  # -- Additional egress rules appended to the policy
+  extraEgress: []
+  # -- Annotations to add to the NetworkPolicy
+  annotations: {}
+
 config:
   # -- HTTP listen address (maps to OPENLICENSD_ADDR)
   addr: ":8080"
