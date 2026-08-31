@@ -64,6 +64,8 @@ Open http://localhost:8080 and sign in with:
 
 > **Warning:** The default bootstrap password is for evaluation only. Generate your own hash with `make hash-password PASSWORD=yourpassword` and set `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` before any real use (for example via a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`).
 
+[`docker-compose.stack.yml`](docker-compose.stack.yml) exposes the full `.env.example` variable set with stack-safe defaults. If you use `.env.stack`, do not copy `.env` or `.env.example` verbatim — keep `OPENLICENSD_DATABASE_URL` pointed at the `postgres` Compose service (the compose file sets this for you).
+
 ### Verify (Docker Compose)
 
 ```bash
