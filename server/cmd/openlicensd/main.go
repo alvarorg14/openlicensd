@@ -75,6 +75,21 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
+	var metricsServer *http.Server
+	if metricsHandler := srv.MetricsHandler(); metricsHandler != nil {
+		metricsServer = &http.Server{
+			Addr:              cfg.Metrics.Addr,
+			Handler:           http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/metrics" {
+					http.NotFound(w, r)
+					return
+				}
+				metricsHandler.ServeHTTP(w, r)
+			}),
+			ReadHeaderTimeout: 10 * time.Second,
+		}
+	}
+
 	go func() {
 		logger.Info("listening", slog.String("version", version.Version), slog.String("addr", cfg.Addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -82,6 +97,16 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+
+	if metricsServer != nil {
+		go func() {
+			logger.Info("metrics listening", slog.String("addr", cfg.Metrics.Addr))
+			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error("metrics server failed", slog.Any("err", err))
+				os.Exit(1)
+			}
+		}()
+	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
@@ -97,6 +122,12 @@ func main() {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error("shutdown failed", slog.Any("err", err))
 		os.Exit(1)
+	}
+	if metricsServer != nil {
+		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+			logger.Error("metrics shutdown failed", slog.Any("err", err))
+			os.Exit(1)
+		}
 	}
 	logger.Info("shutdown complete")
 }

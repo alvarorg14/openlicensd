@@ -334,3 +334,56 @@ func TestLoadLogInvalidFormat(t *testing.T) {
 		t.Fatalf("expected error for invalid log format")
 	}
 }
+
+func TestLoadMetricsDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if !cfg.Metrics.Enabled {
+		t.Fatalf("expected metrics enabled by default")
+	}
+	if cfg.Metrics.Addr != ":9090" {
+		t.Fatalf("metrics addr=%q want :9090", cfg.Metrics.Addr)
+	}
+}
+
+func TestLoadMetricsDisabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "false")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Metrics.Enabled {
+		t.Fatalf("expected metrics disabled")
+	}
+}
+
+func TestLoadMetricsEmptyAddr(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", "   ")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for empty metrics addr")
+	}
+}
+
+func TestLoadMetricsAddrEqualsAPIAddr(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_ADDR", ":8080")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", ":8080")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when metrics addr equals API addr")
+	}
+}
