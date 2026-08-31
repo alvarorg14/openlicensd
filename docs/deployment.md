@@ -100,6 +100,17 @@ config:
 
 This adds a database write on each rate-limited request. A full HA and scaling guide is tracked in [issue #99](https://github.com/alvarorg14/openlicensd/issues/99).
 
+For production deployments with multiple replicas, enable the optional PodDisruptionBudget so voluntary disruptions (node drains, rolling upgrades) respect availability:
+
+```yaml
+replicaCount: 2
+pdb:
+  enabled: true
+  maxUnavailable: 1
+```
+
+The default `maxUnavailable: 1` is safe even with a single replica. Avoid `minAvailable: 1` when `replicaCount: 1` — it blocks all voluntary disruptions. Use `minAvailable` only when running at least two replicas (for example `minAvailable: 1` with `replicaCount: 2` keeps one pod up during drains).
+
 ### Upgrade
 
 ```bash

@@ -47,6 +47,18 @@ helm install openlicensd ./charts/openlicensd \
   -f charts/openlicensd/ci/test-values.yaml
 ```
 
+## Health probes
+
+The Deployment configures Kubernetes probes against the HTTP port:
+
+| Probe | Path | Purpose |
+|-------|------|---------|
+| Liveness | `/healthz` | Process is alive (no dependency checks) |
+| Readiness | `/readyz` | PostgreSQL is reachable |
+| Startup | `/readyz` | Allows migrations to finish before liveness begins |
+
+Liveness must not ping the database: a transient Postgres outage would restart pods instead of removing them from the load balancer. Readiness and startup use `/readyz`, which runs a lightweight `Store.Ping` with a 2-second timeout.
+
 {{ template "chart.valuesHeader" . }}
 {{ template "chart.valuesTable" . }}
 
