@@ -129,6 +129,52 @@ config:
 
 When `autoscaling.enabled` is true, the chart omits `spec.replicas` on the Deployment so the HPA owns replica count. Set `config.rateLimit.backend: postgres` whenever running more than one pod so rate limits are shared across replicas.
 
+### Network policy
+
+For clusters that enforce `NetworkPolicy` (requires a CNI plugin such as Calico or Cilium), enable the optional policy to restrict pod traffic:
+
+```yaml
+networkPolicy:
+  enabled: true
+```
+
+With defaults (`allowExternal: true`, `allowExternalEgress: true`), the policy allows TCP ingress to the HTTP port and metrics port (when metrics are enabled) from any source, and allows all egress so external PostgreSQL, OIDC, and Harbor endpoints keep working.
+
+Tighten ingress to only the ingress controller namespace:
+
+```yaml
+networkPolicy:
+  enabled: true
+  allowExternal: false
+  extraIngress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+```
+
+When locking down ingress, ensure kubelet/node traffic can still reach the pod for liveness and readiness probes — add an `extraIngress` rule for the node CIDR or namespace if your CNI requires it.
+
+Tighten egress to only PostgreSQL (DNS is included automatically when `allowExternalEgress` is false):
+
+```yaml
+networkPolicy:
+  enabled: true
+  allowExternalEgress: false
+  extraEgress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+```
+
+Replace the CIDR with your database network. Add additional `extraEgress` rules for OIDC or Harbor when those features are enabled.
+
 ### Upgrade
 
 ```bash
