@@ -77,6 +77,17 @@ curl -s localhost:8080/healthz
 curl -s localhost:8080/readyz
 ```
 
+### Prometheus metrics
+
+Metrics are served on a **separate listener** (`OPENLICENSD_METRICS_ADDR`, default `:9090`) at `GET /metrics`. This port is not routed by the chart Ingress — scrape it from inside the cluster (e.g. via a `ServiceMonitor` in [issue #96](https://github.com/alvarorg14/openlicensd/issues/96)) or with a port-forward:
+
+```bash
+kubectl port-forward -n openlicensd svc/openlicensd 9090:9090
+curl -s localhost:9090/metrics | head
+```
+
+See [metrics.md](metrics.md) for the full metric catalog.
+
 ### Upgrade
 
 ```bash

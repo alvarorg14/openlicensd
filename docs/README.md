@@ -6,6 +6,7 @@
 | [api.md](api.md) | Authentication flow, curl examples, and how to view the spec |
 | [architecture.md](architecture.md) | Components, request flows, data model, and key format |
 | [configuration.md](configuration.md) | Environment variables, Helm values, and secret management |
+| [metrics.md](metrics.md) | Prometheus metrics endpoint and exported series |
 | [oidc-sso.md](oidc-sso.md) | OIDC SSO setup, provider walkthroughs, and troubleshooting |
 | [harbor-registry-credentials.md](harbor-registry-credentials.md) | Harbor integration: setup, robot accounts, and troubleshooting |
 | [sdk/go.md](sdk/go.md) | Go client SDK for license validation |

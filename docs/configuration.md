@@ -46,6 +46,15 @@ Login success and failure records include `email` and `client_ip`. Plan log rete
 
 Set `OPENLICENSD_LOG_FORMAT=text` for human-readable local development output.
 
+### Metrics
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_METRICS_ENABLED` | `true` | No | Enable Prometheus `/metrics` on a dedicated listener |
+| `OPENLICENSD_METRICS_ADDR` | `:9090` | No | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
+
+See [metrics.md](metrics.md) for the full metric catalog and scrape configuration.
+
 ### Rate limiting
 
 | Variable | Default | Required | Description |
@@ -126,6 +135,8 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
 | `config.log.format` | `OPENLICENSD_LOG_FORMAT` |
 | `config.log.level` | `OPENLICENSD_LOG_LEVEL` |
+| `config.metrics.addr` | `OPENLICENSD_METRICS_ADDR` |
+| `config.metrics.enabled` | `OPENLICENSD_METRICS_ENABLED` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |
