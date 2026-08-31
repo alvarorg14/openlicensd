@@ -260,6 +260,32 @@ func TestLoadRateLimitDefaults(t *testing.T) {
 	if cfg.RateLimit.IdleMinutes != 10 {
 		t.Fatalf("idle minutes=%d want 10", cfg.RateLimit.IdleMinutes)
 	}
+	if cfg.RateLimit.Backend != "memory" {
+		t.Fatalf("backend=%q want memory", cfg.RateLimit.Backend)
+	}
+}
+
+func TestLoadRateLimitBackendPostgres(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "postgres")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RateLimit.Backend != "postgres" {
+		t.Fatalf("backend=%q want postgres", cfg.RateLimit.Backend)
+	}
+}
+
+func TestLoadRateLimitInvalidBackend(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "redis")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid rate limit backend")
+	}
 }
 
 func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {

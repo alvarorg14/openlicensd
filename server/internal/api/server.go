@@ -28,7 +28,7 @@ type Server struct {
 	store    *store.Store
 	harbor   *harbor.Client
 	oidc     *appoidc.Client
-	limiter  *ratelimit.Limiter
+	limiter  ratelimit.Limiter
 	clientIP *clientip.Resolver
 	logger   *slog.Logger
 	metrics  *appmetrics.Metrics
@@ -41,13 +41,27 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.
 		return nil, err
 	}
 
+	var metrics *appmetrics.Metrics
+	if cfg.Metrics.Enabled {
+		var poolStat func() *appmetrics.PoolStat
+		if st != nil {
+			poolStat = st.PoolStat
+		}
+		metrics = appmetrics.New(version.Version, poolStat)
+	}
+
 	srv := &Server{
 		cfg:      cfg,
 		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure, logger),
 		store:    st,
-		limiter:  ratelimit.New(cfg.RateLimit),
+		limiter: ratelimit.New(cfg.RateLimit, ratelimit.Deps{
+			Buckets: st,
+			Logger:  logger,
+			Metrics: metrics,
+		}),
 		clientIP: clientIP,
 		logger:   logger,
+		metrics:  metrics,
 	}
 
 	if cfg.Harbor.Enabled {
@@ -77,14 +91,6 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.
 			return nil, err
 		}
 		srv.oidc = client
-	}
-
-	if cfg.Metrics.Enabled {
-		var poolStat func() *appmetrics.PoolStat
-		if st != nil {
-			poolStat = st.PoolStat
-		}
-		srv.metrics = appmetrics.New(version.Version, poolStat)
 	}
 
 	return srv, nil
