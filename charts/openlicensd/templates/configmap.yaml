@@ -14,6 +14,10 @@ data:
   OPENLICENSD_LOG_FORMAT: {{ .Values.config.log.format | quote }}
   OPENLICENSD_METRICS_ENABLED: {{ .Values.config.metrics.enabled | quote }}
   OPENLICENSD_METRICS_ADDR: {{ .Values.config.metrics.addr | quote }}
+  OPENLICENSD_DATABASE_MAX_CONNS: {{ .Values.config.database.maxConns | quote }}
+  OPENLICENSD_DATABASE_MIN_CONNS: {{ .Values.config.database.minConns | quote }}
+  OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES: {{ .Values.config.database.maxConnIdleMinutes | quote }}
+  OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS: {{ .Values.config.database.statementTimeoutSeconds | quote }}
   OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
   OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
   OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}

@@ -180,6 +180,10 @@ result, _ := client.Validate(ctx, licenseKey)
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | *(required)* | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | Maximum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | Minimum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | Idle connection lifetime in minutes (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | PostgreSQL statement timeout in seconds (`0` = server default) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Email for first admin (required on empty database) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
@@ -190,7 +194,7 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_METRICS_ADDR` | `:9090` | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies and enable HSTS headers (`false` for local HTTP) |
 
-Rate limiting, metrics, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_METRICS_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog.
+Rate limiting, metrics, database pool, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_METRICS_*`, `OPENLICENSD_DATABASE_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog.
 
 Generate a password hash:
 

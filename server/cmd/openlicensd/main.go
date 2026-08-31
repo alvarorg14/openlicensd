@@ -37,7 +37,12 @@ func main() {
 	slog.SetDefault(logger)
 
 	ctx := context.Background()
-	st, err := store.New(ctx, cfg.DatabaseURL)
+	st, err := store.NewWithPool(ctx, cfg.DatabaseURL, store.PoolConfig{
+		MaxConns:                cfg.Database.MaxConns,
+		MinConns:                cfg.Database.MinConns,
+		MaxConnIdleMinutes:      cfg.Database.MaxConnIdleMinutes,
+		StatementTimeoutSeconds: cfg.Database.StatementTimeoutSeconds,
+	})
 	if err != nil {
 		logger.Error("store init failed", slog.Any("err", err))
 		os.Exit(1)

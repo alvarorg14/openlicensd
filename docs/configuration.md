@@ -55,6 +55,17 @@ Set `OPENLICENSD_LOG_FORMAT=text` for human-readable local development output.
 
 See [metrics.md](metrics.md) for the full metric catalog and scrape configuration.
 
+### Database pool
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | No | Maximum pool connections; `0` uses pgx default (`max(4, NumCPU)`) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | No | Minimum pool connections; `0` uses pgx default |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | No | Close idle connections after this many minutes; `0` uses pgx default (`30m`) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | No | PostgreSQL `statement_timeout` in seconds; `0` leaves the server default |
+
+The connection URL is parsed first (`pool_*` query parameters are supported). Non-zero env vars override URL pool settings. Effective pool limits appear in the `openlicensd_db_pool_*` Prometheus gauges — see [metrics.md](metrics.md).
+
 ### Rate limiting
 
 | Variable | Default | Required | Description |
@@ -137,6 +148,10 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.log.level` | `OPENLICENSD_LOG_LEVEL` |
 | `config.metrics.addr` | `OPENLICENSD_METRICS_ADDR` |
 | `config.metrics.enabled` | `OPENLICENSD_METRICS_ENABLED` |
+| `config.database.maxConns` | `OPENLICENSD_DATABASE_MAX_CONNS` |
+| `config.database.minConns` | `OPENLICENSD_DATABASE_MIN_CONNS` |
+| `config.database.maxConnIdleMinutes` | `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` |
+| `config.database.statementTimeoutSeconds` | `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |

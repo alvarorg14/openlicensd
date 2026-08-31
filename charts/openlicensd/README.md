@@ -56,6 +56,10 @@ helm install openlicensd ./charts/openlicensd \
 | config.bootstrapAdmin.email | string | `""` | Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL) |
 | config.bootstrapAdmin.name | string | `"Administrator"` | Display name for the bootstrap admin (maps to OPENLICENSD_BOOTSTRAP_ADMIN_NAME) |
 | config.cookieSecure | bool | `true` | Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE) |
+| config.database.maxConnIdleMinutes | int | `0` | Close idle connections after this many minutes; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES) |
+| config.database.maxConns | int | `0` | Maximum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONNS) |
+| config.database.minConns | int | `0` | Minimum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MIN_CONNS) |
+| config.database.statementTimeoutSeconds | int | `0` | PostgreSQL statement_timeout in seconds; 0 leaves server default (maps to OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS) |
 | config.harbor.debug | bool | `false` | Log Harbor API requests/responses (maps to OPENLICENSD_HARBOR_DEBUG) |
 | config.harbor.enabled | bool | `false` | Enable Harbor registry credentials endpoint |
 | config.harbor.insecureSkipVerify | bool | `false` | Skip TLS verification for Harbor (maps to OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY) |

@@ -110,6 +110,10 @@ Do not commit version bumps to `main` after each publish.
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | **required** | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | Maximum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | Minimum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | Idle connection lifetime in minutes (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | PostgreSQL statement timeout in seconds (`0` = server default) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Seed first admin when users table is empty |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |

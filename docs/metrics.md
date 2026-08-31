@@ -59,7 +59,7 @@ Unmatched routes (static SPA assets, 404s) are labeled `route="other"`.
 | `openlicensd_db_pool_canceled_acquire_count_total` | Counter | Acquires canceled by context |
 | `openlicensd_db_pool_new_connections_count_total` | Counter | New connections opened |
 
-Pool tuning is separate from these gauges — see [issue #87](https://github.com/alvarorg14/openlicensd/issues/87).
+Pool tuning is configured via `OPENLICENSD_DATABASE_*` env vars — see [configuration.md](configuration.md#database-pool).
 
 ### Build and runtime
 

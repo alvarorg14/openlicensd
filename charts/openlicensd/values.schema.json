@@ -127,6 +127,27 @@
             }
           }
         },
+        "database": {
+          "type": "object",
+          "properties": {
+            "maxConns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minConns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxConnIdleMinutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "statementTimeoutSeconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
         "rateLimit": {
           "type": "object",
           "properties": {
