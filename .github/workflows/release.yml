@@ -65,6 +65,13 @@ jobs:
           VERSION="${VERSION#v}"
           sed -i "s/^  version: 0.0.0-dev$/  version: ${VERSION}/" docs/openapi.yaml
           grep -q "^  version: ${VERSION}$" docs/openapi.yaml
+          # GoReleaser requires a clean git worktree; hide the publish-time stamp from status.
+          git update-index --skip-worktree docs/openapi.yaml
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Working tree still dirty after skip-worktree:"
+            git status --porcelain
+            exit 1
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
