@@ -243,8 +243,8 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/healthz` | None | Liveness |
-| `GET` | `/readyz` | None | Readiness (DB ping) |
+| `GET` | `/healthz` | None | Liveness (no dependency checks) |
+| `GET` | `/readyz` | None | Readiness (PostgreSQL ping, 2s timeout) |
 | `POST` | `/api/v1/auth/login` | None | Sets session cookies (when local login enabled) |
 | `GET` | `/api/v1/auth/providers` | None | List enabled login methods |
 | `GET` | `/api/v1/auth/oidc/login` | None | Start OIDC login (when enabled) |

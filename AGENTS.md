@@ -103,6 +103,7 @@ Do not commit version bumps to `main` after each publish.
 9. Prometheus metrics (configurable via `OPENLICENSD_METRICS_ENABLED` / `OPENLICENSD_METRICS_ADDR`) are served on a dedicated listener at `/metrics`, separate from the API/UI port
 10. Rate limiting on unauthenticated endpoints uses per-IP token buckets; with `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, buckets are shared across replicas via PostgreSQL
 11. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+12. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
 ```
 
 ## Configuration
