@@ -79,6 +79,15 @@ config:
     enabled: true
     # -- Metrics listen address (maps to OPENLICENSD_METRICS_ADDR)
     addr: ":9090"
+  database:
+    # -- Maximum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONNS)
+    maxConns: 0
+    # -- Minimum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MIN_CONNS)
+    minConns: 0
+    # -- Close idle connections after this many minutes; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES)
+    maxConnIdleMinutes: 0
+    # -- PostgreSQL statement_timeout in seconds; 0 leaves server default (maps to OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS)
+    statementTimeoutSeconds: 0
   # -- Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES)
   trustedProxies: ""
   rateLimit:
