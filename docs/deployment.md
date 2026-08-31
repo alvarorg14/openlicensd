@@ -129,6 +129,39 @@ config:
 
 When `autoscaling.enabled` is true, the chart omits `spec.replicas` on the Deployment so the HPA owns replica count. Set `config.rateLimit.backend: postgres` whenever running more than one pod so rate limits are shared across replicas.
 
+### Topology spread constraints
+
+When running multiple replicas (fixed count or HPA), spread pods across failure domains so a single zone or node outage does not take out every replica. The chart exposes a pass-through `topologySpreadConstraints` list on the Deployment — supply full constraint objects; nothing is rendered when the list is empty.
+
+Use `ScheduleAnyway` unless your nodes are reliably labeled and you need hard enforcement (`DoNotSchedule` can leave pods Pending on unlabeled nodes). The `labelSelector` must match the chart's pod labels (`app.kubernetes.io/name` and `app.kubernetes.io/instance`, where the instance is the Helm release name):
+
+```yaml
+replicaCount: 3
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: openlicensd
+        app.kubernetes.io/instance: openlicensd
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: openlicensd
+        app.kubernetes.io/instance: openlicensd
+pdb:
+  enabled: true
+  maxUnavailable: 1
+config:
+  rateLimit:
+    backend: postgres
+```
+
+Replace `openlicensd` in `app.kubernetes.io/instance` with your release name if it differs.
+
 ### Network policy
 
 For clusters that enforce `NetworkPolicy` (requires a CNI plugin such as Calico or Cilium), enable the optional policy to restrict pod traffic:

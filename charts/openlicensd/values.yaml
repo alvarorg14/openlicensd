@@ -58,6 +58,8 @@ nodeSelector: {}
 tolerations: []
 # -- Affinity rules for pod assignment
 affinity: {}
+# -- Topology spread constraints for pod assignment
+topologySpreadConstraints: []
 
 autoscaling:
   # -- Create a HorizontalPodAutoscaler for OpenLicensd pods

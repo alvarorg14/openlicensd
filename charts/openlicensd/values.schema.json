@@ -93,6 +93,12 @@
     "affinity": {
       "type": "object"
     },
+    "topologySpreadConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
     "autoscaling": {
       "type": "object",
       "properties": {
