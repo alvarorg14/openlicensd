@@ -48,6 +48,11 @@ type RateLimitConfig struct {
 	IdleMinutes     int
 }
 
+type LogConfig struct {
+	Level  string
+	Format string
+}
+
 type Config struct {
 	Addr                          string
 	DatabaseURL                   string
@@ -57,6 +62,7 @@ type Config struct {
 	CookieSecure                  bool
 	LocalLoginEnabled             bool
 	TrustedProxies                []string
+	Log                           LogConfig
 	RateLimit                     RateLimitConfig
 	Harbor                        HarborConfig
 	OIDC                          OIDCConfig
@@ -78,6 +84,10 @@ func Load() (*Config, error) {
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
 		LocalLoginEnabled:             localLoginEnabled,
 		TrustedProxies:                parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
+		Log: LogConfig{
+			Level:  getEnv("OPENLICENSD_LOG_LEVEL", "info"),
+			Format: getEnv("OPENLICENSD_LOG_FORMAT", "json"),
+		},
 		RateLimit: RateLimitConfig{
 			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
 			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
@@ -122,6 +132,9 @@ func Load() (*Config, error) {
 	if err := validateTrustedProxies(cfg.TrustedProxies); err != nil {
 		return nil, err
 	}
+	if err := cfg.Log.validate(); err != nil {
+		return nil, err
+	}
 	if err := cfg.RateLimit.validate(); err != nil {
 		return nil, err
 	}
@@ -151,6 +164,20 @@ func (o OIDCConfig) IsAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+func (l LogConfig) validate() error {
+	switch strings.ToLower(l.Level) {
+	case "debug", "info", "warn", "error":
+	default:
+		return fmt.Errorf("OPENLICENSD_LOG_LEVEL must be debug, info, warn, or error")
+	}
+	switch strings.ToLower(l.Format) {
+	case "json", "text":
+	default:
+		return fmt.Errorf("OPENLICENSD_LOG_FORMAT must be json or text")
+	}
+	return nil
 }
 
 func (r RateLimitConfig) validate() error {

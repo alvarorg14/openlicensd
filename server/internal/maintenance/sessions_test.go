@@ -3,12 +3,18 @@ package maintenance_test
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/alvarorg14/openlicensd/server/internal/maintenance"
 )
+
+func testLogger() *slog.Logger {
+	return slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
+}
 
 type fakeSessionStore struct {
 	mu      sync.Mutex
@@ -35,7 +41,7 @@ func (f *fakeSessionStore) callCount() int {
 
 func TestSessionCleanerRunsImmediatelyAndOnTicker(t *testing.T) {
 	store := &fakeSessionStore{removed: 2}
-	cleaner := maintenance.NewSessionCleaner(store, 20*time.Millisecond)
+	cleaner := maintenance.NewSessionCleaner(store, 20*time.Millisecond, testLogger())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -69,7 +75,7 @@ func TestSessionCleanerRunsImmediatelyAndOnTicker(t *testing.T) {
 
 func TestSessionCleanerContinuesAfterError(t *testing.T) {
 	store := &fakeSessionStore{err: errors.New("db unavailable")}
-	cleaner := maintenance.NewSessionCleaner(store, 10*time.Millisecond)
+	cleaner := maintenance.NewSessionCleaner(store, 10*time.Millisecond, testLogger())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -103,7 +109,7 @@ func TestSessionCleanerContinuesAfterError(t *testing.T) {
 
 func TestSessionCleanerRunOnce(t *testing.T) {
 	store := &fakeSessionStore{removed: 3}
-	cleaner := maintenance.NewSessionCleaner(store, time.Minute)
+	cleaner := maintenance.NewSessionCleaner(store, time.Minute, testLogger())
 
 	removed, err := cleaner.RunOnce(context.Background())
 	if err != nil {

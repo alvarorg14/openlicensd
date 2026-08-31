@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -76,7 +78,10 @@ func setupTestEnv(t *testing.T) testEnv {
 		}
 	}
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 
 	return testEnv{
 		Handler:  srv.Router(nil),
@@ -84,6 +89,10 @@ func setupTestEnv(t *testing.T) testEnv {
 		Email:    email,
 		Password: "test-password",
 	}
+}
+
+func testLogger() *slog.Logger {
+	return slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
 }
 
 func login(t *testing.T, handler http.Handler, email, password string) []*http.Cookie {

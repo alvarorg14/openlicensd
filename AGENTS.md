@@ -62,6 +62,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
+| `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
 | `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses, machines; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
@@ -97,7 +98,8 @@ Do not commit version bumps to `main` after each publish.
 5. Admin lists resources → GET /api/v1/licenses|products|policies|users with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
-8. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+8. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
+9. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
 ```
 
 ## Configuration
@@ -113,6 +115,8 @@ Do not commit version bumps to `main` after each publish.
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
+| `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
+| `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |
 | `OPENLICENSD_TRUSTED_PROXIES` | — | Trusted proxy IPs/CIDRs for client IP resolution |
 | `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | Enable per-IP rate limiting on unauthenticated endpoints |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | Sustained rate for `/validate` and `/registry-credentials` |

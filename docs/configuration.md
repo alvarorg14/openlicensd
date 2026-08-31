@@ -18,6 +18,34 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies; when `true`, also enables `Strict-Transport-Security` response headers |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
 
+### Logging
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_LOG_LEVEL` | `info` | No | Log level: `debug`, `info`, `warn`, or `error` |
+| `OPENLICENSD_LOG_FORMAT` | `json` | No | Log output format: `json` or `text` |
+
+Logs are written to stderr. Each HTTP request emits a completion line with `request_id`, `method`, `path`, `status`, `bytes`, `duration_ms`, and `remote_addr`. Handler and integration logs reuse the same `request_id` for correlation.
+
+Example JSON line:
+
+```json
+{"time":"2026-08-31T12:00:00.000Z","level":"INFO","msg":"request completed","request_id":"abc-123","method":"POST","path":"/api/v1/validate","status":200,"bytes":84,"duration_ms":12,"remote_addr":"127.0.0.1:12345"}
+```
+
+Common structured attributes: `request_id`, `client_ip`, `user_id`, `email`, `license_key_prefix`, `product_code`, `reason`, `err`.
+
+| Level | Examples |
+|-------|----------|
+| `error` | Internal handler failures (`writeInternalError`), Harbor robot creation failures |
+| `warn` | Failed logins, OIDC callback failures, rate-limit denials, best-effort store write failures |
+| `info` | Request completion, successful logins, license validation outcomes, migrations, startup/shutdown |
+| `debug` | Harbor API traffic when `OPENLICENSD_HARBOR_DEBUG=true` |
+
+Login success and failure records include `email` and `client_ip`. Plan log retention in your aggregator accordingly — license keys are never logged (only `license_key_prefix`).
+
+Set `OPENLICENSD_LOG_FORMAT=text` for human-readable local development output.
+
 ### Rate limiting
 
 | Variable | Default | Required | Description |
@@ -96,6 +124,8 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.sessionCleanupIntervalMinutes` | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
+| `config.log.format` | `OPENLICENSD_LOG_FORMAT` |
+| `config.log.level` | `OPENLICENSD_LOG_LEVEL` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |

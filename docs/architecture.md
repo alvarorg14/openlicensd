@@ -48,6 +48,7 @@ flowchart TB
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
+| `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
 | `store` | `server/internal/store/` | PostgreSQL CRUD, validation recording, migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server with SPA fallback |

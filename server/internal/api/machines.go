@@ -60,7 +60,7 @@ func (s *Server) handleListLicenseMachines(w http.ResponseWriter, r *http.Reques
 
 	lic, err := s.store.GetLicenseByID(r.Context(), licenseID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to load license")
+		writeInternalError(w, r, err, "failed to load license")
 		return
 	}
 	if lic == nil {
@@ -100,7 +100,7 @@ func (s *Server) handleListLicenseMachines(w http.ResponseWriter, r *http.Reques
 
 	machines, total, err := s.store.ListLicenseMachines(r.Context(), listParams)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list machines")
+		writeInternalError(w, r, err, "failed to list machines")
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *Server) handleUpdateLicenseMachine(w http.ResponseWriter, r *http.Reque
 
 	machine, err := s.store.UpdateMachineName(r.Context(), licenseID, machineID, req.Name)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update machine")
+		writeInternalError(w, r, err, "failed to update machine")
 		return
 	}
 	if machine == nil {
@@ -164,7 +164,7 @@ func (s *Server) handleReleaseLicenseMachine(w http.ResponseWriter, r *http.Requ
 
 	machine, err := s.store.DeactivateMachine(r.Context(), licenseID, machineID, byUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to release machine")
+		writeInternalError(w, r, err, "failed to release machine")
 		return
 	}
 	if machine == nil {

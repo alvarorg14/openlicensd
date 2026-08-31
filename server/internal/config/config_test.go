@@ -297,3 +297,40 @@ func TestLoadTrustedProxiesParsesCSV(t *testing.T) {
 		t.Fatalf("trusted proxies=%v", cfg.TrustedProxies)
 	}
 }
+
+func TestLoadLogDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_LEVEL", "")
+	t.Setenv("OPENLICENSD_LOG_FORMAT", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Log.Level != "info" {
+		t.Fatalf("log level=%q", cfg.Log.Level)
+	}
+	if cfg.Log.Format != "json" {
+		t.Fatalf("log format=%q", cfg.Log.Format)
+	}
+}
+
+func TestLoadLogInvalidLevel(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_LEVEL", "trace")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid log level")
+	}
+}
+
+func TestLoadLogInvalidFormat(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_FORMAT", "xml")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid log format")
+	}
+}

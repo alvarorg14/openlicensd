@@ -5,12 +5,16 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// Store uses slog.Default() for lifecycle logging during startup and migrations.
+// main.go sets the default logger before store.New is called.
 
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
@@ -62,6 +66,7 @@ func New(ctx context.Context, databaseURL string) (*Store, error) {
 		return nil, err
 	}
 
+	slog.Default().Info("database connected")
 	return s, nil
 }
 

@@ -109,7 +109,7 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	policy, err := s.store.GetPolicyForProduct(r.Context(), req.PolicyID, req.ProductID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to load policy")
+		writeInternalError(w, r, err, "failed to load policy")
 		return
 	}
 	if policy == nil {
@@ -119,7 +119,7 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	rawKey, keyHash, keyPrefix, err := license.GenerateKey()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to generate license key")
+		writeInternalError(w, r, err, "failed to generate license key")
 		return
 	}
 
@@ -147,7 +147,7 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to create license")
+		writeInternalError(w, r, err, "failed to create license")
 		return
 	}
 
@@ -202,7 +202,7 @@ func (s *Server) handleListLicenses(w http.ResponseWriter, r *http.Request) {
 
 	licenses, total, err := s.store.ListLicenses(r.Context(), listParams)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list licenses")
+		writeInternalError(w, r, err, "failed to list licenses")
 		return
 	}
 
@@ -224,7 +224,7 @@ type licenseStatsResponse struct {
 func (s *Server) handleLicenseStats(w http.ResponseWriter, r *http.Request) {
 	stats, err := s.store.LicenseStats(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to load license stats")
+		writeInternalError(w, r, err, "failed to load license stats")
 		return
 	}
 
@@ -245,7 +245,7 @@ func (s *Server) handleGetLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.GetLicenseByID(r.Context(), id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to load license")
+		writeInternalError(w, r, err, "failed to load license")
 		return
 	}
 	if lic == nil {
@@ -283,7 +283,7 @@ func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.UpdateLicense(r.Context(), id, req.Label, req.ExpiresAt, req.MaxActivations)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update license")
+		writeInternalError(w, r, err, "failed to update license")
 		return
 	}
 	if lic == nil {
@@ -303,7 +303,7 @@ func (s *Server) handleDeleteLicense(w http.ResponseWriter, r *http.Request) {
 
 	deleted, err := s.store.DeleteLicense(r.Context(), id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete license")
+		writeInternalError(w, r, err, "failed to delete license")
 		return
 	}
 	if !deleted {
@@ -323,7 +323,7 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.SetLicenseRevoked(r.Context(), id, true)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to revoke license")
+		writeInternalError(w, r, err, "failed to revoke license")
 		return
 	}
 	if lic == nil {
@@ -343,7 +343,7 @@ func (s *Server) handleUnrevokeLicense(w http.ResponseWriter, r *http.Request) {
 
 	lic, err := s.store.SetLicenseRevoked(r.Context(), id, false)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to unrevoke license")
+		writeInternalError(w, r, err, "failed to unrevoke license")
 		return
 	}
 	if lic == nil {

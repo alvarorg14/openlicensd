@@ -8,11 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 )
 
 type Client struct {
@@ -21,6 +23,7 @@ type Client struct {
 	username   string
 	password   string
 	debug      bool
+	logger     *slog.Logger
 	httpClient *http.Client
 }
 
@@ -62,7 +65,7 @@ type robotListItem struct {
 	ExpiresAt int64  `json:"expires_at"`
 }
 
-func New(baseURL, username, password string, insecureSkipVerify, debug bool) (*Client, error) {
+func New(baseURL, username, password string, insecureSkipVerify, debug bool, logger *slog.Logger) (*Client, error) {
 	parsed, err := url.Parse(strings.TrimRight(baseURL, "/"))
 	if err != nil {
 		return nil, fmt.Errorf("parse harbor url: %w", err)
@@ -83,6 +86,7 @@ func New(baseURL, username, password string, insecureSkipVerify, debug bool) (*C
 		username: username,
 		password: password,
 		debug:    debug,
+		logger:   logger,
 		httpClient: &http.Client{
 			Timeout:   30 * time.Second,
 			Transport: transport,
@@ -130,7 +134,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 	}
 
 	endpoint := c.baseURL + "/api/v2.0/robots"
-	c.logDebug("request method=%s url=%s user=%q body=%s", http.MethodPost, endpoint, c.username, string(payload))
+	c.logDebug(ctx, "harbor request", slog.String("method", http.MethodPost), slog.String("url", endpoint), slog.String("user", c.username), slog.String("body", string(payload)))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
 	if err != nil {
@@ -141,7 +145,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logDebug("transport error method=%s url=%s err=%v", http.MethodPost, endpoint, err)
+		c.logDebug(ctx, "harbor transport error", slog.String("method", http.MethodPost), slog.String("url", endpoint), slog.Any("err", err))
 		return nil, fmt.Errorf("create robot: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -151,7 +155,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 		return nil, fmt.Errorf("read robot response: %w", err)
 	}
 
-	c.logResponse(http.MethodPost, endpoint, resp.StatusCode, respBody)
+	c.logResponse(ctx, http.MethodPost, endpoint, resp.StatusCode, respBody)
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("create robot: status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
@@ -165,7 +169,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 		return nil, fmt.Errorf("create robot: missing name or secret in response")
 	}
 
-	c.logDebug("created robot name=%q expires_at=%d", created.Name, created.ExpiresAt)
+	c.logDebug(ctx, "harbor robot created", slog.String("name", created.Name), slog.Int64("expires_at", created.ExpiresAt))
 
 	return &Credentials{
 		Name:      created.Name,
@@ -176,7 +180,7 @@ func (c *Client) CreateEphemeralRobot(ctx context.Context, projects []string, du
 
 func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) error {
 	endpoint := c.baseURL + "/api/v2.0/robots"
-	c.logDebug("request method=%s url=%s user=%q", http.MethodGet, endpoint, c.username)
+	c.logDebug(ctx, "harbor request", slog.String("method", http.MethodGet), slog.String("url", endpoint), slog.String("user", c.username))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -186,7 +190,7 @@ func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) er
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logDebug("transport error method=%s url=%s err=%v", http.MethodGet, endpoint, err)
+		c.logDebug(ctx, "harbor transport error", slog.String("method", http.MethodGet), slog.String("url", endpoint), slog.Any("err", err))
 		return fmt.Errorf("list robots: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -196,7 +200,7 @@ func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) er
 		return fmt.Errorf("read robots response: %w", err)
 	}
 
-	c.logResponse(http.MethodGet, endpoint, resp.StatusCode, respBody)
+	c.logResponse(ctx, http.MethodGet, endpoint, resp.StatusCode, respBody)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("list robots: status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
@@ -217,7 +221,7 @@ func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) er
 		}
 
 		deleteEndpoint := fmt.Sprintf("%s/api/v2.0/robots/%d", c.baseURL, robot.ID)
-		c.logDebug("request method=%s url=%s user=%q robot=%q", http.MethodDelete, deleteEndpoint, c.username, robot.Name)
+		c.logDebug(ctx, "harbor request", slog.String("method", http.MethodDelete), slog.String("url", deleteEndpoint), slog.String("user", c.username), slog.String("robot", robot.Name))
 
 		deleteReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, deleteEndpoint, nil)
 		if err != nil {
@@ -227,37 +231,56 @@ func (c *Client) CleanupExpiredRobots(ctx context.Context, namePrefix string) er
 
 		deleteResp, err := c.httpClient.Do(deleteReq)
 		if err != nil {
-			c.logDebug("transport error method=%s url=%s err=%v", http.MethodDelete, deleteEndpoint, err)
+			c.logDebug(ctx, "harbor transport error", slog.String("method", http.MethodDelete), slog.String("url", deleteEndpoint), slog.Any("err", err))
 			continue
 		}
 
 		deleteBody, _ := io.ReadAll(deleteResp.Body)
 		_ = deleteResp.Body.Close()
-		c.logResponse(http.MethodDelete, deleteEndpoint, deleteResp.StatusCode, deleteBody)
+		c.logResponse(ctx, http.MethodDelete, deleteEndpoint, deleteResp.StatusCode, deleteBody)
 	}
 
 	return nil
 }
 
-func (c *Client) logDebug(format string, args ...any) {
+func (c *Client) logDebug(ctx context.Context, msg string, attrs ...any) {
 	if !c.debug {
 		return
 	}
-	log.Printf("harbor debug: "+format, args...)
+	c.loggerFor(ctx).Debug(msg, attrs...)
 }
 
-func (c *Client) logResponse(method, endpoint string, status int, body []byte) {
+func (c *Client) logResponse(ctx context.Context, method, endpoint string, status int, body []byte) {
 	if !c.debug && status >= 200 && status < 300 {
 		return
 	}
 
 	response := redactSecrets(strings.TrimSpace(string(body)))
+	logger := c.loggerFor(ctx)
 	if c.debug {
-		log.Printf("harbor debug: response method=%s url=%s status=%d body=%s", method, endpoint, status, response)
+		logger.Debug("harbor response",
+			slog.String("method", method),
+			slog.String("url", endpoint),
+			slog.Int("status", status),
+			slog.String("body", response),
+		)
 		return
 	}
 
-	log.Printf("harbor: response method=%s url=%s status=%d body=%s", method, endpoint, status, response)
+	logger.Warn("harbor response",
+		slog.String("method", method),
+		slog.String("url", endpoint),
+		slog.Int("status", status),
+		slog.String("body", response),
+	)
+}
+
+func (c *Client) loggerFor(ctx context.Context) *slog.Logger {
+	logger := logging.FromContext(ctx)
+	if c.logger != nil && logger == slog.Default() {
+		return c.logger
+	}
+	return logger
 }
 
 func redactSecrets(body string) string {

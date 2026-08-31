@@ -41,7 +41,10 @@ func setupRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) http.
 	}
 	t.Cleanup(st.Close)
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 	return srv.Router(nil)
 }
 

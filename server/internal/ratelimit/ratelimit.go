@@ -2,7 +2,7 @@ package ratelimit
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -145,17 +145,16 @@ func RetryAfterSeconds(delay time.Duration) int {
 }
 
 // LogStartup logs whether rate limiting is enabled.
-func LogStartup(cfg config.RateLimitConfig) {
+func LogStartup(logger *slog.Logger, cfg config.RateLimitConfig) {
 	if !cfg.Enabled {
-		log.Printf("rate limiting disabled")
+		logger.Info("rate limiting disabled")
 		return
 	}
-	log.Printf(
-		"rate limiting enabled (public=%d/min burst=%d, login=%d/min burst=%d, idle=%dm)",
-		cfg.PublicPerMinute,
-		cfg.PublicBurst,
-		cfg.LoginPerMinute,
-		cfg.LoginBurst,
-		cfg.IdleMinutes,
+	logger.Info("rate limiting enabled",
+		slog.Int("public_per_minute", cfg.PublicPerMinute),
+		slog.Int("public_burst", cfg.PublicBurst),
+		slog.Int("login_per_minute", cfg.LoginPerMinute),
+		slog.Int("login_burst", cfg.LoginBurst),
+		slog.Int("idle_minutes", cfg.IdleMinutes),
 	)
 }

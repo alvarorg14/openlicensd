@@ -10,6 +10,8 @@ data:
   OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
   OPENLICENSD_COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
   OPENLICENSD_LOCAL_LOGIN_ENABLED: {{ .Values.config.localLoginEnabled | quote }}
+  OPENLICENSD_LOG_LEVEL: {{ .Values.config.log.level | quote }}
+  OPENLICENSD_LOG_FORMAT: {{ .Values.config.log.format | quote }}
   OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
   OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
   OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}
