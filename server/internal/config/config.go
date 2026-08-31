@@ -58,9 +58,17 @@ type MetricsConfig struct {
 	Addr    string
 }
 
+type DatabaseConfig struct {
+	MaxConns                 int
+	MinConns                 int
+	MaxConnIdleMinutes       int
+	StatementTimeoutSeconds  int
+}
+
 type Config struct {
 	Addr                          string
 	DatabaseURL                   string
+	Database                      DatabaseConfig
 	BootstrapAdmin                BootstrapAdminConfig
 	SessionTTLHours               int
 	SessionCleanupIntervalMinutes int
@@ -80,6 +88,12 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Addr:        getEnv("OPENLICENSD_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("OPENLICENSD_DATABASE_URL"),
+		Database: DatabaseConfig{
+			MaxConns:                getIntEnv("OPENLICENSD_DATABASE_MAX_CONNS", 0),
+			MinConns:                getIntEnv("OPENLICENSD_DATABASE_MIN_CONNS", 0),
+			MaxConnIdleMinutes:      getIntEnv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", 0),
+			StatementTimeoutSeconds: getIntEnv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", 0),
+		},
 		BootstrapAdmin: BootstrapAdminConfig{
 			Email:        os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL"),
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
@@ -148,6 +162,9 @@ func Load() (*Config, error) {
 	if err := cfg.Metrics.validate(cfg.Addr); err != nil {
 		return nil, err
 	}
+	if err := cfg.Database.validate(); err != nil {
+		return nil, err
+	}
 	if err := cfg.RateLimit.validate(); err != nil {
 		return nil, err
 	}
@@ -177,6 +194,25 @@ func (o OIDCConfig) IsAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+func (d DatabaseConfig) validate() error {
+	if d.MaxConns < 0 {
+		return fmt.Errorf("OPENLICENSD_DATABASE_MAX_CONNS must be 0 or greater")
+	}
+	if d.MinConns < 0 {
+		return fmt.Errorf("OPENLICENSD_DATABASE_MIN_CONNS must be 0 or greater")
+	}
+	if d.MaxConnIdleMinutes < 0 {
+		return fmt.Errorf("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES must be 0 or greater")
+	}
+	if d.StatementTimeoutSeconds < 0 {
+		return fmt.Errorf("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS must be 0 or greater")
+	}
+	if d.MaxConns > 0 && d.MinConns > d.MaxConns {
+		return fmt.Errorf("OPENLICENSD_DATABASE_MIN_CONNS must not exceed OPENLICENSD_DATABASE_MAX_CONNS")
+	}
+	return nil
 }
 
 func (m MetricsConfig) validate(apiAddr string) error {

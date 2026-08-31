@@ -50,7 +50,16 @@ type Store struct {
 }
 
 func New(ctx context.Context, databaseURL string) (*Store, error) {
-	pool, err := pgxpool.New(ctx, databaseURL)
+	return NewWithPool(ctx, databaseURL, PoolConfig{})
+}
+
+func NewWithPool(ctx context.Context, databaseURL string, poolCfg PoolConfig) (*Store, error) {
+	parsed, err := parsePoolConfig(databaseURL, poolCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, parsed)
 	if err != nil {
 		return nil, fmt.Errorf("connect to database: %w", err)
 	}
@@ -59,6 +68,8 @@ func New(ctx context.Context, databaseURL string) (*Store, error) {
 		pool.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
+
+	logPoolConfig(parsed)
 
 	s := &Store{pool: pool}
 	if err := s.Migrate(ctx); err != nil {
