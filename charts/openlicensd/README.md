@@ -92,8 +92,8 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | config.oidc.providerName | string | `"SSO"` | SSO button label (maps to OPENLICENSD_OIDC_PROVIDER_NAME) |
 | config.oidc.redirectUrl | string | `""` | Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL) |
 | config.oidc.scopes | string | `"openid,profile,email"` | Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES) |
+| config.rateLimit.backend | string | `"memory"` | Rate limit backend: memory (per-replica) or postgres (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND) |
 | config.rateLimit.enabled | bool | `true` | Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED) |
-| config.rateLimit.backend | string | `"memory"` | Rate limit backend: `memory` (per-replica) or `postgres` (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND) |
 | config.rateLimit.idleMinutes | int | `10` | Minutes before unused per-IP buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES) |
 | config.rateLimit.loginBurst | int | `10` | Burst capacity for login endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_BURST) |
 | config.rateLimit.loginPerMinute | int | `30` | Sustained request rate for login and OIDC endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE) |
@@ -117,6 +117,10 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | ingress.tls | list | `[]` | Ingress TLS configuration |
 | nameOverride | string | `""` | Override the chart name used in labels and resource names |
 | nodeSelector | object | `{}` | Node labels for pod assignment |
+| pdb.annotations | object | `{}` | Annotations to add to the PodDisruptionBudget |
+| pdb.enabled | bool | `false` | Create a PodDisruptionBudget for OpenLicensd pods |
+| pdb.maxUnavailable | int | `1` | Maximum pods that may be unavailable during voluntary disruptions. Used when minAvailable is empty. |
+| pdb.minAvailable | string | `""` | Minimum pods that must remain available during voluntary disruptions. When set (including 0), takes precedence over maxUnavailable. Leave empty to use maxUnavailable instead. |
 | podAnnotations | object | `{}` | Annotations to add to OpenLicensd pods |
 | podLabels | object | `{}` | Labels to add to OpenLicensd pods |
 | podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532}` | Pod-level security context |

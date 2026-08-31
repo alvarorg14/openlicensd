@@ -59,6 +59,16 @@ tolerations: []
 # -- Affinity rules for pod assignment
 affinity: {}
 
+pdb:
+  # -- Create a PodDisruptionBudget for OpenLicensd pods
+  enabled: false
+  # -- Minimum pods that must remain available during voluntary disruptions. When set (including 0), takes precedence over maxUnavailable. Leave empty to use maxUnavailable instead.
+  minAvailable: ""
+  # -- Maximum pods that may be unavailable during voluntary disruptions. Used when minAvailable is empty.
+  maxUnavailable: 1
+  # -- Annotations to add to the PodDisruptionBudget
+  annotations: {}
+
 config:
   # -- HTTP listen address (maps to OPENLICENSD_ADDR)
   addr: ":8080"
