@@ -74,6 +74,11 @@ config:
     level: info
     # -- Log output format: json or text (maps to OPENLICENSD_LOG_FORMAT)
     format: json
+  metrics:
+    # -- Enable Prometheus /metrics on a dedicated listener (maps to OPENLICENSD_METRICS_ENABLED)
+    enabled: true
+    # -- Metrics listen address (maps to OPENLICENSD_METRICS_ADDR)
+    addr: ":9090"
   # -- Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES)
   trustedProxies: ""
   rateLimit:
