@@ -33,6 +33,16 @@ type PolicyListParams struct {
 	ProductID *string
 }
 
+// AuditEventListParams extends ListParams with audit-event-specific filters.
+type AuditEventListParams struct {
+	ListParams
+	Action       string
+	ResourceType string
+	ActorUserID  *string
+	From         *string
+	To           *string
+}
+
 // LicenseStats holds aggregate license counts by status.
 type LicenseStats struct {
 	Total   int64
