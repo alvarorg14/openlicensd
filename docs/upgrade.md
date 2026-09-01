@@ -15,7 +15,7 @@ This runbook covers upgrade steps for Helm, Docker Compose, single-container, an
 | **Single container** | Stop, replace the image, restart with the same `OPENLICENSD_DATABASE_URL` |
 | **Binary** | Replace the executable and restart the process |
 
-For HA, replica-count, and rate-limiting caveats during multi-replica deployments, see the scaling documentation (issue [#99](https://github.com/alvarorg14/openlicensd/issues/99) — not covered here.
+For HA, replica-count, and rate-limiting caveats during multi-replica deployments, see [scaling.md](scaling.md).
 
 ## Before you upgrade
 
@@ -197,6 +197,7 @@ When a release lists breaking changes, read each item and verify:
 
 ## Related
 
+- [scaling.md](scaling.md) — HA, scaling, and multi-replica caveats
 - [backup-restore.md](backup-restore.md) — `pg_dump`/`pg_restore` and RPO/RTO guidance
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and health probes
 - [configuration.md](configuration.md) — environment variables and Helm values

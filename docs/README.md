@@ -13,6 +13,7 @@
 | [deployment.md](deployment.md) | Helm, Docker, binary, Ingress, and upgrades |
 | [upgrade.md](upgrade.md) | Upgrade procedure, forward-only migrations, and rollback via backup |
 | [backup-restore.md](backup-restore.md) | PostgreSQL backup and restore procedures, RPO/RTO guidance |
+| [scaling.md](scaling.md) | HA, scaling, session stickiness, and multi-replica caveats |
 
 ## Quick links
 

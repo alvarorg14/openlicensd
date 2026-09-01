@@ -6,7 +6,7 @@ Open source license server for creating and validating license keys
 
 ## Installing
 
-Requires an external PostgreSQL database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md) and [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md) for operator-owned upgrade and backup procedures.
+Requires an external PostgreSQL database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md), [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md), and [scaling](https://github.com/alvarorg14/openlicensd/blob/main/docs/scaling.md) for operator-owned upgrade, backup, and HA procedures.
 
 ```bash
 helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
