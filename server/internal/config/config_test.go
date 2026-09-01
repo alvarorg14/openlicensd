@@ -290,6 +290,7 @@ func TestLoadRateLimitInvalidBackend(t *testing.T) {
 
 func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "true")
 	t.Setenv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", "0")
 
 	_, err := config.Load()
