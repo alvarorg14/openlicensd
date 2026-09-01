@@ -102,6 +102,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
     return [
       ...baseNavItems,
       { label: 'API Tokens', to: '/api-tokens', icon: 'i-lucide-key-round' },
+      { label: 'Audit Log', to: '/audit-log', icon: 'i-lucide-scroll-text' },
       { label: 'Users', to: '/users', icon: 'i-lucide-users' }
     ]
   }
