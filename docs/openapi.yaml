@@ -55,6 +55,8 @@ tags:
     description: User management (admin only)
   - name: API Tokens
     description: API token management for machine-to-machine access (admin session only)
+  - name: Audit Log
+    description: Append-only audit trail of admin mutations (admin only)
   - name: Products
     description: Product management
   - name: Policies
@@ -680,6 +682,53 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /api/v1/audit-events:
+    get:
+      tags: [Audit Log]
+      summary: List audit events
+      description: |
+        Returns a paginated, append-only audit trail of successful admin mutations.
+
+        **Required role:** `admin`. Accepts session cookie or Bearer API token.
+
+        Filter by `action`, `resource_type`, `actor_user_id`, `from`, and `to` (RFC3339 timestamps).
+      operationId: listAuditEvents
+      security:
+        - sessionAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/AuditEventSort"
+        - $ref: "#/components/parameters/Order"
+        - $ref: "#/components/parameters/AuditEventAction"
+        - $ref: "#/components/parameters/AuditEventResourceType"
+        - $ref: "#/components/parameters/AuditEventActorUserID"
+        - $ref: "#/components/parameters/AuditEventFrom"
+        - $ref: "#/components/parameters/AuditEventTo"
+      responses:
+        "200":
+          description: Paginated list of audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAuditEvents"
+        "400":
+          description: Invalid list parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
         "504":
@@ -1689,6 +1738,53 @@ components:
         enum: [created_at, updated_at, name, role, last_used_at, expires_at]
         default: created_at
       description: Sort field for API tokens
+    AuditEventSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [occurred_at, action, resource_type, actor_name]
+        default: occurred_at
+      description: Sort field for audit events
+    AuditEventAction:
+      name: action
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Filter by action (e.g. product.create, license.revoke)
+    AuditEventResourceType:
+      name: resource_type
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Filter by resource type (e.g. product, license, user)
+    AuditEventActorUserID:
+      name: actor_user_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Filter by actor user ID (session-authenticated actions only)
+    AuditEventFrom:
+      name: from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: Include events at or after this RFC3339 timestamp
+    AuditEventTo:
+      name: to
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: Include events at or before this RFC3339 timestamp
     Order:
       name: order
       in: query
@@ -1981,6 +2077,85 @@ components:
           type: ["string", "null"]
           format: date-time
           description: Optional expiration time (RFC3339); omit for no expiration
+
+    AuditEvent:
+      type: object
+      required:
+        - id
+        - occurred_at
+        - action
+        - resource_type
+        - actor_name
+        - actor_role
+        - auth_method
+        - request_method
+        - request_path
+        - response_status
+      properties:
+        id:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        action:
+          type: string
+          description: Action identifier (e.g. product.create, user.disable)
+        resource_type:
+          type: string
+        resource_id:
+          type: ["string", "null"]
+          format: uuid
+        resource_label:
+          type: ["string", "null"]
+        actor_user_id:
+          type: ["string", "null"]
+          format: uuid
+        actor_token_id:
+          type: ["string", "null"]
+          format: uuid
+        actor_name:
+          type: string
+        actor_email:
+          type: ["string", "null"]
+        actor_role:
+          $ref: "#/components/schemas/Role"
+        auth_method:
+          type: string
+          enum: [session, api_token]
+        client_ip:
+          type: ["string", "null"]
+        user_agent:
+          type: ["string", "null"]
+        request_id:
+          type: ["string", "null"]
+        request_method:
+          type: string
+        request_path:
+          type: string
+        response_status:
+          type: integer
+        metadata:
+          type: ["object", "null"]
+          additionalProperties: true
+
+    PaginatedAuditEvents:
+      type: object
+      required: [items, page, page_size, total, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
 
     CreateUserRequest:
       type: object

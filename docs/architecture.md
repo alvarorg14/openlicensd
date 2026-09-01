@@ -74,7 +74,7 @@ Git tracks a self-contained placeholder `index.html` so `go build` on a fresh cl
 
 In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`). Lucide icons are bundled into the client at `nuxt generate` time (`@iconify-json/lucide` + `@nuxt/icon` client bundle) because the embedded UI's `Content-Security-Policy` does not allow runtime fetches to the Iconify API. All HTTP responses — including the embedded UI, API, and health probes — pass through security-header middleware that sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options`; `Strict-Transport-Security` is added when `OPENLICENSD_COOKIE_SECURE=true`. API requests are bounded by configurable per-request context deadlines (`OPENLICENSD_REQUEST_TIMEOUT_SECONDS`, default 30 seconds); `/readyz` additionally caps database pings at 2 seconds.
 
-The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, and **Users** (admin only). Admins can reset user passwords from the Users page.
+The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, **API Tokens**, **Audit Log**, and **Users** (admin only). Admins can reset user passwords from the Users page.
 
 ## Data model
 
@@ -160,6 +160,32 @@ erDiagram
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 Only the SHA-256 hash of the API token is stored.
+
+### `audit_events` table
+
+Append-only audit trail of successful admin mutations. Rows are never updated through the API; a database trigger rejects `UPDATE` statements.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `UUID` | Primary key |
+| `occurred_at` | `TIMESTAMPTZ` | When the action completed |
+| `action` | `TEXT` | Action identifier (e.g. `product.create`, `license.revoke`) |
+| `resource_type` | `TEXT` | Target resource type |
+| `resource_id` | `UUID` | Nullable FK to the affected resource |
+| `resource_label` | `TEXT` | Human-readable resource name at time of action |
+| `actor_user_id` | `UUID` | Nullable FK to `users` (`ON DELETE SET NULL`) |
+| `actor_token_id` | `UUID` | Nullable FK to `api_tokens` (`ON DELETE SET NULL`) |
+| `actor_name` | `TEXT` | Denormalized actor display name |
+| `actor_email` | `TEXT` | Denormalized actor email (session auth only) |
+| `actor_role` | `TEXT` | Role at time of action |
+| `auth_method` | `TEXT` | `session` or `api_token` |
+| `client_ip` | `TEXT` | Resolved client IP |
+| `user_agent` | `TEXT` | HTTP User-Agent header |
+| `request_id` | `TEXT` | Correlation ID from request logging |
+| `request_method` | `TEXT` | HTTP method |
+| `request_path` | `TEXT` | Request path |
+| `response_status` | `INTEGER` | HTTP status code |
+| `metadata` | `JSONB` | Optional structured details |
 
 ### Expiry semantics
 

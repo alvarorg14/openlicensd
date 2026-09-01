@@ -96,14 +96,15 @@ Do not commit version bumps to `main` after each publish.
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
-5. Admin lists resources → GET /api/v1/licenses|products|policies|users|api-tokens with server-side pagination, search, filters, and sorting
-6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
-7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
-8. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
-9. Prometheus metrics (configurable via `OPENLICENSD_METRICS_ENABLED` / `OPENLICENSD_METRICS_ADDR`) are served on a dedicated listener at `/metrics`, separate from the API/UI port
-10. Rate limiting on unauthenticated endpoints uses per-IP token buckets; with `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, buckets are shared across replicas via PostgreSQL
-11. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
-12. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
+5. Admin lists resources → GET /api/v1/licenses|products|policies|users|api-tokens|audit-events with server-side pagination, search, filters, and sorting
+6. Successful admin mutations append an audit event (actor, action, resource, IP, user agent) to `audit_events`; admins read the log via GET /api/v1/audit-events or the Audit Log UI page
+7. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
+8. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
+9. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
+10. Prometheus metrics (configurable via `OPENLICENSD_METRICS_ENABLED` / `OPENLICENSD_METRICS_ADDR`) are served on a dedicated listener at `/metrics`, separate from the API/UI port
+11. Rate limiting on unauthenticated endpoints uses per-IP token buckets; with `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, buckets are shared across replicas via PostgreSQL
+12. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+13. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
 ```
 
 ## Configuration
@@ -162,6 +163,8 @@ Do not commit version bumps to `main` after each publish.
 | `server/internal/api/products.go` | Product handlers |
 | `server/internal/api/policies.go` | Policy handlers |
 | `server/internal/api/api_tokens.go` | API token handlers |
+| `server/internal/api/audit.go` | Audit capture middleware and route map |
+| `server/internal/api/audit_events.go` | Audit event list handler |
 | `server/internal/api/validate.go` | Validation and registry credentials handlers |
 | `server/internal/api/oidc.go` | OIDC login and callback handlers |
 | `server/internal/auth/auth.go` | Session auth, Bearer API tokens, CSRF, role middleware |
@@ -170,6 +173,8 @@ Do not commit version bumps to `main` after each publish.
 | `server/internal/license/license.go` | Key generation and validation |
 | `server/internal/store/listing.go` | Shared list query building for paginated store queries |
 | `server/internal/store/store.go` | PostgreSQL operations |
+| `server/internal/store/api_tokens.go` | API token CRUD |
+| `server/internal/store/audit_events.go` | Append-only audit event storage |
 | `server/internal/store/migrations/` | SQL migrations (run on startup) |
 | `ui/nuxt.config.ts` | Nuxt config, API proxy in dev |
 | `charts/openlicensd/values.yaml` | Helm defaults |
