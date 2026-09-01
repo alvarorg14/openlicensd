@@ -68,6 +68,8 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), product.ID, product.Name)
+
 	writeJSON(w, http.StatusCreated, productToResponse(product))
 }
 
@@ -135,6 +137,8 @@ func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "product not found")
 		return
 	}
+
+	auditResource(r.Context(), product.ID, product.Name)
 
 	writeJSON(w, http.StatusOK, productToResponse(product))
 }

@@ -33,6 +33,10 @@ var (
 )
 
 func parseListParams(r *http.Request, allowedSorts map[string]string) (parsedListParams, error) {
+	return parseListParamsDefault(r, allowedSorts, "created_at")
+}
+
+func parseListParamsDefault(r *http.Request, allowedSorts map[string]string, defaultSort string) (parsedListParams, error) {
 	q := r.URL.Query()
 
 	page := 1
@@ -55,7 +59,7 @@ func parseListParams(r *http.Request, allowedSorts map[string]string) (parsedLis
 
 	sortKey := q.Get("sort")
 	if sortKey == "" {
-		sortKey = "created_at"
+		sortKey = defaultSort
 	}
 	sortExpr, ok := allowedSorts[sortKey]
 	if !ok {
@@ -165,4 +169,11 @@ var apiTokenSorts = map[string]string{
 	"role":         "role",
 	"last_used_at": "last_used_at",
 	"expires_at":   "expires_at",
+}
+
+var auditEventSorts = map[string]string{
+	"occurred_at":   "occurred_at",
+	"action":        "action",
+	"resource_type": "resource_type",
+	"actor_name":    "actor_name",
 }

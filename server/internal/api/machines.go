@@ -141,6 +141,8 @@ func (s *Server) handleUpdateLicenseMachine(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	auditResource(r.Context(), machine.ID, store.MachineDisplayName(machine))
+
 	writeJSON(w, http.StatusOK, machineToResponse(machine))
 }
 
@@ -171,6 +173,8 @@ func (s *Server) handleReleaseLicenseMachine(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusNotFound, "machine not found")
 		return
 	}
+
+	auditResource(r.Context(), machine.ID, store.MachineDisplayName(machine))
 
 	writeJSON(w, http.StatusOK, machineToResponse(machine))
 }

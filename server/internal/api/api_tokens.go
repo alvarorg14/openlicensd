@@ -166,6 +166,8 @@ func (s *Server) handleCreateAPIToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), tok.ID, tok.Name)
+
 	resp := apiTokenWithSecretResponse{
 		apiTokenResponse: apiTokenToResponse(tok),
 		Token:            raw,
@@ -193,6 +195,8 @@ func (s *Server) handleRevokeAPIToken(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "api token not found")
 		return
 	}
+
+	auditResource(r.Context(), tok.ID, tok.Name)
 
 	writeJSON(w, http.StatusOK, apiTokenToResponse(tok))
 }
