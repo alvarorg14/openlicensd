@@ -226,3 +226,4 @@ helm uninstall openlicensd -n openlicensd
 - Deployment guide: [docs/deployment.md](docs/deployment.md)
 - Upgrade procedure: [docs/upgrade.md](docs/upgrade.md)
 - PostgreSQL backup and restore: [docs/backup-restore.md](docs/backup-restore.md)
+- Troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md)

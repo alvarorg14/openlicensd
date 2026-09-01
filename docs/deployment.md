@@ -358,4 +358,5 @@ The release job also stamps `docs/openapi.yaml` `info.version` from the tag and 
 - [upgrade.md](upgrade.md) — upgrade procedure and migration notes
 - [backup-restore.md](backup-restore.md) — PostgreSQL backup and restore
 - [scaling.md](scaling.md) — HA, scaling, and multi-replica caveats
+- [troubleshooting.md](troubleshooting.md) — common failures: database, migrations, OIDC, Harbor
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference
