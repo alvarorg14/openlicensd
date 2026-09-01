@@ -299,6 +299,8 @@ The server serves the API and embedded UI on `OPENLICENSD_ADDR` (default `:8080`
 
 OpenLicensd requires PostgreSQL 16+. Migrations run automatically on startup from `server/internal/store/migrations/`.
 
+Backups are operator-owned — the Helm chart does not bundle a database. See [backup-restore.md](backup-restore.md) for `pg_dump`/`pg_restore` procedures and RPO/RTO guidance.
+
 For local development, start PostgreSQL with Docker Compose:
 
 ```bash
@@ -351,4 +353,5 @@ The release job also stamps `docs/openapi.yaml` `info.version` from the tag and 
 
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
 - [configuration.md](configuration.md) — all environment variables
+- [backup-restore.md](backup-restore.md) — PostgreSQL backup and restore
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference

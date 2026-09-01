@@ -224,3 +224,4 @@ helm uninstall openlicensd -n openlicensd
 - API documentation: [docs/api.md](docs/api.md) and [docs/openapi.yaml](docs/openapi.yaml)
 - Harbor registry credentials: [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md)
 - Deployment guide: [docs/deployment.md](docs/deployment.md)
+- PostgreSQL backup and restore: [docs/backup-restore.md](docs/backup-restore.md)

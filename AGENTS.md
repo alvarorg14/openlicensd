@@ -357,6 +357,6 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`)
 
 - [README.md](README.md) — User-facing overview and reference
 - [QUICKSTART.md](QUICKSTART.md) — Get running in minutes
-- [docs/](docs/) — API spec, architecture, configuration, deployment, OIDC SSO, Harbor
+- [docs/](docs/) — API spec, architecture, configuration, deployment, backup/restore, OIDC SSO, Harbor
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributor workflow
 - [SECURITY.md](SECURITY.md) — Security policy and vulnerability reporting
