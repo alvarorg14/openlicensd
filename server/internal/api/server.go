@@ -177,6 +177,11 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Patch("/users/{id}/disable", s.handleDisableUser)
 				r.Patch("/users/{id}/enable", s.handleEnableUser)
 				r.Delete("/users/{id}", s.handleDeleteUser)
+
+				r.Get("/api-tokens", s.handleListAPITokens)
+				r.Post("/api-tokens", s.handleCreateAPIToken)
+				r.Patch("/api-tokens/{id}/revoke", s.handleRevokeAPIToken)
+				r.Delete("/api-tokens/{id}", s.handleDeleteAPIToken)
 			})
 		})
 	})

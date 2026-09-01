@@ -157,3 +157,12 @@ var userSorts = map[string]string{
 	"role":          "role",
 	"last_login_at": "last_login_at",
 }
+
+var apiTokenSorts = map[string]string{
+	"created_at":   "created_at",
+	"updated_at":   "updated_at",
+	"name":         "name",
+	"role":         "role",
+	"last_used_at": "last_used_at",
+	"expires_at":   "expires_at",
+}

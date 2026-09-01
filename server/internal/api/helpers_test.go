@@ -159,3 +159,41 @@ func findCookie(cookies []*http.Cookie, name string) *http.Cookie {
 	}
 	return nil
 }
+
+func createTestAPIToken(t *testing.T, st *store.Store, name string, role store.Role) string {
+	t.Helper()
+
+	raw, hash, prefix, err := auth.GenerateAPIToken()
+	if err != nil {
+		t.Fatalf("generate api token: %v", err)
+	}
+
+	ctx := context.Background()
+	if _, err := st.CreateAPIToken(ctx, name, hash, prefix, role, nil, nil); err != nil {
+		t.Fatalf("create api token: %v", err)
+	}
+	return raw
+}
+
+func doJSONWithToken(t *testing.T, handler http.Handler, method, path string, body any, token string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var payload []byte
+	if body != nil {
+		var err error
+		payload, err = json.Marshal(body)
+		if err != nil {
+			t.Fatalf("marshal body: %v", err)
+		}
+	}
+
+	req := httptest.NewRequest(method, path, bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return rec
+}
