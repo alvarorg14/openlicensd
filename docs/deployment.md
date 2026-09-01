@@ -222,6 +222,8 @@ Replace the CIDR with your database network. Add additional `extraEgress` rules 
 
 ### Upgrade
 
+Replace `X.Y.Z` with the target release version. Take a `pg_dump` before upgrading — see [upgrade.md](upgrade.md) for the full procedure (migrations, rolling updates, rollback).
+
 ```bash
 helm upgrade openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --version X.Y.Z \
@@ -353,5 +355,6 @@ The release job also stamps `docs/openapi.yaml` `info.version` from the tag and 
 
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
 - [configuration.md](configuration.md) — all environment variables
+- [upgrade.md](upgrade.md) — upgrade procedure and migration notes
 - [backup-restore.md](backup-restore.md) — PostgreSQL backup and restore
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference

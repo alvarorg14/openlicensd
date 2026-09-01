@@ -57,6 +57,8 @@ flowchart TB
 
 `server/cmd/openlicensd/main.go` loads configuration, connects to PostgreSQL, runs migrations, starts a background session cleanup task (when enabled), and starts the HTTP server with graceful shutdown.
 
+Migrations are automatic, forward-only, and transactional. SQL files in `server/internal/store/migrations/` are embedded in the binary, applied once (recorded in `schema_migrations`), and serialized across concurrent startups with a PostgreSQL advisory lock. There is no down-migration path — rollback requires restoring a pre-upgrade database backup. See [upgrade.md](upgrade.md) for operator upgrade and rollback procedures.
+
 ### Admin UI
 
 The UI is a Nuxt 4 SPA built from `ui/`:
