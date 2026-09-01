@@ -142,6 +142,26 @@ export interface CreateUserInput {
   role: UserRole
 }
 
+export interface ApiToken {
+  id: string
+  name: string
+  token?: string
+  token_prefix: string
+  role: UserRole
+  created_by?: string | null
+  last_used_at?: string | null
+  expires_at?: string | null
+  revoked_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateApiTokenInput {
+  name: string
+  role: UserRole
+  expires_at?: string
+}
+
 export interface Paginated<T> {
   items: T[]
   page: number

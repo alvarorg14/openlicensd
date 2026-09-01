@@ -1,4 +1,6 @@
 import type {
+  ApiToken,
+  CreateApiTokenInput,
   CreateLicenseInput,
   CreatePolicyInput,
   CreateProductInput,
@@ -188,6 +190,25 @@ export const useApi = () => {
       body: { current_password: currentPassword, password }
     })
 
+  const listApiTokens = (params?: ListQueryParams) =>
+    authFetch<Paginated<ApiToken>>(`/api/v1/api-tokens${buildQuery(params as Record<string, string | number | undefined | null>)}`)
+
+  const createApiToken = (input: CreateApiTokenInput) =>
+    authFetch<ApiToken>('/api/v1/api-tokens', {
+      method: 'POST',
+      body: input
+    })
+
+  const revokeApiToken = (id: string) =>
+    authFetch<ApiToken>(`/api/v1/api-tokens/${id}/revoke`, {
+      method: 'PATCH'
+    })
+
+  const deleteApiToken = (id: string) =>
+    authFetch(`/api/v1/api-tokens/${id}`, {
+      method: 'DELETE'
+    })
+
   return {
     authFetch,
     listLicenses,
@@ -215,6 +236,10 @@ export const useApi = () => {
     disableUser,
     enableUser,
     deleteUser,
-    changeOwnPassword
+    changeOwnPassword,
+    listApiTokens,
+    createApiToken,
+    revokeApiToken,
+    deleteApiToken
   }
 }
