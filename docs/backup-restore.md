@@ -28,6 +28,7 @@ OpenLicensd has no built-in backup API, scheduled dump job, or WAL-archiving int
 | `licenses` | Key hashes, prefixes, expiry, revoke state, validation counters |
 | `license_machines` | Machine activations and fingerprints |
 | `users` | Admin accounts, bcrypt password hashes, OIDC linkage |
+| `api_tokens` | Scoped API token hashes and metadata |
 | `schema_migrations` | Applied migration versions (needed for correct startup) |
 
 ### Ephemeral (optional in backups)

@@ -55,7 +55,7 @@ This document provides context and guidelines for AI coding assistants working o
 | Package | Path | Responsibility |
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
-| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
+| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, Bearer API tokens, role middleware |
 | `clientip` | `server/internal/clientip/` | Trusted-proxy aware client IP resolution |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
@@ -92,11 +92,11 @@ Do not commit version bumps to `main` after each publish.
 ## Data Flow
 
 ```
-1. Admin logs in via UI or API → receives session cookie (httpOnly) + CSRF cookie; OIDC logins sync `picture_url` from the ID token `picture` claim when present
+1. Admin logs in via UI or API → receives session cookie (httpOnly) + CSRF cookie; OIDC logins sync `picture_url` from the ID token `picture` claim when present. Automation uses scoped API tokens via `Authorization: Bearer` (no CSRF)
 2. Admin creates products and policies → defines expiration rules per product
 3. Admin creates license (product + policy required) → server generates key, derives expiry from policy, stores SHA-256 hash, returns raw key once
 4. Client validates key → POST /api/v1/validate (optional product code) → hash lookup → validation result
-5. Admin lists resources → GET /api/v1/licenses|products|policies|users with server-side pagination, search, filters, and sorting
+5. Admin lists resources → GET /api/v1/licenses|products|policies|users|api-tokens with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
 8. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
@@ -161,9 +161,10 @@ Do not commit version bumps to `main` after each publish.
 | `server/internal/api/licenses.go` | License handlers |
 | `server/internal/api/products.go` | Product handlers |
 | `server/internal/api/policies.go` | Policy handlers |
+| `server/internal/api/api_tokens.go` | API token handlers |
 | `server/internal/api/validate.go` | Validation and registry credentials handlers |
 | `server/internal/api/oidc.go` | OIDC login and callback handlers |
-| `server/internal/auth/auth.go` | Session auth, CSRF, role middleware |
+| `server/internal/auth/auth.go` | Session auth, Bearer API tokens, CSRF, role middleware |
 | `server/internal/harbor/harbor.go` | Harbor robot creation and cleanup |
 | `server/internal/oidc/oidc.go` | OIDC discovery, PKCE, ID token verification |
 | `server/internal/license/license.go` | Key generation and validation |

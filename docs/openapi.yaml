@@ -4,8 +4,10 @@ info:
   description: |
     HTTP API for OpenLicensd — an open source license server for creating and validating license keys.
 
-    Admin endpoints require a session cookie obtained from `POST /api/v1/auth/login` or OIDC SSO.
-    Unsafe methods also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
+    Admin endpoints accept either a session cookie (from `POST /api/v1/auth/login` or OIDC SSO) or a
+    scoped API token via `Authorization: Bearer <token>`. Session-based unsafe methods also require
+    the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie; Bearer requests do not use CSRF.
+    API token management (`/api/v1/api-tokens`) requires a session cookie (admin role).
     Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
     Unauthenticated endpoints are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
     API requests are bounded by `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` (default `30`; `0` disables); exceeded deadlines return `504` with `{"error":"request timeout"}`.
@@ -28,8 +30,8 @@ info:
     | `operator` | Create, update, and delete licenses, products, and policies |
     | `viewer` | Read-only access to licenses, products, and policies |
 
-    Any authenticated user (any role) may call `/api/v1/auth/me`, `/api/v1/auth/logout`, and
-    `/api/v1/auth/password`.
+    Any authenticated user (any role) may call `/api/v1/auth/me`. Session users may also call
+    `/api/v1/auth/logout` and `/api/v1/auth/password` (not available for API token authentication).
   version: 0.0.0-dev
   license:
     name: Apache-2.0
@@ -51,6 +53,8 @@ tags:
     description: Admin authentication and session management
   - name: Users
     description: User management (admin only)
+  - name: API Tokens
+    description: API token management for machine-to-machine access (admin session only)
   - name: Products
     description: Product management
   - name: Policies
@@ -195,6 +199,7 @@ paths:
       operationId: getCurrentUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Current user profile
@@ -216,6 +221,7 @@ paths:
       operationId: logout
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: Logged out successfully
@@ -236,6 +242,7 @@ paths:
       operationId: changeOwnPassword
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -263,6 +270,7 @@ paths:
       operationId: listUsers
       security:
         - sessionAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
@@ -301,6 +309,7 @@ paths:
       operationId: createUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -345,6 +354,7 @@ paths:
       operationId: updateUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -387,6 +397,7 @@ paths:
       operationId: deleteUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: User deleted
@@ -422,6 +433,7 @@ paths:
       operationId: setUserPassword
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -458,6 +470,7 @@ paths:
       operationId: disableUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: User disabled
@@ -496,6 +509,7 @@ paths:
       operationId: enableUser
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: User enabled
@@ -520,6 +534,157 @@ paths:
         "504":
           $ref: "#/components/responses/GatewayTimeout"
 
+  /api/v1/api-tokens:
+    get:
+      tags: [API Tokens]
+      summary: List API tokens
+      description: |
+        **Required role:** `admin`. **Authentication:** session cookie only (not Bearer tokens).
+
+        Returns paginated API tokens including revoked tokens.
+      operationId: listAPITokens
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/ApiTokenSort"
+        - $ref: "#/components/parameters/Order"
+      responses:
+        "200":
+          description: Paginated list of API tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedApiTokens"
+        "400":
+          description: Invalid list parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+    post:
+      tags: [API Tokens]
+      summary: Create an API token
+      description: |
+        Creates a scoped API token. The raw token value is returned exactly once in the response.
+
+        **Required role:** `admin`. **Authentication:** session cookie only (not Bearer tokens).
+      operationId: createAPIToken
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiTokenRequest"
+      responses:
+        "201":
+          description: API token created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiTokenWithSecret"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /api/v1/api-tokens/{id}/revoke:
+    parameters:
+      - $ref: "#/components/parameters/ApiTokenId"
+
+    patch:
+      tags: [API Tokens]
+      summary: Revoke an API token
+      description: |
+        Revokes an API token. Revoked tokens remain listed but cannot authenticate.
+
+        **Required role:** `admin`. **Authentication:** session cookie only (not Bearer tokens).
+      operationId: revokeAPIToken
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: API token revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiToken"
+        "400":
+          description: Invalid API token ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
+  /api/v1/api-tokens/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ApiTokenId"
+
+    delete:
+      tags: [API Tokens]
+      summary: Delete an API token
+      description: |
+        Permanently deletes an API token record.
+
+        **Required role:** `admin`. **Authentication:** session cookie only (not Bearer tokens).
+      operationId: deleteAPIToken
+      security:
+        - sessionAuth: []
+      responses:
+        "204":
+          description: API token deleted
+        "400":
+          description: Invalid API token ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
   /api/v1/products:
     get:
       tags: [Products]
@@ -529,6 +694,7 @@ paths:
       operationId: listProducts
       security:
         - sessionAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
@@ -565,6 +731,7 @@ paths:
       operationId: createProduct
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -607,6 +774,7 @@ paths:
       operationId: updateProduct
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -647,6 +815,7 @@ paths:
       operationId: deleteProduct
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: Product deleted
@@ -678,6 +847,7 @@ paths:
       operationId: listPolicies
       security:
         - sessionAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
@@ -721,6 +891,7 @@ paths:
       operationId: createPolicy
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -763,6 +934,7 @@ paths:
       operationId: updatePolicy
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -803,6 +975,7 @@ paths:
       operationId: deletePolicy
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: Policy deleted
@@ -834,6 +1007,7 @@ paths:
       operationId: getLicenseStats
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Aggregate license counts by status
@@ -859,6 +1033,7 @@ paths:
       operationId: listLicenses
       security:
         - sessionAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
@@ -919,6 +1094,7 @@ paths:
       operationId: createLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -962,6 +1138,7 @@ paths:
       operationId: getLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: License details
@@ -994,6 +1171,7 @@ paths:
       operationId: updateLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1032,6 +1210,7 @@ paths:
       operationId: deleteLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "204":
           description: License deleted
@@ -1065,6 +1244,7 @@ paths:
       operationId: revokeLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: License revoked
@@ -1104,6 +1284,7 @@ paths:
       operationId: unrevokeLicense
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: License unrevoked
@@ -1142,6 +1323,7 @@ paths:
       operationId: listLicenseMachines
       security:
         - sessionAuth: []
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
@@ -1193,6 +1375,7 @@ paths:
       operationId: updateLicenseMachine
       security:
         - sessionAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1232,6 +1415,7 @@ paths:
       operationId: releaseLicenseMachine
       security:
         - sessionAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Released machine
@@ -1370,6 +1554,12 @@ components:
         Session cookie obtained from `POST /api/v1/auth/login` or OIDC SSO.
         Unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header
         set to the value of the `openlicensd_csrf` cookie.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Scoped API token created via `POST /api/v1/api-tokens` (admin session required).
+        Present as `Authorization: Bearer <token>`. CSRF is not required for Bearer requests.
 
   parameters:
     LicenseId:
@@ -1401,6 +1591,14 @@ components:
       in: path
       required: true
       description: User UUID
+      schema:
+        type: string
+        format: uuid
+    ApiTokenId:
+      name: id
+      in: path
+      required: true
+      description: API token UUID
       schema:
         type: string
         format: uuid
@@ -1482,6 +1680,15 @@ components:
         enum: [created_at, updated_at, name, email, role, last_login_at]
         default: created_at
       description: Sort field for users
+    ApiTokenSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [created_at, updated_at, name, role, last_used_at, expires_at]
+        default: created_at
+      description: Sort field for API tokens
     Order:
       name: order
       in: query
@@ -1494,7 +1701,7 @@ components:
 
   responses:
     Unauthorized:
-      description: Missing or invalid session
+      description: Missing or invalid authentication
       content:
         application/json:
           schema:
@@ -1503,6 +1710,9 @@ components:
             invalid_session:
               value:
                 error: invalid session
+            invalid_api_token:
+              value:
+                error: invalid api token
             unauthorized:
               value:
                 error: unauthorized
@@ -1695,6 +1905,82 @@ components:
           format: int64
         total_pages:
           type: integer
+
+    ApiToken:
+      type: object
+      required: [id, name, token_prefix, role, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        token_prefix:
+          type: string
+          description: Display prefix of the token (full value shown only at creation)
+        role:
+          $ref: "#/components/schemas/Role"
+        created_by:
+          type: ["string", "null"]
+          format: uuid
+          description: Admin user who created the token (audit reference)
+        last_used_at:
+          type: ["string", "null"]
+          format: date-time
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+        revoked_at:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ApiTokenWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/ApiToken"
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: Raw bearer token (shown exactly once)
+
+    PaginatedApiTokens:
+      type: object
+      required: [items, page, page_size, total, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiToken"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+
+    CreateApiTokenRequest:
+      type: object
+      required: [name, role]
+      properties:
+        name:
+          type: string
+          description: Unique display name for the token
+        role:
+          $ref: "#/components/schemas/Role"
+        expires_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Optional expiration time (RFC3339); omit for no expiration
 
     CreateUserRequest:
       type: object

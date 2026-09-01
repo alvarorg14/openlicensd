@@ -84,6 +84,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
+- **API tokens** — scoped, revocable Bearer credentials for CI, Terraform, and other automation
 - Single binary distribution with embedded UI
 - PostgreSQL storage with automatic migrations
 - Prometheus metrics on a dedicated listener (`/metrics` on `:9090` by default)
@@ -149,10 +150,14 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
 | `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
 | `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |
-| `GET` | `/api/v1/users` | Session (admin) | List users (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
-| `POST` | `/api/v1/users` | Session (admin) | Create a user |
+| `GET` | `/api/v1/users` | Session or Bearer (admin) | List users (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
+| `POST` | `/api/v1/users` | Session or Bearer (admin) | Create a user |
+| `GET` | `/api/v1/api-tokens` | Session (admin) | List API tokens (paginated) |
+| `POST` | `/api/v1/api-tokens` | Session (admin) | Create an API token (raw value returned once) |
+| `PATCH` | `/api/v1/api-tokens/{id}/revoke` | Session (admin) | Revoke an API token |
+| `DELETE` | `/api/v1/api-tokens/{id}` | Session (admin) | Delete an API token |
 
-See [docs/api.md](docs/api.md) for authentication flow and curl examples.
+See [docs/api.md](docs/api.md) for authentication flow and curl examples. Admin endpoints accept a session cookie or a scoped API token (`Authorization: Bearer`); token management requires a session.
 
 ## Client SDKs
 
