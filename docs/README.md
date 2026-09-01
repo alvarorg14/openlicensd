@@ -11,6 +11,7 @@
 | [harbor-registry-credentials.md](harbor-registry-credentials.md) | Harbor integration: setup, robot accounts, and troubleshooting |
 | [sdk/go.md](sdk/go.md) | Go client SDK for license validation |
 | [deployment.md](deployment.md) | Helm, Docker, binary, Ingress, and upgrades |
+| [upgrade.md](upgrade.md) | Upgrade procedure, forward-only migrations, and rollback via backup |
 | [backup-restore.md](backup-restore.md) | PostgreSQL backup and restore procedures, RPO/RTO guidance |
 
 ## Quick links
