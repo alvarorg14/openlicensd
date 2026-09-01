@@ -325,12 +325,24 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if principal.AuthMethod == auth.AuthMethodAPIToken {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"auth_method":    auth.AuthMethodAPIToken,
+			"name":           principal.Name,
+			"role":           principal.Role,
+			"token_id":       principal.TokenID,
+			"server_version": version.Version,
+		})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"id":             principal.UserID,
 		"email":          principal.Email,
 		"name":           principal.Name,
 		"role":           principal.Role,
 		"auth_provider":  principal.AuthProvider,
+		"auth_method":    auth.AuthMethodSession,
 		"has_password":   principal.HasPassword,
 		"picture_url":    principal.PictureURL,
 		"server_version": version.Version,
@@ -339,13 +351,20 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	principal, ok := auth.PrincipalFromContext(r.Context())
-	if ok {
-		if err := s.auth.Logout(r.Context(), principal.SessionID); err != nil {
-			logging.FromContext(r.Context()).Warn("logout failed",
-				slog.String("session_id", principal.SessionID.String()),
-				slog.Any("err", err),
-			)
-		}
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if principal.AuthMethod == auth.AuthMethodAPIToken {
+		writeError(w, http.StatusForbidden, "not available for api token authentication")
+		return
+	}
+
+	if err := s.auth.Logout(r.Context(), principal.SessionID); err != nil {
+		logging.FromContext(r.Context()).Warn("logout failed",
+			slog.String("session_id", principal.SessionID.String()),
+			slog.Any("err", err),
+		)
 	}
 	s.auth.ClearSessionCookies(w)
 	w.WriteHeader(http.StatusNoContent)
@@ -355,6 +374,10 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 	principal, ok := auth.PrincipalFromContext(r.Context())
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if principal.AuthMethod == auth.AuthMethodAPIToken {
+		writeError(w, http.StatusForbidden, "not available for api token authentication")
 		return
 	}
 

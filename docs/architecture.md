@@ -43,7 +43,7 @@ flowchart TB
 | Package | Path | Responsibility |
 |---------|------|----------------|
 | `api` | `server/internal/api/` | HTTP router, handlers, request/response types |
-| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, role middleware |
+| `auth` | `server/internal/auth/` | Bcrypt login, session cookies, CSRF, Bearer API tokens, role middleware |
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE flow, ID token verification |
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
@@ -144,7 +144,22 @@ erDiagram
 | `deactivated_at` | `TIMESTAMPTZ` | Set when an operator releases the machine |
 | `deactivated_by` | `UUID` | FK to `users`; operator who released the machine |
 
-Only the SHA-256 hash of the license key is stored.
+### `api_tokens` table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `UUID` | Primary key |
+| `name` | `TEXT` | Unique display name (case-insensitive) |
+| `token_hash` | `TEXT` | SHA-256 hash of the full bearer token (unique) |
+| `token_prefix` | `TEXT` | Display prefix (`olsd_` + first 8 hex chars) |
+| `role` | `TEXT` | `admin`, `operator`, or `viewer` |
+| `created_by` | `UUID` | Nullable FK to `users` (audit reference; `ON DELETE SET NULL`) |
+| `last_used_at` | `TIMESTAMPTZ` | Last authenticated request (throttled writes) |
+| `expires_at` | `TIMESTAMPTZ` | Optional expiration |
+| `revoked_at` | `TIMESTAMPTZ` | Set on revocation (soft revoke; row retained in lists) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
+
+Only the SHA-256 hash of the API token is stored.
 
 ### Expiry semantics
 
@@ -272,7 +287,11 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `DELETE` | `/api/v1/licenses/{id}` | Session | Delete license |
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
 | `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke license |
-| `GET` | `/api/v1/users` | Session (admin) | List users (paginated) |
+| `GET` | `/api/v1/users` | Session or Bearer (admin) | List users (paginated) |
+| `GET` | `/api/v1/api-tokens` | Session (admin) | List API tokens (paginated) |
+| `POST` | `/api/v1/api-tokens` | Session (admin) | Create API token (raw value returned once) |
+| `PATCH` | `/api/v1/api-tokens/{id}/revoke` | Session (admin) | Revoke API token |
+| `DELETE` | `/api/v1/api-tokens/{id}` | Session (admin) | Delete API token |
 | `*` | All other paths | None | Embedded SPA |
 
 ## Related

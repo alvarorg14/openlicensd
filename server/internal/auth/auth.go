@@ -26,9 +26,22 @@ const (
 	maxFailedAttempts = 5
 	lockoutDuration   = 15 * time.Minute
 	sessionTouchMin   = 5 * time.Minute
+	apiTokenPrefix    = "olsd_"
 
 	// bcrypt hash of "dummy-password-for-timing" — used when user not found.
 	dummyPasswordHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+)
+
+var (
+	errInvalidSession  = errors.New("invalid session")
+	errInvalidAPIToken = errors.New("invalid api token")
+)
+
+type AuthMethod string
+
+const (
+	AuthMethodSession  AuthMethod = "session"
+	AuthMethodAPIToken AuthMethod = "api_token"
 )
 
 type contextKey string
@@ -44,6 +57,16 @@ type Principal struct {
 	PictureURL   *string
 	SessionID    uuid.UUID
 	HasPassword  bool
+	AuthMethod   AuthMethod
+	TokenID      uuid.UUID
+}
+
+func (p *Principal) ActingUserID() *uuid.UUID {
+	if p == nil || p.AuthMethod == AuthMethodAPIToken || p.UserID == uuid.Nil {
+		return nil
+	}
+	id := p.UserID
+	return &id
 }
 
 type Service struct {
@@ -196,7 +219,11 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 				writeGatewayTimeout(w)
 				return
 			}
-			writeAuthError(w, "invalid session")
+			message := "invalid session"
+			if errors.Is(err, errInvalidAPIToken) {
+				message = "invalid api token"
+			}
+			writeAuthError(w, message)
 			return
 		}
 
@@ -206,9 +233,46 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 }
 
 func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
+	if token, ok := bearerTokenFromHeader(r.Header.Get("Authorization")); ok {
+		return s.authenticateAPIToken(r, token)
+	}
+	return s.authenticateSession(r)
+}
+
+func (s *Service) authenticateAPIToken(r *http.Request, rawToken string) (*Principal, error) {
+	tokenHash := hashToken(rawToken)
+	tok, err := s.store.GetAPITokenByHash(r.Context(), tokenHash)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, err
+		}
+		return nil, errInvalidAPIToken
+	}
+	if tok == nil {
+		return nil, errInvalidAPIToken
+	}
+
+	if tok.LastUsedAt == nil || time.Since(*tok.LastUsedAt) >= sessionTouchMin {
+		if touchErr := s.store.TouchAPIToken(r.Context(), tok.ID); touchErr != nil {
+			s.logger.Warn("touch api token failed",
+				slog.String("token_id", tok.ID.String()),
+				slog.Any("err", touchErr),
+			)
+		}
+	}
+
+	return &Principal{
+		Name:       tok.Name,
+		Role:       tok.Role,
+		AuthMethod: AuthMethodAPIToken,
+		TokenID:    tok.ID,
+	}, nil
+}
+
+func (s *Service) authenticateSession(r *http.Request) (*Principal, error) {
 	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil || cookie.Value == "" {
-		return nil, errors.New("missing session")
+		return nil, errInvalidSession
 	}
 
 	tokenHash := hashToken(cookie.Value)
@@ -217,10 +281,10 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, err
 		}
-		return nil, errors.New("invalid session")
+		return nil, errInvalidSession
 	}
 	if sess == nil {
-		return nil, errors.New("invalid session")
+		return nil, errInvalidSession
 	}
 
 	user, err := s.store.GetUserByID(r.Context(), sess.UserID)
@@ -228,20 +292,20 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, err
 		}
-		return nil, errors.New("invalid session")
+		return nil, errInvalidSession
 	}
 	if user == nil || user.DisabledAt != nil {
-		return nil, errors.New("invalid session")
+		return nil, errInvalidSession
 	}
 
 	if isUnsafeMethod(r.Method) {
 		csrfCookie, err := r.Cookie(CSRFCookieName)
 		if err != nil || csrfCookie.Value == "" {
-			return nil, errors.New("missing csrf token")
+			return nil, errInvalidSession
 		}
 		csrfHeader := r.Header.Get(CSRFHeaderName)
 		if csrfHeader == "" || subtle.ConstantTimeCompare([]byte(csrfCookie.Value), []byte(csrfHeader)) != 1 {
-			return nil, errors.New("invalid csrf token")
+			return nil, errInvalidSession
 		}
 	}
 
@@ -264,6 +328,7 @@ func (s *Service) authenticateRequest(r *http.Request) (*Principal, error) {
 		PictureURL:   user.PictureURL,
 		SessionID:    sess.ID,
 		HasPassword:  user.PasswordHash != nil,
+		AuthMethod:   AuthMethodSession,
 	}, nil
 }
 
@@ -374,6 +439,29 @@ func generateToken() (string, error) {
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+// GenerateAPIToken returns a raw bearer token, its SHA-256 hash, and a display prefix.
+func GenerateAPIToken() (raw, hash, prefix string, err error) {
+	tokenHex, err := generateToken()
+	if err != nil {
+		return "", "", "", err
+	}
+	raw = apiTokenPrefix + tokenHex
+	hash = hashToken(raw)
+	prefix = apiTokenPrefix + tokenHex[:8]
+	return raw, hash, prefix, nil
+}
+
+func bearerTokenFromHeader(header string) (string, bool) {
+	if header == "" {
+		return "", false
+	}
+	parts := strings.Fields(header)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
 }
 
 func isUnsafeMethod(method string) bool {

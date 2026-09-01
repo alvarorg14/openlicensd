@@ -99,7 +99,11 @@ const baseNavItems: NavigationMenuItem[] = [
 
 const navItems = computed<NavigationMenuItem[]>(() => {
   if (isAdmin.value) {
-    return [...baseNavItems, { label: 'Users', to: '/users', icon: 'i-lucide-users' }]
+    return [
+      ...baseNavItems,
+      { label: 'API Tokens', to: '/api-tokens', icon: 'i-lucide-key-round' },
+      { label: 'Users', to: '/users', icon: 'i-lucide-users' }
+    ]
   }
   return baseNavItems
 })

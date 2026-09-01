@@ -159,7 +159,7 @@ func (s *Server) handleReleaseLicenseMachine(w http.ResponseWriter, r *http.Requ
 
 	var byUserID *uuid.UUID
 	if principal, ok := auth.PrincipalFromContext(r.Context()); ok {
-		byUserID = &principal.UserID
+		byUserID = principal.ActingUserID()
 	}
 
 	machine, err := s.store.DeactivateMachine(r.Context(), licenseID, machineID, byUserID)

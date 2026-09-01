@@ -139,7 +139,7 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	var createdBy *uuid.UUID
 	if principal, ok := auth.PrincipalFromContext(r.Context()); ok {
-		createdBy = &principal.UserID
+		createdBy = principal.ActingUserID()
 	}
 
 	lic, err := s.store.CreateLicense(r.Context(), req.Label, keyHash, keyPrefix, req.ProductID, req.PolicyID, expiresAt, maxActivations, createdBy)

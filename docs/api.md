@@ -8,7 +8,7 @@ All API endpoints are served from the root of the server (default `http://localh
 
 ## Authentication
 
-Admin endpoints require a session cookie (`openlicensd_session`). Unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
+Admin endpoints require a session cookie (`openlicensd_session`) or a scoped API token (`Authorization: Bearer <token>`). Session-based unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie. Bearer requests do not use CSRF.
 
 ### 1. Login
 
@@ -74,6 +74,7 @@ Allowed `sort` values vary by resource:
 | Policies | `created_at`, `name`, `product_name`, `grace_period_days`, `max_activations` |
 | Products | `created_at`, `updated_at`, `name`, `code` |
 | Users | `created_at`, `updated_at`, `name`, `email`, `role`, `last_login_at` |
+| API tokens | `created_at`, `updated_at`, `name`, `role`, `last_used_at`, `expires_at` |
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
@@ -137,6 +138,33 @@ Redirect the browser to `oidc_login_url` (or open `/api/v1/auth/oidc/login` dire
 
 See [oidc-sso.md](oidc-sso.md) for full setup instructions.
 
+### 6. API tokens for automation
+
+Admins can create scoped API tokens from the **API Tokens** page in the admin UI or via `POST /api/v1/api-tokens` (session cookie required). Tokens carry one of the existing roles (`admin`, `operator`, `viewer`) and authenticate machine-to-machine requests without CSRF.
+
+```bash
+# Create a token (admin session)
+CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
+curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/api-tokens \
+  -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF" \
+  -d '{"name":"terraform","role":"operator"}'
+```
+
+The response includes a `token` field shown exactly once. Store it securely.
+
+```bash
+# Use the token (no CSRF header required)
+curl -s http://localhost:8080/api/v1/licenses \
+  -H "Authorization: Bearer olsd_..."
+
+# Verify token identity
+curl -s http://localhost:8080/api/v1/auth/me \
+  -H "Authorization: Bearer olsd_..."
+```
+
+Token management endpoints (`/api/v1/api-tokens`) require an admin session — a Bearer token cannot create or revoke other tokens. Revoke with `PATCH /api/v1/api-tokens/{id}/revoke` or delete with `DELETE /api/v1/api-tokens/{id}`.
+
 ## Roles and RBAC
 
 | Role | Permissions |
@@ -180,6 +208,10 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `PATCH` | `/api/v1/users/{id}/disable` | `admin` |
 | `PATCH` | `/api/v1/users/{id}/enable` | `admin` |
 | `DELETE` | `/api/v1/users/{id}` | `admin` |
+| `GET` | `/api/v1/api-tokens` | `admin` (session only) |
+| `POST` | `/api/v1/api-tokens` | `admin` (session only) |
+| `PATCH` | `/api/v1/api-tokens/{id}/revoke` | `admin` (session only) |
+| `DELETE` | `/api/v1/api-tokens/{id}` | `admin` (session only) |
 
 ## Public endpoints
 
