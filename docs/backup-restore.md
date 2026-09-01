@@ -204,5 +204,6 @@ Sign in to the admin UI and confirm products, policies, and licenses are present
 - [upgrade.md](upgrade.md) — upgrade procedure and when to take a dump before upgrading
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and PostgreSQL requirements
 - [configuration.md](configuration.md) — `OPENLICENSD_DATABASE_URL` and pool settings
+- [troubleshooting.md](troubleshooting.md) — common failures: database, migrations, OIDC, Harbor
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference

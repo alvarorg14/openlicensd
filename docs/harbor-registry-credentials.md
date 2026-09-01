@@ -175,6 +175,9 @@ docker pull harbor.example.com/myproject/myimage:latest
 | `403` | `not_found` | License key not found |
 | `403` | `expired` | License has expired |
 | `403` | `revoked` | License has been revoked |
+| `403` | `product_mismatch` | Product code does not match the license |
+| `403` | `fingerprint_required` | Policy requires a machine fingerprint |
+| `403` | `activation_limit` | Max concurrent machine activations reached |
 | `502` | `failed to issue registry credentials` | Harbor API failure |
 | `500` | `failed to validate license` | Database error |
 
@@ -182,9 +185,9 @@ When `OPENLICENSD_HARBOR_DEBUG=true`, `502` responses include the underlying Har
 
 ## Troubleshooting
 
-### `403` with `not_found`, `expired`, or `revoked`
+### `403` with `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, or `activation_limit`
 
-The license key is invalid. Verify the key is correct, not expired, and not revoked in the admin UI.
+The license key is invalid or does not meet policy requirements. Verify the key is correct, not expired, not revoked, and matches the requested product. When the policy enforces machine activations, include a `fingerprint` in the request body.
 
 ### `502 failed to issue registry credentials`
 
@@ -220,6 +223,8 @@ The `/api/v1/registry-credentials` endpoint is only registered when `OPENLICENSD
 ### Robots accumulating in Harbor
 
 Expired robot cleanup runs on each successful credential request. If cleanup fails (e.g. Harbor admin lacks delete permission), robots may accumulate. Check OpenLicensd logs for `harbor cleanup failed` messages.
+
+For startup failures, Harbor connectivity, and a full symptom table, see [troubleshooting.md](troubleshooting.md).
 
 ## Security considerations
 

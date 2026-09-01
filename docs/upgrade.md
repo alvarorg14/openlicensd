@@ -200,6 +200,7 @@ When a release lists breaking changes, read each item and verify:
 - [scaling.md](scaling.md) — HA, scaling, and multi-replica caveats
 - [backup-restore.md](backup-restore.md) — `pg_dump`/`pg_restore` and RPO/RTO guidance
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and health probes
+- [troubleshooting.md](troubleshooting.md) — common failures: database, migrations, OIDC, Harbor
 - [configuration.md](configuration.md) — environment variables and Helm values
 - [architecture.md](architecture.md) — components and data model
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly

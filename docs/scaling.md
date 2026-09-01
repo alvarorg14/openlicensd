@@ -130,6 +130,7 @@ For autoscaling, topology spread, and NetworkPolicy examples, see [deployment.md
 - [deployment.md](deployment.md) — Helm install, Ingress, HPA, PDB, topology spread, NetworkPolicy
 - [upgrade.md](upgrade.md) — rolling updates, migrations, mixed-version rollouts
 - [backup-restore.md](backup-restore.md) — PostgreSQL backup and restore
+- [troubleshooting.md](troubleshooting.md) — common failures: database, migrations, OIDC, Harbor
 - [configuration.md](configuration.md) — environment variables and Helm value mapping
 - [metrics.md](metrics.md) — Prometheus metric catalog
 - [oidc-sso.md](oidc-sso.md) — OIDC cookie flow (HA-safe across replicas)
