@@ -48,6 +48,8 @@ flowchart TB
 | `config` | `server/internal/config/` | Environment variable loading and validation |
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
+| `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
+| `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting (`memory` or `postgres` backend) |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
 | `store` | `server/internal/store/` | PostgreSQL CRUD, validation recording, migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server with SPA fallback |
@@ -55,6 +57,10 @@ flowchart TB
 ### Entry point
 
 `server/cmd/openlicensd/main.go` loads configuration, connects to PostgreSQL, runs migrations, starts a background session cleanup task (when enabled), and starts the HTTP server with graceful shutdown.
+
+Migrations are automatic, forward-only, and transactional. SQL files in `server/internal/store/migrations/` are embedded in the binary, applied once (recorded in `schema_migrations`), and serialized across concurrent startups with a PostgreSQL advisory lock. There is no down-migration path — rollback requires restoring a pre-upgrade database backup. See [upgrade.md](upgrade.md) for operator upgrade and rollback procedures.
+
+For multi-replica deployments, sessions and OIDC state are shared via PostgreSQL and browser cookies — no session stickiness is required. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running more than one replica so rate limits are global. See [scaling.md](scaling.md).
 
 ### Admin UI
 
@@ -66,7 +72,7 @@ ui/  →  npm run generate  →  server/internal/static/dist/  →  //go:embed
 
 Git tracks a self-contained placeholder `index.html` so `go build` on a fresh clone serves a working page. Run `make ui` (or `make build`) locally, or rely on GoReleaser's pre-build hook, to embed the full Nuxt SPA.
 
-In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`). Lucide icons are bundled into the client at `nuxt generate` time (`@iconify-json/lucide` + `@nuxt/icon` client bundle) because the embedded UI's `Content-Security-Policy` does not allow runtime fetches to the Iconify API. All HTTP responses — including the embedded UI, API, and health probes — pass through security-header middleware that sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options`; `Strict-Transport-Security` is added when `OPENLICENSD_COOKIE_SECURE=true`.
+In development, the UI runs on `:3000` and proxies `/api` to the Go server on `:8080`. In production, the built static files are embedded in the binary and served via the `NotFound` handler (SPA fallback to `200.html`). Lucide icons are bundled into the client at `nuxt generate` time (`@iconify-json/lucide` + `@nuxt/icon` client bundle) because the embedded UI's `Content-Security-Policy` does not allow runtime fetches to the Iconify API. All HTTP responses — including the embedded UI, API, and health probes — pass through security-header middleware that sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options`; `Strict-Transport-Security` is added when `OPENLICENSD_COOKIE_SECURE=true`. API requests are bounded by configurable per-request context deadlines (`OPENLICENSD_REQUEST_TIMEOUT_SECONDS`, default 30 seconds); `/readyz` additionally caps database pings at 2 seconds.
 
 The admin UI has a left sidebar with pages for **Licenses**, **Products**, **Policies**, and **Users** (admin only). Admins can reset user passwords from the Users page.
 
@@ -242,8 +248,8 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/healthz` | None | Liveness |
-| `GET` | `/readyz` | None | Readiness (DB ping) |
+| `GET` | `/healthz` | None | Liveness (no dependency checks) |
+| `GET` | `/readyz` | None | Readiness (PostgreSQL ping, 2s timeout) |
 | `POST` | `/api/v1/auth/login` | None | Sets session cookies (when local login enabled) |
 | `GET` | `/api/v1/auth/providers` | None | List enabled login methods |
 | `GET` | `/api/v1/auth/oidc/login` | None | Start OIDC login (when enabled) |

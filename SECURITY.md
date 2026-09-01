@@ -60,7 +60,7 @@ When deploying OpenLicensd:
 
 ### Known Security Considerations
 
-- **Public endpoints**: `/api/v1/validate`, `/api/v1/registry-credentials`, `/api/v1/auth/login`, and OIDC login/callback are unauthenticated. These endpoints are rate limited per client IP (token bucket). Configure `OPENLICENSD_TRUSTED_PROXIES` when running behind a reverse proxy so limits apply per client rather than per proxy. Limits are per process; with multiple replicas, effective throughput scales with replica count.
+- **Public endpoints**: `/api/v1/validate`, `/api/v1/registry-credentials`, `/api/v1/auth/login`, and OIDC login/callback are unauthenticated. These endpoints are rate limited per client IP (token bucket). Configure `OPENLICENSD_TRUSTED_PROXIES` when running behind a reverse proxy so limits apply per client rather than per proxy. With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global per-IP budget. See [docs/scaling.md](docs/scaling.md).
 - **License key storage**: Full license keys are never stored. Only SHA-256 hashes and a 5-character prefix are persisted.
 - **Sessions**: Admin sessions use httpOnly cookies with CSRF protection on unsafe methods. Set `OPENLICENSD_COOKIE_SECURE=true` in production (also enables HSTS response headers).
 - **Harbor integration**: When enabled, anyone with a valid license key can obtain short-lived Harbor pull credentials. Robot accounts have pull-only access to configured projects.

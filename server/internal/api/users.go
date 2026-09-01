@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
 	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
@@ -106,7 +108,7 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 		Offset: params.Offset,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list users")
+		writeInternalError(w, r, err, "failed to list users")
 		return
 	}
 
@@ -146,7 +148,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to hash password")
+		writeInternalError(w, r, err, "failed to hash password")
 		return
 	}
 
@@ -155,7 +157,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to create user")
+		writeInternalError(w, r, err, "failed to create user")
 		return
 	}
 
@@ -195,7 +197,7 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to update user")
+		writeInternalError(w, r, err, "failed to update user")
 		return
 	}
 	if user == nil {
@@ -225,7 +227,7 @@ func (s *Server) handleSetUserPassword(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to hash password")
+		writeInternalError(w, r, err, "failed to hash password")
 		return
 	}
 
@@ -252,7 +254,7 @@ func (s *Server) handleDisableUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := s.store.SetUserDisabled(r.Context(), id, true)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to disable user")
+		writeInternalError(w, r, err, "failed to disable user")
 		return
 	}
 	if user == nil {
@@ -260,7 +262,12 @@ func (s *Server) handleDisableUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = s.store.RevokeAllUserSessions(r.Context(), id)
+	if err := s.store.RevokeAllUserSessions(r.Context(), id); err != nil {
+		logging.FromContext(r.Context()).Warn("revoke all user sessions failed",
+			slog.String("user_id", id.String()),
+			slog.Any("err", err),
+		)
+	}
 
 	writeJSON(w, http.StatusOK, userToResponse(user))
 }
@@ -274,7 +281,7 @@ func (s *Server) handleEnableUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := s.store.SetUserDisabled(r.Context(), id, false)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to enable user")
+		writeInternalError(w, r, err, "failed to enable user")
 		return
 	}
 	if user == nil {
@@ -300,7 +307,7 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	deleted, err := s.store.DeleteUser(r.Context(), id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete user")
+		writeInternalError(w, r, err, "failed to delete user")
 		return
 	}
 	if !deleted {
@@ -333,7 +340,12 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	principal, ok := auth.PrincipalFromContext(r.Context())
 	if ok {
-		_ = s.auth.Logout(r.Context(), principal.SessionID)
+		if err := s.auth.Logout(r.Context(), principal.SessionID); err != nil {
+			logging.FromContext(r.Context()).Warn("logout failed",
+				slog.String("session_id", principal.SessionID.String()),
+				slog.Any("err", err),
+			)
+		}
 	}
 	s.auth.ClearSessionCookies(w)
 	w.WriteHeader(http.StatusNoContent)
@@ -362,7 +374,7 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 
 	user, err := s.store.GetUserByID(r.Context(), principal.UserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to load user")
+		writeInternalError(w, r, err, "failed to load user")
 		return
 	}
 	if user == nil {
@@ -380,17 +392,17 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to hash password")
+		writeInternalError(w, r, err, "failed to hash password")
 		return
 	}
 
 	if err := s.store.SetUserPassword(r.Context(), principal.UserID, hash); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to set password")
+		writeInternalError(w, r, err, "failed to set password")
 		return
 	}
 
 	if err := s.store.RevokeUserSessionsExcept(r.Context(), principal.UserID, principal.SessionID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to revoke sessions")
+		writeInternalError(w, r, err, "failed to revoke sessions")
 		return
 	}
 

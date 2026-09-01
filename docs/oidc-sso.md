@@ -173,13 +173,18 @@ For `secret.mode: existing` or `externalSecrets`, ensure the Secret contains `OP
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
+| Process exits at startup with `discover oidc provider` | Wrong or unreachable issuer URL | Fix `OPENLICENSD_OIDC_ISSUER_URL`; verify IdP discovery from the pod |
 | `redirect_uri_mismatch` from IdP | Redirect URI in IdP does not match config | Align IdP registration with `OPENLICENSD_OIDC_REDIRECT_URL` exactly |
-| Login page shows `Single sign-on failed` | Callback error (invalid state, token exchange, missing email) | Check server logs; verify client secret, issuer URL, and that the IdP returns an `email` claim |
+| Login page shows `Single sign-on failed` | Callback error (invalid state, token exchange, missing email) | Check server logs for `oidc callback failed` with a `reason` code; verify client secret, issuer URL, and that the IdP returns an `email` claim |
 | SSO button missing | OIDC not enabled or `/auth/providers` unreachable | Set `OPENLICENSD_OIDC_ENABLED=true` and restart |
 | Session not set after SSO | `OPENLICENSD_COOKIE_SECURE=true` over plain HTTP | Use HTTPS in production, or set `OPENLICENSD_COOKIE_SECURE=false` for local HTTP only |
 | `invalid id token` / clock errors | Server clock skew | Sync NTP on the OpenLicensd host |
 | User created but wrong role | Default role or admin email list | Adjust `OPENLICENSD_OIDC_DEFAULT_ROLE` or `OPENLICENSD_OIDC_ADMIN_EMAILS`; change role in Users UI |
 | Locked out with SSO-only | No admin provisioned | Add your email to `OPENLICENSD_OIDC_ADMIN_EMAILS` or temporarily re-enable local login |
+
+Callback failures log `oidc callback failed` with a `reason` attribute (`provider_error`, `state_missing`, `state_mismatch`, `nonce_missing`, `verifier_missing`, `code_missing`, `exchange_failed`, `user_resolution_failed`, `session_creation_failed`). The underlying error is not logged for `exchange_failed`, `user_resolution_failed`, or `session_creation_failed` — only the reason code.
+
+For a full symptom table and log message reference, see [troubleshooting.md](troubleshooting.md).
 
 ## Security notes
 

@@ -86,6 +86,16 @@ See [docs/sdk/go.md](docs/sdk/go.md) for integration documentation.
 
 For architecture details and AI assistant guidelines, see [AGENTS.md](AGENTS.md).
 
+## Database migrations
+
+Schema changes use numbered SQL files in `server/internal/store/migrations/`. Migrations are forward-only — there are no down files.
+
+- Add a new file with the next sequence number (for example `010_my_change.sql`).
+- Never edit a migration that has already been applied in any environment.
+- Reviewers need `make dev-db-reset` when testing a new migration locally.
+
+See [docs/upgrade.md](docs/upgrade.md) for how migrations behave in production upgrades and rollbacks.
+
 ## Pull requests
 
 - Keep changes focused and well-scoped.

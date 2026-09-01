@@ -62,7 +62,9 @@ This document provides context and guidelines for AI coding assistants working o
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
-| `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints |
+| `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
+| `metrics` | `server/internal/metrics/` | Prometheus registry, HTTP middleware, license validation counters, pgxpool collector |
+| `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting for unauthenticated endpoints; in-memory (default) or Postgres-backed shared buckets |
 | `store` | `server/internal/store/` | PostgreSQL CRUD for products, policies, licenses, machines; validation recording; migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server |
 | `version` | `server/internal/version/` | Build version string injected via ldflags; exposed as `server_version` on `GET /api/v1/auth/me` |
@@ -71,7 +73,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Helm Chart
 
 - **Location**: `charts/openlicensd/`
-- Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress
+- Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress, HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicy, and ServiceMonitor
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
 - Source `Chart.yaml` `version` / `appVersion` are `0.0.0-dev` placeholders; `.github/workflows/release.yml` stamps the packaged OCI chart from the git tag (`helm package --version/--app-version`)
 
@@ -97,7 +99,11 @@ Do not commit version bumps to `main` after each publish.
 5. Admin lists resources → GET /api/v1/licenses|products|policies|users with server-side pagination, search, filters, and sorting
 6. (Optional) Client requests Harbor credentials → validate key → create robot → return credentials
 7. UI dev server proxies /api to Go server on :8080; production embeds static files in binary
-8. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+8. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
+9. Prometheus metrics (configurable via `OPENLICENSD_METRICS_ENABLED` / `OPENLICENSD_METRICS_ADDR`) are served on a dedicated listener at `/metrics`, separate from the API/UI port
+10. Rate limiting on unauthenticated endpoints uses per-IP token buckets; with `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, buckets are shared across replicas via PostgreSQL
+11. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+12. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
 ```
 
 ## Configuration
@@ -106,15 +112,25 @@ Do not commit version bumps to `main` after each publish.
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | **required** | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | Maximum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | Minimum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | Idle connection lifetime in minutes (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | PostgreSQL statement timeout in seconds (`0` = server default) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Seed first admin when users table is empty |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
+| `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
+| `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |
+| `OPENLICENSD_METRICS_ENABLED` | `true` | Enable Prometheus `/metrics` on a dedicated listener |
+| `OPENLICENSD_METRICS_ADDR` | `:9090` | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
 | `OPENLICENSD_TRUSTED_PROXIES` | — | Trusted proxy IPs/CIDRs for client IP resolution |
 | `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | Enable per-IP rate limiting on unauthenticated endpoints |
+| `OPENLICENSD_RATE_LIMIT_BACKEND` | `memory` | Rate limit backend: `memory` (per-replica) or `postgres` (shared across replicas) |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | Sustained rate for `/validate` and `/registry-credentials` |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` | `60` | Burst capacity for public endpoints |
 | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` | `30` | Sustained rate for login and OIDC endpoints |
@@ -341,6 +357,6 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`)
 
 - [README.md](README.md) — User-facing overview and reference
 - [QUICKSTART.md](QUICKSTART.md) — Get running in minutes
-- [docs/](docs/) — API spec, architecture, configuration, deployment, OIDC SSO, Harbor
+- [docs/](docs/) — API spec, architecture, configuration, deployment, upgrade, backup/restore, scaling, troubleshooting, OIDC SSO, Harbor
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributor workflow
 - [SECURITY.md](SECURITY.md) — Security policy and vulnerability reporting

@@ -201,7 +201,10 @@ func setupOIDCTestEnv(t *testing.T, idp *mockOIDCProvider, redirectURL string) (
 	}
 	t.Cleanup(st.Close)
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 	return srv.Router(nil), st
 }
 
@@ -247,7 +250,11 @@ func TestLocalLoginDisabledReturnsForbidden(t *testing.T) {
 	}
 	t.Cleanup(st.Close)
 
-	handler := api.New(ctx, cfg, st).Router(nil)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
+	handler := srv.Router(nil)
 	resp := doJSON(t, handler, http.MethodPost, "/api/v1/auth/login", map[string]string{
 		"email":    "admin@example.com",
 		"password": "password",

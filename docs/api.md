@@ -192,8 +192,8 @@ These endpoints do not require authentication:
 | `GET` | `/api/v1/auth/providers` | List enabled login methods |
 | `GET` | `/api/v1/auth/oidc/login` | Start OIDC login (when enabled) |
 | `GET` | `/api/v1/auth/oidc/callback` | OIDC callback (when enabled) |
-| `GET` | `/healthz` | Liveness probe |
-| `GET` | `/readyz` | Readiness probe (checks database) |
+| `GET` | `/healthz` | Liveness probe (no dependency checks) |
+| `GET` | `/readyz` | Readiness probe (PostgreSQL ping) |
 
 ## Authenticated endpoints (session required)
 
@@ -336,6 +336,7 @@ Common status codes:
 | `429` | Rate limit exceeded (unauthenticated endpoints; includes `Retry-After` header) |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
+| `504` | Request deadline exceeded (`OPENLICENSD_REQUEST_TIMEOUT_SECONDS`) |
 
 ## Viewing the OpenAPI spec
 

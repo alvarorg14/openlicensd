@@ -64,7 +64,7 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to create product")
+		writeInternalError(w, r, err, "failed to create product")
 		return
 	}
 
@@ -89,7 +89,7 @@ func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		Offset: params.Offset,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list products")
+		writeInternalError(w, r, err, "failed to list products")
 		return
 	}
 
@@ -128,7 +128,7 @@ func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to update product")
+		writeInternalError(w, r, err, "failed to update product")
 		return
 	}
 	if product == nil {
@@ -151,7 +151,7 @@ func (s *Server) handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
 		if writeStoreError(w, err, "") {
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to delete product")
+		writeInternalError(w, r, err, "failed to delete product")
 		return
 	}
 	if !deleted {

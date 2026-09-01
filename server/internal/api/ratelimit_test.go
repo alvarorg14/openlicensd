@@ -41,7 +41,10 @@ func setupRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) http.
 	}
 	t.Cleanup(st.Close)
 
-	srv := api.New(ctx, cfg, st)
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
 	return srv.Router(nil)
 }
 
@@ -81,6 +84,7 @@ func doJSONWithRemoteAddr(t *testing.T, handler http.Handler, method, path strin
 func TestRateLimitValidateReturns429(t *testing.T) {
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
+		Backend:         "memory",
 		PublicPerMinute: 60,
 		PublicBurst:     2,
 		LoginPerMinute:  30,
@@ -139,6 +143,7 @@ func TestRateLimitLoginReturns429(t *testing.T) {
 	env := setupTestEnv(t)
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
+		Backend:         "memory",
 		PublicPerMinute: 600,
 		PublicBurst:     60,
 		LoginPerMinute:  30,
@@ -165,4 +170,104 @@ func TestRateLimitLoginReturns429(t *testing.T) {
 	if resp.Code != http.StatusTooManyRequests {
 		t.Fatalf("status=%d want 429 body=%s", resp.Code, resp.Body.String())
 	}
+}
+
+func TestRateLimitPostgresBackendReturns429(t *testing.T) {
+	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
+		Enabled:         true,
+		Backend:         "postgres",
+		PublicPerMinute: 60,
+		PublicBurst:     2,
+		LoginPerMinute:  30,
+		LoginBurst:      10,
+		IdleMinutes:     10,
+	})
+
+	remoteAddr := uniqueTestRemoteAddr()
+
+	for i := 0; i < 2; i++ {
+		resp := doJSONWithRemoteAddr(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+			"key": "invalid-key",
+		}, nil, remoteAddr)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("request %d status=%d body=%s", i, resp.Code, resp.Body.String())
+		}
+	}
+
+	resp := doJSONWithRemoteAddr(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "invalid-key",
+	}, nil, remoteAddr)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+}
+
+func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
+	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("OPENLICENSD_DATABASE_URL not set")
+	}
+
+	cfg := &config.Config{
+		Addr:              ":8080",
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
+		LocalLoginEnabled: true,
+		RateLimit: config.RateLimitConfig{
+			Enabled:         true,
+			Backend:         "postgres",
+			PublicPerMinute: 60,
+			PublicBurst:     2,
+			LoginPerMinute:  30,
+			LoginBurst:      10,
+			IdleMinutes:     10,
+		},
+	}
+
+	ctx := context.Background()
+	st, err := store.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(st.Close)
+
+	srvA, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server A: %v", err)
+	}
+	srvB, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server B: %v", err)
+	}
+
+	handlerA := srvA.Router(nil)
+	handlerB := srvB.Router(nil)
+	remoteAddr := uniqueTestRemoteAddr()
+
+	resp := doJSONWithRemoteAddr(t, handlerA, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "invalid-key",
+	}, nil, remoteAddr)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("replica A request 1 status=%d body=%s", resp.Code, resp.Body.String())
+	}
+
+	resp = doJSONWithRemoteAddr(t, handlerB, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "invalid-key",
+	}, nil, remoteAddr)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("replica B request 1 status=%d body=%s", resp.Code, resp.Body.String())
+	}
+
+	resp = doJSONWithRemoteAddr(t, handlerA, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "invalid-key",
+	}, nil, remoteAddr)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("replica A request 3 status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+}
+
+func uniqueTestRemoteAddr() string {
+	id := time.Now().UnixNano()
+	return fmt.Sprintf("198.51.%d.%d:12345", (id>>8)%250+1, id%250+1)
 }

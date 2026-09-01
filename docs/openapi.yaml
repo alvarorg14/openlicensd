@@ -8,6 +8,7 @@ info:
     Unsafe methods also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie.
     Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
     Unauthenticated endpoints are rate limited per client IP; configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
+    API requests are bounded by `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` (default `30`; `0` disables); exceeded deadlines return `504` with `{"error":"request timeout"}`.
 
     All responses include browser security headers: `Content-Security-Policy`, `X-Frame-Options`,
     and `X-Content-Type-Options`. When `OPENLICENSD_COOKIE_SECURE=true`, responses also include
@@ -66,16 +67,18 @@ paths:
     get:
       tags: [Health]
       summary: Liveness probe
+      description: Returns 200 when the HTTP server is accepting requests. Does not check external dependencies; use `/readyz` for database readiness.
       operationId: healthz
       responses:
         "200":
-          description: Server is alive
+          description: Server is alive (no dependency checks)
       security: []
 
   /readyz:
     get:
       tags: [Health]
       summary: Readiness probe
+      description: Pings PostgreSQL via the connection pool (2-second timeout). Returns 503 when the database is unreachable.
       operationId: readyz
       responses:
         "200":
@@ -285,6 +288,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     post:
       tags: [Users]
@@ -323,6 +328,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/users/{id}:
     parameters:
@@ -367,6 +374,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     delete:
       tags: [Users]
@@ -395,6 +404,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/users/{id}/password:
     parameters:
@@ -468,6 +479,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/users/{id}/enable:
     parameters:
@@ -504,6 +517,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/products:
     get:
@@ -539,6 +554,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     post:
       tags: [Products]
@@ -575,6 +592,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/products/{id}:
     parameters:
@@ -617,6 +636,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     delete:
       tags: [Products]
@@ -645,6 +666,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/policies:
     get:
@@ -687,6 +710,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     post:
       tags: [Policies]
@@ -723,6 +748,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/policies/{id}:
     parameters:
@@ -765,6 +792,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     delete:
       tags: [Policies]
@@ -793,6 +822,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/stats:
     get:
@@ -816,6 +847,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses:
     get:
@@ -872,6 +905,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     post:
       tags: [Licenses]
@@ -909,6 +944,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/{id}:
     parameters:
@@ -946,6 +983,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     patch:
       tags: [Licenses]
@@ -982,6 +1021,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     delete:
       tags: [Licenses]
@@ -1008,6 +1049,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/{id}/revoke:
     parameters:
@@ -1043,6 +1086,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/{id}/unrevoke:
     parameters:
@@ -1080,6 +1125,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/{id}/machines:
     parameters:
@@ -1126,6 +1173,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/licenses/{id}/machines/{machineId}:
     parameters:
@@ -1171,6 +1220,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
     delete:
       tags: [Licenses]
       summary: Release a license machine
@@ -1196,6 +1247,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/validate:
     post:
@@ -1229,6 +1282,8 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
       security: []
 
   /api/v1/registry-credentials:
@@ -1293,6 +1348,8 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
         "502":
           description: Harbor API failure
           content:
@@ -1496,6 +1553,14 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    GatewayTimeout:
+      description: Request deadline exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: request timeout
     TooManyRequests:
       description: Rate limit exceeded
       headers:

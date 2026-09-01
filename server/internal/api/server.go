@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -12,9 +12,12 @@ import (
 	"github.com/alvarorg14/openlicensd/server/internal/clientip"
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/harbor"
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
+	appmetrics "github.com/alvarorg14/openlicensd/server/internal/metrics"
 	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
 	"github.com/alvarorg14/openlicensd/server/internal/ratelimit"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -25,23 +28,40 @@ type Server struct {
 	store    *store.Store
 	harbor   *harbor.Client
 	oidc     *appoidc.Client
-	limiter  *ratelimit.Limiter
+	limiter  ratelimit.Limiter
 	clientIP *clientip.Resolver
+	logger   *slog.Logger
+	metrics  *appmetrics.Metrics
 }
 
-func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
+func New(ctx context.Context, cfg *config.Config, st *store.Store, logger *slog.Logger) (*Server, error) {
 	sessionTTL := time.Duration(cfg.SessionTTLHours) * time.Hour
 	clientIP, err := clientip.NewResolver(cfg.TrustedProxies)
 	if err != nil {
-		log.Fatalf("client ip resolver: %v", err)
+		return nil, err
+	}
+
+	var metrics *appmetrics.Metrics
+	if cfg.Metrics.Enabled {
+		var poolStat func() *appmetrics.PoolStat
+		if st != nil {
+			poolStat = st.PoolStat
+		}
+		metrics = appmetrics.New(version.Version, poolStat)
 	}
 
 	srv := &Server{
 		cfg:      cfg,
-		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure),
+		auth:     auth.NewService(st, sessionTTL, cfg.CookieSecure, logger),
 		store:    st,
-		limiter:  ratelimit.New(cfg.RateLimit),
+		limiter: ratelimit.New(cfg.RateLimit, ratelimit.Deps{
+			Buckets: st,
+			Logger:  logger,
+			Metrics: metrics,
+		}),
 		clientIP: clientIP,
+		logger:   logger,
+		metrics:  metrics,
 	}
 
 	if cfg.Harbor.Enabled {
@@ -51,9 +71,10 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 			cfg.Harbor.AdminPassword,
 			cfg.Harbor.InsecureSkipVerify,
 			cfg.Harbor.Debug,
+			logger,
 		)
 		if err != nil {
-			log.Fatalf("harbor client: %v", err)
+			return nil, err
 		}
 		srv.harbor = client
 	}
@@ -67,19 +88,23 @@ func New(ctx context.Context, cfg *config.Config, st *store.Store) *Server {
 			Scopes:       cfg.OIDC.Scopes,
 		})
 		if err != nil {
-			log.Fatalf("oidc client: %v", err)
+			return nil, err
 		}
 		srv.oidc = client
 	}
 
-	return srv
+	return srv, nil
 }
 
 func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
-	r.Use(middleware.Logger)
+	r.Use(logging.RequestLogger(s.logger))
+	r.Use(requestTimeout(s.cfg.RequestTimeout()))
+	if s.metrics != nil {
+		r.Use(appmetrics.Middleware(s.metrics))
+	}
 	r.Use(middleware.Recoverer)
 	r.Use(securityHeaders(s.cfg.CookieSecure))
 
@@ -164,6 +189,14 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	return r
 }
 
+// MetricsHandler returns the Prometheus /metrics handler, or nil when metrics are disabled.
+func (s *Server) MetricsHandler() http.Handler {
+	if s.metrics == nil {
+		return nil
+	}
+	return s.metrics.Handler()
+}
+
 type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -190,6 +223,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, tokens, err := s.auth.Login(r.Context(), req.Email, req.Password, userAgent, clientIP)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
 		writeError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -208,10 +245,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleHealthz is the Kubernetes liveness probe. It must not check external
+// dependencies: a failed database ping must not restart the process.
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleReadyz is the Kubernetes readiness probe. It verifies that PostgreSQL
+// is reachable before the pod receives traffic.
 func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
@@ -232,6 +273,16 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func writeInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		logging.FromContext(r.Context()).Warn(message, slog.Any("err", err))
+		writeError(w, http.StatusGatewayTimeout, "request timeout")
+		return
+	}
+	logging.FromContext(r.Context()).Error(message, slog.Any("err", err))
+	writeError(w, http.StatusInternalServerError, message)
 }
 
 func writeStoreError(w http.ResponseWriter, err error, notFoundMessage string) bool {

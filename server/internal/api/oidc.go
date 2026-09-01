@@ -1,15 +1,19 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	appoidc "github.com/alvarorg14/openlicensd/server/internal/oidc"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
@@ -30,17 +34,17 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 	state, err := randomToken()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to start sso")
+		writeInternalError(w, r, err, "failed to start sso")
 		return
 	}
 	nonce, err := randomToken()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to start sso")
+		writeInternalError(w, r, err, "failed to start sso")
 		return
 	}
 	verifier, err := randomToken()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to start sso")
+		writeInternalError(w, r, err, "failed to start sso")
 		return
 	}
 
@@ -65,47 +69,55 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	defer clearOIDCFlowCookies(w, s.cfg.CookieSecure)
 
 	if errMsg := r.URL.Query().Get("error"); errMsg != "" {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "provider_error")
 		return
 	}
 
 	stateCookie, err := r.Cookie(oidcStateCookie)
 	if err != nil || stateCookie.Value == "" {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "state_missing")
 		return
 	}
 	queryState := r.URL.Query().Get("state")
 	if queryState == "" || subtle.ConstantTimeCompare([]byte(stateCookie.Value), []byte(queryState)) != 1 {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "state_mismatch")
 		return
 	}
 
 	nonceCookie, err := r.Cookie(oidcNonceCookie)
 	if err != nil || nonceCookie.Value == "" {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "nonce_missing")
 		return
 	}
 	verifierCookie, err := r.Cookie(oidcVerifierCookie)
 	if err != nil || verifierCookie.Value == "" {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "verifier_missing")
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		redirectSSOError(w, r)
+		redirectSSOError(w, r, "code_missing")
 		return
 	}
 
 	claims, err := s.oidc.Exchange(r.Context(), code, verifierCookie.Value, nonceCookie.Value)
 	if err != nil {
-		redirectSSOError(w, r)
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
+		redirectSSOError(w, r, "exchange_failed")
 		return
 	}
 
 	user, err := s.resolveOIDCUser(r, claims)
 	if err != nil {
-		redirectSSOError(w, r)
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
+		redirectSSOError(w, r, "user_resolution_failed")
 		return
 	}
 
@@ -114,11 +126,20 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := s.auth.CreateSessionForUser(r.Context(), user, store.AuthProviderOIDC, userAgent, clientIP)
 	if err != nil {
-		redirectSSOError(w, r)
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, "request timeout")
+			return
+		}
+		redirectSSOError(w, r, "session_creation_failed")
 		return
 	}
 
-	_ = s.store.ClearFailedLogin(r.Context(), user.ID)
+	if err := s.store.ClearFailedLogin(r.Context(), user.ID); err != nil {
+		logging.FromContext(r.Context()).Warn("clear failed login failed",
+			slog.String("user_id", user.ID.String()),
+			slog.Any("err", err),
+		)
+	}
 
 	s.auth.SetSessionCookies(w, tokens)
 
@@ -221,7 +242,8 @@ func sanitizeReturnTo(value string) string {
 	return value
 }
 
-func redirectSSOError(w http.ResponseWriter, r *http.Request) {
+func redirectSSOError(w http.ResponseWriter, r *http.Request, reason string) {
+	logging.FromContext(r.Context()).Warn("oidc callback failed", slog.String("reason", reason))
 	http.Redirect(w, r, "/login?error=sso_failed", http.StatusFound)
 }
 

@@ -5,7 +5,7 @@
 
 ## Installing
 
-Requires an external PostgreSQL database. The chart does not bundle a database.
+Requires an external PostgreSQL database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md) and [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md) for operator-owned upgrade and backup procedures.
 
 ```bash
 helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
@@ -46,6 +46,18 @@ helm install openlicensd ./charts/openlicensd \
   --create-namespace \
   -f charts/openlicensd/ci/test-values.yaml
 ```
+
+## Health probes
+
+The Deployment configures Kubernetes probes against the HTTP port:
+
+| Probe | Path | Purpose |
+|-------|------|---------|
+| Liveness | `/healthz` | Process is alive (no dependency checks) |
+| Readiness | `/readyz` | PostgreSQL is reachable |
+| Startup | `/readyz` | Allows migrations to finish before liveness begins |
+
+Liveness must not ping the database: a transient Postgres outage would restart pods instead of removing them from the load balancer. Readiness and startup use `/readyz`, which runs a lightweight `Store.Ping` with a 2-second timeout.
 
 {{ template "chart.valuesHeader" . }}
 {{ template "chart.valuesTable" . }}

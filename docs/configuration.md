@@ -14,9 +14,58 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | No | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
+| `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | No | Per-request context deadline in seconds; `0` disables |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | No | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies; when `true`, also enables `Strict-Transport-Security` response headers |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
+
+### Logging
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_LOG_LEVEL` | `info` | No | Log level: `debug`, `info`, `warn`, or `error` |
+| `OPENLICENSD_LOG_FORMAT` | `json` | No | Log output format: `json` or `text` |
+
+Logs are written to stderr. Each HTTP request emits a completion line with `request_id`, `method`, `path`, `status`, `bytes`, `duration_ms`, and `remote_addr`. Handler and integration logs reuse the same `request_id` for correlation.
+
+Example JSON line:
+
+```json
+{"time":"2026-08-31T12:00:00.000Z","level":"INFO","msg":"request completed","request_id":"abc-123","method":"POST","path":"/api/v1/validate","status":200,"bytes":84,"duration_ms":12,"remote_addr":"127.0.0.1:12345"}
+```
+
+Common structured attributes: `request_id`, `client_ip`, `user_id`, `email`, `license_key_prefix`, `product_code`, `reason`, `err`.
+
+| Level | Examples |
+|-------|----------|
+| `error` | Internal handler failures (`writeInternalError`), Harbor robot creation failures |
+| `warn` | Failed logins, OIDC callback failures, rate-limit denials, best-effort store write failures |
+| `info` | Request completion, successful logins, license validation outcomes, migrations, startup/shutdown |
+| `debug` | Harbor API traffic when `OPENLICENSD_HARBOR_DEBUG=true` |
+
+Login success and failure records include `email` and `client_ip`. Plan log retention in your aggregator accordingly — license keys are never logged (only `license_key_prefix`).
+
+Set `OPENLICENSD_LOG_FORMAT=text` for human-readable local development output.
+
+### Metrics
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_METRICS_ENABLED` | `true` | No | Enable Prometheus `/metrics` on a dedicated listener |
+| `OPENLICENSD_METRICS_ADDR` | `:9090` | No | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
+
+See [metrics.md](metrics.md) for the full metric catalog and scrape configuration.
+
+### Database pool
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | No | Maximum pool connections; `0` uses pgx default (`max(4, NumCPU)`) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | No | Minimum pool connections; `0` uses pgx default |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | No | Close idle connections after this many minutes; `0` uses pgx default (`30m`) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | No | PostgreSQL `statement_timeout` in seconds; `0` leaves the server default |
+
+The connection URL is parsed first (`pool_*` query parameters are supported). Non-zero env vars override URL pool settings. Effective pool limits appear in the `openlicensd_db_pool_*` Prometheus gauges — see [metrics.md](metrics.md).
 
 ### Rate limiting
 
@@ -24,13 +73,14 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 |----------|---------|----------|-------------|
 | `OPENLICENSD_TRUSTED_PROXIES` | — | No | Comma-separated trusted proxy IPs or CIDRs. When the direct peer matches, `X-Forwarded-For` is used to resolve the client IP |
 | `OPENLICENSD_RATE_LIMIT_ENABLED` | `true` | No | Enable per-IP rate limiting on unauthenticated endpoints |
+| `OPENLICENSD_RATE_LIMIT_BACKEND` | `memory` | No | Backend: `memory` (per-replica buckets) or `postgres` (shared buckets across replicas) |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` | `600` | No | Sustained request rate for `/validate` and `/registry-credentials` |
 | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` | `60` | No | Burst capacity for public endpoints |
 | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` | `30` | No | Sustained request rate for `/auth/login` and OIDC login/callback |
 | `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` | `10` | No | Burst capacity for login endpoints |
-| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted from memory |
+| `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted (`memory`: from process memory; `postgres`: from the database) |
 
-Limits are per process. With multiple replicas, effective throughput scales with replica count. Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer.
+With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global per-IP budget; this adds a database write on each rate-limited request (fail-open on backend errors; see `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md)). Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer. See [scaling.md](scaling.md) for HA guidance and recommended replica counts.
 
 ### OIDC SSO (optional)
 
@@ -93,13 +143,23 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 |------------|---------------------|
 | `config.addr` | `OPENLICENSD_ADDR` |
 | `config.sessionTTLHours` | `OPENLICENSD_SESSION_TTL_HOURS` |
+| `config.requestTimeoutSeconds` | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` |
 | `config.sessionCleanupIntervalMinutes` | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
+| `config.log.format` | `OPENLICENSD_LOG_FORMAT` |
+| `config.log.level` | `OPENLICENSD_LOG_LEVEL` |
+| `config.metrics.addr` | `OPENLICENSD_METRICS_ADDR` |
+| `config.metrics.enabled` | `OPENLICENSD_METRICS_ENABLED` |
+| `config.database.maxConns` | `OPENLICENSD_DATABASE_MAX_CONNS` |
+| `config.database.minConns` | `OPENLICENSD_DATABASE_MIN_CONNS` |
+| `config.database.maxConnIdleMinutes` | `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` |
+| `config.database.statementTimeoutSeconds` | `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` |
 | `config.bootstrapAdmin.email` | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` |
 | `config.bootstrapAdmin.name` | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` |
 | `config.trustedProxies` | `OPENLICENSD_TRUSTED_PROXIES` |
 | `config.rateLimit.enabled` | `OPENLICENSD_RATE_LIMIT_ENABLED` |
+| `config.rateLimit.backend` | `OPENLICENSD_RATE_LIMIT_BACKEND` |
 | `config.rateLimit.publicPerMinute` | `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE` |
 | `config.rateLimit.publicBurst` | `OPENLICENSD_RATE_LIMIT_PUBLIC_BURST` |
 | `config.rateLimit.loginPerMinute` | `OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE` |

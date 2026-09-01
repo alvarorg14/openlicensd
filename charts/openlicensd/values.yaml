@@ -58,22 +58,105 @@ nodeSelector: {}
 tolerations: []
 # -- Affinity rules for pod assignment
 affinity: {}
+# -- Topology spread constraints for pod assignment
+topologySpreadConstraints: []
+
+autoscaling:
+  # -- Create a HorizontalPodAutoscaler for OpenLicensd pods
+  enabled: false
+  # -- Minimum replicas when autoscaling is enabled
+  minReplicas: 1
+  # -- Maximum replicas when autoscaling is enabled
+  maxReplicas: 5
+  # -- Target average CPU utilization percentage. Leave empty to omit the CPU metric.
+  targetCPUUtilizationPercentage: 80
+  # -- Target average memory utilization percentage. Leave empty to omit the memory metric.
+  targetMemoryUtilizationPercentage: ""
+  # -- HPA scaling behavior (scaleUp/scaleDown policies)
+  behavior: {}
+  # -- Annotations to add to the HorizontalPodAutoscaler
+  annotations: {}
+
+pdb:
+  # -- Create a PodDisruptionBudget for OpenLicensd pods
+  enabled: false
+  # -- Minimum pods that must remain available during voluntary disruptions. When set (including 0), takes precedence over maxUnavailable. Leave empty to use maxUnavailable instead.
+  minAvailable: ""
+  # -- Maximum pods that may be unavailable during voluntary disruptions. Used when minAvailable is empty.
+  maxUnavailable: 1
+  # -- Annotations to add to the PodDisruptionBudget
+  annotations: {}
+
+serviceMonitor:
+  # -- Create a Prometheus Operator ServiceMonitor for /metrics scraping
+  enabled: false
+  # -- Scrape interval
+  interval: 30s
+  # -- Scrape timeout. Leave empty to omit.
+  scrapeTimeout: ""
+  # -- Extra labels for Prometheus Operator serviceMonitorSelector matching
+  labels: {}
+  # -- Annotations to add to the ServiceMonitor
+  annotations: {}
+  # -- Honor labels from the scraped metrics
+  honorLabels: false
+  # -- Relabeling rules applied before ingestion
+  relabelings: []
+  # -- Relabeling rules applied to scraped metrics
+  metricRelabelings: []
+
+networkPolicy:
+  # -- Create a NetworkPolicy for OpenLicensd pods
+  enabled: false
+  # -- Allow ingress from any source to the HTTP and metrics ports
+  allowExternal: true
+  # -- Allow egress to any destination (required for external PostgreSQL, OIDC, and Harbor)
+  allowExternalEgress: true
+  # -- Additional ingress rules appended to the policy
+  extraIngress: []
+  # -- Additional egress rules appended to the policy
+  extraEgress: []
+  # -- Annotations to add to the NetworkPolicy
+  annotations: {}
 
 config:
   # -- HTTP listen address (maps to OPENLICENSD_ADDR)
   addr: ":8080"
   # -- Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS)
   sessionTTLHours: 24
+  # -- Per-request context deadline in seconds; 0 disables (maps to OPENLICENSD_REQUEST_TIMEOUT_SECONDS)
+  requestTimeoutSeconds: 30
   # -- Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES)
   sessionCleanupIntervalMinutes: 60
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
   localLoginEnabled: true
+  log:
+    # -- Log level: debug, info, warn, or error (maps to OPENLICENSD_LOG_LEVEL)
+    level: info
+    # -- Log output format: json or text (maps to OPENLICENSD_LOG_FORMAT)
+    format: json
+  metrics:
+    # -- Enable Prometheus /metrics on a dedicated listener (maps to OPENLICENSD_METRICS_ENABLED)
+    enabled: true
+    # -- Metrics listen address (maps to OPENLICENSD_METRICS_ADDR)
+    addr: ":9090"
+  database:
+    # -- Maximum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONNS)
+    maxConns: 0
+    # -- Minimum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MIN_CONNS)
+    minConns: 0
+    # -- Close idle connections after this many minutes; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES)
+    maxConnIdleMinutes: 0
+    # -- PostgreSQL statement_timeout in seconds; 0 leaves server default (maps to OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS)
+    statementTimeoutSeconds: 0
   # -- Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES)
   trustedProxies: ""
   rateLimit:
     # -- Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED)
     enabled: true
+    # -- Rate limit backend: memory (per-replica) or postgres (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND)
+    backend: memory
     # -- Sustained request rate for /validate and /registry-credentials (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE)
     publicPerMinute: 600
     # -- Burst capacity for public endpoints (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_BURST)

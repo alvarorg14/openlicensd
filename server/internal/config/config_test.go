@@ -260,6 +260,32 @@ func TestLoadRateLimitDefaults(t *testing.T) {
 	if cfg.RateLimit.IdleMinutes != 10 {
 		t.Fatalf("idle minutes=%d want 10", cfg.RateLimit.IdleMinutes)
 	}
+	if cfg.RateLimit.Backend != "memory" {
+		t.Fatalf("backend=%q want memory", cfg.RateLimit.Backend)
+	}
+}
+
+func TestLoadRateLimitBackendPostgres(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "postgres")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RateLimit.Backend != "postgres" {
+		t.Fatalf("backend=%q want postgres", cfg.RateLimit.Backend)
+	}
+}
+
+func TestLoadRateLimitInvalidBackend(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "redis")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid rate limit backend")
+	}
 }
 
 func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {
@@ -295,5 +321,221 @@ func TestLoadTrustedProxiesParsesCSV(t *testing.T) {
 	}
 	if cfg.TrustedProxies[0] != "10.0.0.0/8" || cfg.TrustedProxies[1] != "10.1.2.3" {
 		t.Fatalf("trusted proxies=%v", cfg.TrustedProxies)
+	}
+}
+
+func TestLoadLogDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_LEVEL", "")
+	t.Setenv("OPENLICENSD_LOG_FORMAT", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Log.Level != "info" {
+		t.Fatalf("log level=%q", cfg.Log.Level)
+	}
+	if cfg.Log.Format != "json" {
+		t.Fatalf("log format=%q", cfg.Log.Format)
+	}
+}
+
+func TestLoadLogInvalidLevel(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_LEVEL", "trace")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid log level")
+	}
+}
+
+func TestLoadLogInvalidFormat(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_LOG_FORMAT", "xml")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid log format")
+	}
+}
+
+func TestLoadMetricsDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if !cfg.Metrics.Enabled {
+		t.Fatalf("expected metrics enabled by default")
+	}
+	if cfg.Metrics.Addr != ":9090" {
+		t.Fatalf("metrics addr=%q want :9090", cfg.Metrics.Addr)
+	}
+}
+
+func TestLoadMetricsDisabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "false")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Metrics.Enabled {
+		t.Fatalf("expected metrics disabled")
+	}
+}
+
+func TestLoadMetricsEmptyAddr(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", "   ")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for empty metrics addr")
+	}
+}
+
+func TestLoadMetricsAddrEqualsAPIAddr(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_ADDR", ":8080")
+	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
+	t.Setenv("OPENLICENSD_METRICS_ADDR", ":8080")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when metrics addr equals API addr")
+	}
+}
+
+func TestLoadDatabaseDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "")
+	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", "")
+	t.Setenv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Database.MaxConns != 0 {
+		t.Fatalf("max conns=%d want 0", cfg.Database.MaxConns)
+	}
+	if cfg.Database.MinConns != 0 {
+		t.Fatalf("min conns=%d want 0", cfg.Database.MinConns)
+	}
+	if cfg.Database.MaxConnIdleMinutes != 0 {
+		t.Fatalf("idle minutes=%d want 0", cfg.Database.MaxConnIdleMinutes)
+	}
+	if cfg.Database.StatementTimeoutSeconds != 0 {
+		t.Fatalf("statement timeout=%d want 0", cfg.Database.StatementTimeoutSeconds)
+	}
+}
+
+func TestLoadDatabaseOverrides(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "20")
+	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "2")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", "15")
+	t.Setenv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", "60")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.Database.MaxConns != 20 {
+		t.Fatalf("max conns=%d want 20", cfg.Database.MaxConns)
+	}
+	if cfg.Database.MinConns != 2 {
+		t.Fatalf("min conns=%d want 2", cfg.Database.MinConns)
+	}
+	if cfg.Database.MaxConnIdleMinutes != 15 {
+		t.Fatalf("idle minutes=%d want 15", cfg.Database.MaxConnIdleMinutes)
+	}
+	if cfg.Database.StatementTimeoutSeconds != 60 {
+		t.Fatalf("statement timeout=%d want 60", cfg.Database.StatementTimeoutSeconds)
+	}
+}
+
+func TestLoadDatabaseNegativeMaxConns(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "-1")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for negative max conns")
+	}
+}
+
+func TestLoadDatabaseMinExceedsMax(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "5")
+	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "10")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when min conns exceeds max conns")
+	}
+}
+
+func TestLoadRequestTimeoutDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RequestTimeoutSeconds != 30 {
+		t.Fatalf("request timeout=%d want 30", cfg.RequestTimeoutSeconds)
+	}
+	if cfg.RequestTimeout() != 30*time.Second {
+		t.Fatalf("request timeout duration=%s want 30s", cfg.RequestTimeout())
+	}
+}
+
+func TestLoadRequestTimeoutOverride(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "45")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RequestTimeoutSeconds != 45 {
+		t.Fatalf("request timeout=%d want 45", cfg.RequestTimeoutSeconds)
+	}
+}
+
+func TestLoadRequestTimeoutDisabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "0")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RequestTimeoutSeconds != 0 {
+		t.Fatalf("request timeout=%d want 0", cfg.RequestTimeoutSeconds)
+	}
+	if cfg.RequestTimeout() != 0 {
+		t.Fatalf("request timeout duration=%s want 0", cfg.RequestTimeout())
+	}
+}
+
+func TestLoadRequestTimeoutNegative(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "-1")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for negative request timeout")
 	}
 }

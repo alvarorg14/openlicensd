@@ -1,0 +1,21 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "openlicensd.fullname" . }}
+  labels:
+    {{- include "openlicensd.labels" . | nindent 4 }}
+  {{- with .Values.pdb.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if ne (toString .Values.pdb.minAvailable) "" }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- else }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "openlicensd.selectorLabels" . | nindent 6 }}
+{{- end }}

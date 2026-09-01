@@ -93,6 +93,148 @@
     "affinity": {
       "type": "object"
     },
+    "topologySpreadConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetCPUUtilizationPercentage": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 100 },
+            { "type": "string" }
+          ]
+        },
+        "targetMemoryUtilizationPercentage": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 100 },
+            { "type": "string" }
+          ]
+        },
+        "behavior": {
+          "type": "object"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pdb": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minAvailable": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string" }
+          ]
+        },
+        "maxUnavailable": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string" }
+          ]
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "scrapeTimeout": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "honorLabels": {
+          "type": "boolean"
+        },
+        "relabelings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "metricRelabelings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowExternal": {
+          "type": "boolean"
+        },
+        "allowExternalEgress": {
+          "type": "boolean"
+        },
+        "extraIngress": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "extraEgress": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "config": {
       "type": "object",
       "properties": {
@@ -102,6 +244,10 @@
         "sessionTTLHours": {
           "type": "integer",
           "minimum": 1
+        },
+        "requestTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 0
         },
         "sessionCleanupIntervalMinutes": {
           "type": "integer",
@@ -116,11 +262,47 @@
         "trustedProxies": {
           "type": "string"
         },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "addr": {
+              "type": "string"
+            }
+          }
+        },
+        "database": {
+          "type": "object",
+          "properties": {
+            "maxConns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minConns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxConnIdleMinutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "statementTimeoutSeconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
         "rateLimit": {
           "type": "object",
           "properties": {
             "enabled": {
               "type": "boolean"
+            },
+            "backend": {
+              "type": "string",
+              "enum": ["memory", "postgres"]
             },
             "publicPerMinute": {
               "type": "integer",

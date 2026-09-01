@@ -86,6 +86,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - Single binary distribution with embedded UI
 - PostgreSQL storage with automatic migrations
+- Prometheus metrics on a dedicated listener (`/metrics` on `:9090` by default)
 - Helm chart for Kubernetes deployment
 
 ## 🚀 Quick Start
@@ -179,13 +180,22 @@ result, _ := client.Validate(ctx, licenseKey)
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
 | `OPENLICENSD_DATABASE_URL` | *(required)* | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | Maximum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | Minimum pool connections (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | Idle connection lifetime in minutes (`0` = pgx default) |
+| `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | PostgreSQL statement timeout in seconds (`0` = server default) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Email for first admin (required on empty database) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
+| `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
+| `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
+| `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |
+| `OPENLICENSD_METRICS_ENABLED` | `true` | Enable Prometheus `/metrics` on a dedicated listener |
+| `OPENLICENSD_METRICS_ADDR` | `:9090` | Metrics listen address (must differ from `OPENLICENSD_ADDR`) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies and enable HSTS headers (`false` for local HTTP) |
 
-Rate limiting and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). Harbor variables (`OPENLICENSD_HARBOR_*`) and OIDC SSO variables (`OPENLICENSD_OIDC_*`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/oidc-sso.md](docs/oidc-sso.md) for provider setup walkthroughs.
+Rate limiting, metrics, database pool, and trusted-proxy variables (`OPENLICENSD_RATE_LIMIT_*`, including optional `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` for multi-replica deployments, `OPENLICENSD_METRICS_*`, `OPENLICENSD_DATABASE_*`, `OPENLICENSD_TRUSTED_PROXIES`) are documented in [docs/configuration.md](docs/configuration.md). See [docs/metrics.md](docs/metrics.md) for the Prometheus metric catalog, [docs/scaling.md](docs/scaling.md) for HA and multi-replica guidance, and [docs/troubleshooting.md](docs/troubleshooting.md) for common failure diagnosis.
 
 Generate a password hash:
 

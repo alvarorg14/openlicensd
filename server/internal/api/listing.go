@@ -122,7 +122,7 @@ var licenseSorts = map[string]string{
 	"policy_name":       "pol.name",
 	"last_validated_at": "l.last_validated_at",
 	"validation_count":  "l.validation_count",
-	"activation_count":  "activation_count",
+	"activation_count":  "COALESCE(ac.activation_count, 0)",
 	"max_activations":   "l.max_activations",
 }
 

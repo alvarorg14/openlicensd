@@ -17,3 +17,9 @@ spec:
       port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
+    {{- if .Values.config.metrics.enabled }}
+    - name: metrics
+      port: {{ last (splitList ":" .Values.config.metrics.addr) | int }}
+      targetPort: metrics
+      protocol: TCP
+    {{- end }}
