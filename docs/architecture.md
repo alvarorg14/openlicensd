@@ -49,6 +49,7 @@ flowchart TB
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
 | `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
+| `ratelimit` | `server/internal/ratelimit/` | Per-IP token bucket rate limiting (`memory` or `postgres` backend) |
 | `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
 | `store` | `server/internal/store/` | PostgreSQL CRUD, validation recording, migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server with SPA fallback |
@@ -58,6 +59,8 @@ flowchart TB
 `server/cmd/openlicensd/main.go` loads configuration, connects to PostgreSQL, runs migrations, starts a background session cleanup task (when enabled), and starts the HTTP server with graceful shutdown.
 
 Migrations are automatic, forward-only, and transactional. SQL files in `server/internal/store/migrations/` are embedded in the binary, applied once (recorded in `schema_migrations`), and serialized across concurrent startups with a PostgreSQL advisory lock. There is no down-migration path — rollback requires restoring a pre-upgrade database backup. See [upgrade.md](upgrade.md) for operator upgrade and rollback procedures.
+
+For multi-replica deployments, sessions and OIDC state are shared via PostgreSQL and browser cookies — no session stickiness is required. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running more than one replica so rate limits are global. See [scaling.md](scaling.md).
 
 ### Admin UI
 

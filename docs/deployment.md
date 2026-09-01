@@ -110,7 +110,7 @@ config:
     backend: postgres
 ```
 
-This adds a database write on each rate-limited request. A full HA and scaling guide is tracked in [issue #99](https://github.com/alvarorg14/openlicensd/issues/99).
+This adds a database write on each rate-limited request. See [scaling.md](scaling.md) for session stickiness, recommended replica counts, and other multi-replica caveats.
 
 For production deployments with multiple replicas, enable the optional PodDisruptionBudget so voluntary disruptions (node drains, rolling upgrades) respect availability:
 
@@ -357,4 +357,5 @@ The release job also stamps `docs/openapi.yaml` `info.version` from the tag and 
 - [configuration.md](configuration.md) — all environment variables
 - [upgrade.md](upgrade.md) — upgrade procedure and migration notes
 - [backup-restore.md](backup-restore.md) — PostgreSQL backup and restore
+- [scaling.md](scaling.md) — HA, scaling, and multi-replica caveats
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference

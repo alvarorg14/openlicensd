@@ -80,7 +80,7 @@ The connection URL is parsed first (`pool_*` query parameters are supported). No
 | `OPENLICENSD_RATE_LIMIT_LOGIN_BURST` | `10` | No | Burst capacity for login endpoints |
 | `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused per-IP bucket is evicted (`memory`: from process memory; `postgres`: from the database) |
 
-With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global per-IP budget; this adds a database write on each rate-limited request (fail-open on backend errors; see `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md)). Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer.
+With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global per-IP budget; this adds a database write on each rate-limited request (fail-open on backend errors; see `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md)). Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer. See [scaling.md](scaling.md) for HA guidance and recommended replica counts.
 
 ### OIDC SSO (optional)
 
