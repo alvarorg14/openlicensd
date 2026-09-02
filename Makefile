@@ -1,4 +1,4 @@
-.PHONY: help dev dev-db dev-db-reset dev-server dev-ui stack-up stack-down stack-logs ui server test test-sdk lint lint-server lint-ui lint-sdk vuln hash-password build release
+.PHONY: help dev dev-db dev-db-reset dev-server dev-ui docs-dev docs-build stack-up stack-down stack-logs ui server test test-sdk lint lint-server lint-ui lint-sdk vuln hash-password build release
 
 .DEFAULT_GOAL := help
 
@@ -46,6 +46,12 @@ dev-server: dev-db ## Run the API server (loads .env)
 
 dev-ui: ## Run the Nuxt dev server
 	cd ui && npm run dev
+
+docs-dev: ## Run the VitePress docs dev server
+	cd docs && npm run docs:dev
+
+docs-build: ## Build the VitePress docs site
+	cd docs && npm run docs:build
 
 ui: ## Build static UI into server/internal/static/dist
 	cd ui && npm run generate

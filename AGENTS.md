@@ -31,6 +31,14 @@ This document provides context and guidelines for AI coding assistants working o
 - **Build output**: `server/internal/static/dist/` (embedded via `//go:embed`; git tracks a placeholder `index.html`, run `make ui` or GoReleaser to generate the full SPA)
 - **Public assets**: `ui/public/` (favicon, self-hosted fonts)
 
+### Documentation site (VitePress)
+
+- **Location**: `docs/` (content) and `docs/.vitepress/` (site config)
+- **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference
+- **Published at**: `https://alvarorg14.github.io/openlicensd/` (GitHub Pages via `.github/workflows/docs.yml`)
+- **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, and `CONTRIBUTING.md` included via VitePress file includes (no duplication)
+- **Build**: `make docs-build` (or `cd docs && npm run docs:build`); `make docs-dev` for local preview
+
 ### Go SDK
 
 - **Location**: `sdk/go/`
@@ -179,6 +187,7 @@ Do not commit version bumps to `main` after each publish.
 | `ui/nuxt.config.ts` | Nuxt config, API proxy in dev |
 | `charts/openlicensd/values.yaml` | Helm defaults |
 | `docs/openapi.yaml` | OpenAPI 3.1 specification |
+| `docs/.vitepress/config.ts` | VitePress site config (nav, sidebar, GitHub Pages base path) |
 | `.goreleaser.yaml` | Release and container image publishing |
 
 ## Development Workflow
@@ -191,6 +200,8 @@ make dev-db        # Start PostgreSQL via Docker Compose (docker-compose.yml)
 make dev-db-reset  # Reset local PostgreSQL volume (required when schema changes)
 make dev-server    # Run Go API server (loads .env)
 make dev-ui        # Run Nuxt dev server
+make docs-dev      # Run VitePress docs dev server
+make docs-build    # Build VitePress docs site
 make stack-up      # Start Postgres + openlicensd from GHCR (docker-compose.stack.yml)
 make stack-down    # Stop full stack (ARGS=-v to drop its data)
 make stack-logs    # Tail full stack logs
@@ -237,6 +248,15 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
+
+### Docs (`.github/workflows/docs.yml`)
+
+Triggers on push/PR to `main` when `docs/**`, root guides, or the workflow file change:
+
+| Job | Command |
+|-----|---------|
+| Build | `npm ci`, `npm run docs:build` in `docs/` |
+| Deploy | GitHub Pages (push to `main` only) |
 
 ### SDK CI (`.github/workflows/sdk-ci.yml`)
 
@@ -323,6 +343,7 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`)
 - Update `docs/openapi.yaml` if API changes
 - Update `docs/sdk/go.md` if SDK behavior changes
 - Update `AGENTS.md` for architectural changes
+- Run `make docs-build` when documentation content or site config changes
 - Update Helm chart README if values change
 
 ### Pre-Commit Checklist

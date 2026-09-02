@@ -29,6 +29,11 @@
       "labels": ["dependencies"]
     },
     {
+      "matchManagers": ["npm"],
+      "matchFileNames": ["docs/**"],
+      "labels": ["dependencies"]
+    },
+    {
       "matchManagers": ["dockerfile"],
       "labels": ["dependencies"]
     },

@@ -29,7 +29,7 @@
 
 <br>
 
-[Quick Start](#-quick-start) · [API](#-api) · [Configuration](#%EF%B8%8F-configuration) · [Contributing](#-contributing)
+[Documentation](https://alvarorg14.github.io/openlicensd/) · [Quick Start](#-quick-start) · [API](#-api) · [Configuration](#%EF%B8%8F-configuration) · [Contributing](#-contributing)
 
 </div>
 
@@ -56,15 +56,18 @@
 
 ---
 
+<!-- #region site -->
 ## 📖 Overview
 
 **OpenLicensd** is a self-hosted license server for creating, managing, and validating license keys. It ships as a single Go binary with an embedded Nuxt admin UI and stores data in PostgreSQL.
 
 Use it to gate access to your software, issue time-limited keys, track validation usage, and optionally provide short-lived Harbor registry credentials to licensed clients.
 
+<!-- #endregion site -->
 <div align="center">
   <img src="docs/screenshots/admin-ui-licenses.png" alt="OpenLicensd admin UI licenses list" width="900">
 </div>
+<!-- #region site -->
 
 ## 🤔 Why OpenLicensd?
 
@@ -311,6 +314,7 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+<!-- #endregion site -->
 
 ---
 

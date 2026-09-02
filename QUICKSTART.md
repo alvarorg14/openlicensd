@@ -220,6 +220,7 @@ helm uninstall openlicensd -n openlicensd
 
 ## Next Steps
 
+- Documentation site: [https://alvarorg14.github.io/openlicensd/](https://alvarorg14.github.io/openlicensd/)
 - Full configuration reference: [docs/configuration.md](docs/configuration.md)
 - API documentation: [docs/api.md](docs/api.md) and [docs/openapi.yaml](docs/openapi.yaml)
 - Harbor registry credentials: [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md)

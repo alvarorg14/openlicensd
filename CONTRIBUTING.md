@@ -44,6 +44,20 @@ make lint
 make hash-password PASSWORD=yourpassword
 ```
 
+## Docs site
+
+The documentation site is built with VitePress from the `docs/` directory and published to GitHub Pages.
+
+```bash
+# Run the docs dev server (hot reload)
+make docs-dev
+
+# Build the static site (same check as CI)
+make docs-build
+```
+
+When editing `docs/*.md`, changes appear in the dev server immediately. Root-level guides (`README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`) are included in the site via VitePress file includes — edit those source files, not the wrapper pages in `docs/`.
+
 ## Releasing
 
 Releases are managed through [Release Drafter](https://github.com/release-drafter/release-drafter). Merging labeled pull requests to `main` updates draft releases automatically.
