@@ -152,41 +152,13 @@ Open http://localhost:3000 and sign in with `admin` / `admin`.
 
 ## 📡 API
 
-All endpoints are under `/api/v1`. The full specification is in [docs/openapi.yaml](docs/openapi.yaml).
+The HTTP API is specified in [docs/openapi.yaml](docs/openapi.yaml) (OpenAPI 3.1). That file is the source of truth for paths, schemas, and status codes. See [docs/api.md](docs/api.md) for authentication, roles, and curl examples.
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/v1/auth/login` | None | Admin login (sets session cookies) |
-| `POST` | `/api/v1/validate` | None | Validate a license key |
-| `POST` | `/api/v1/registry-credentials` | None | Issue Harbor credentials (when enabled) |
-| `POST` | `/api/v1/products` | Session | Create a product |
-| `GET` | `/api/v1/products` | Session | List products (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
-| `PATCH` | `/api/v1/products/{id}` | Session | Update a product |
-| `DELETE` | `/api/v1/products/{id}` | Session | Delete a product |
-| `POST` | `/api/v1/policies` | Session | Create a policy |
-| `GET` | `/api/v1/policies` | Session | List policies (paginated; supports `product_id`, `search`, `sort`, `order`) |
-| `PATCH` | `/api/v1/policies/{id}` | Session | Update a policy |
-| `DELETE` | `/api/v1/policies/{id}` | Session | Delete a policy |
-| `POST` | `/api/v1/licenses` | Session | Create a license |
-| `GET` | `/api/v1/licenses` | Session | List licenses (paginated; supports `status`, `product_id`, `policy_id`, `search`, `sort`, `order`) |
-| `GET` | `/api/v1/licenses/stats` | Session | License status counts (total, active, expired, revoked) |
-| `GET` | `/api/v1/licenses/{id}` | Session | Get a license by ID |
-| `PATCH` | `/api/v1/licenses/{id}` | Session | Update a license |
-| `DELETE` | `/api/v1/licenses/{id}` | Session | Delete a license |
-| `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke a license |
-| `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke a license |
-| `GET` | `/api/v1/licenses/{id}/machines` | Session | List machines that activated a license |
-| `PATCH` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Rename a machine |
-| `DELETE` | `/api/v1/licenses/{id}/machines/{machineId}` | Session | Release a machine (free a seat) |
-| `GET` | `/api/v1/users` | Session or Bearer (admin) | List users (paginated; supports `page`, `page_size`, `search`, `sort`, `order`) |
-| `POST` | `/api/v1/users` | Session or Bearer (admin) | Create a user |
-| `GET` | `/api/v1/api-tokens` | Session (admin) | List API tokens (paginated) |
-| `POST` | `/api/v1/api-tokens` | Session (admin) | Create an API token (raw value returned once) |
-| `PATCH` | `/api/v1/api-tokens/{id}/revoke` | Session (admin) | Revoke an API token |
-| `DELETE` | `/api/v1/api-tokens/{id}` | Session (admin) | Delete an API token |
-| `GET` | `/api/v1/audit-events` | Session or Bearer (admin) | List audit events (paginated) |
+**Public** (no auth; rate limited): `POST /api/v1/validate` and, when Harbor is enabled, `POST /api/v1/registry-credentials`.
 
-See [docs/api.md](docs/api.md) for authentication flow and curl examples. Admin endpoints accept a session cookie or a scoped API token (`Authorization: Bearer`); token management requires a session.
+**Admin** (session cookie or `Authorization: Bearer`; CSRF on session writes): products, policies, licenses, machines, users, API tokens, and audit events. Token management (`/api/v1/api-tokens`) requires an admin session.
+
+**Health**: `GET /healthz` (liveness), `GET /readyz` (readiness, PostgreSQL ping).
 
 ## Client SDKs
 
