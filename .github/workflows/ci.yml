@@ -62,7 +62,7 @@ jobs:
         working-directory: server
         env:
           OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable
-        run: go test ./...
+        run: go test -p 1 ./...
 
       - name: Build
         working-directory: server
