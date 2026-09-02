@@ -11,6 +11,7 @@
 [![CI](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml)
 [![SDK CI](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml)
 [![Vulnerability Scan](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml)
+[![CodeQL](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml)
 [![Release](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/releases)
 [![License](https://img.shields.io/github/license/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/blob/main/LICENSE)
@@ -308,6 +309,8 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 **Dependency maintenance:** Renovate opens pull requests for Go modules, npm packages, Docker base images, and GitHub Actions updates. Install the [Renovate GitHub App](https://github.com/apps/renovate) on this repository to enable it.
 
 **Vulnerability scanning:** A separate Vulnerability Scan workflow runs govulncheck weekly, on demand, and on pull requests (non-blocking) to detect known vulnerabilities in Go dependencies.
+
+**Static analysis:** A CodeQL workflow runs on push, pull requests, and weekly to scan Go (server and SDK) and TypeScript (admin UI) source for security issues. Results appear in the repository [Security tab](https://github.com/alvarorg14/openlicensd/security/code-scanning).
 
 ## 📄 License
 

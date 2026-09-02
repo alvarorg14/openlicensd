@@ -276,6 +276,18 @@ Runs [`govulncheck`](https://go.dev/security/vuln/) separately from CI:
 | `workflow_dispatch` | Manual on-demand scan |
 | Pull request to `main` | Early visibility (non-blocking) |
 
+### CodeQL (`.github/workflows/codeql.yml`)
+
+Runs [CodeQL](https://codeql.github.com/) static analysis separately from CI and govulncheck:
+
+| Trigger | Purpose |
+|---------|---------|
+| Weekly schedule (Mondays 06:00 UTC) | Catch new query findings without a commit |
+| `workflow_dispatch` | Manual on-demand scan |
+| Push / pull request to `main` | Upload SARIF to GitHub code scanning |
+
+Languages: Go (`server/` and `sdk/go/` via manual `go build`) and TypeScript/JavaScript (`ui/`). Config: `.github/codeql/codeql-config.yml`.
+
 ### Dependency updates (Renovate)
 
 [Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions. Pull requests are labeled `dependencies` or `ci` to satisfy the PR policy below.

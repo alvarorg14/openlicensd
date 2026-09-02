@@ -1,0 +1,5 @@
+name: "OpenLicensd CodeQL config"
+
+paths-ignore:
+  - server/internal/static/dist/**
+  - "**/node_modules/**"
