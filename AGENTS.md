@@ -34,7 +34,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Documentation site (VitePress)
 
 - **Location**: `docs/` (content) and `docs/.vitepress/` (site config)
-- **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference
+- **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference and `vitepress-plugin-mermaid` for Mermaid diagrams
 - **Published at**: `https://alvarorg14.github.io/openlicensd/` (GitHub Pages via `.github/workflows/docs.yml`)
 - **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, and `CONTRIBUTING.md` included via VitePress file includes (no duplication)
 - **Build**: `make docs-build` (or `cd docs && npm run docs:build`); `make docs-dev` for local preview

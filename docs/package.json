@@ -10,7 +10,9 @@
   },
   "devDependencies": {
     "@rollup/plugin-yaml": "^5.0.0",
+    "mermaid": "^11.17.2",
     "vitepress": "^1.6.4",
-    "vitepress-openapi": "^0.2.4"
+    "vitepress-openapi": "^0.2.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }
