@@ -233,7 +233,8 @@ make release       # Local GoReleaser release
 - Table-driven tests where appropriate
 - Test files live beside source: `*_test.go`
 - API tests require a live PostgreSQL instance (`OPENLICENSD_DATABASE_URL`)
-- Run: `make test` or `cd server && go test ./...`
+- Server tests run with `-p 1` because all packages share one PostgreSQL instance (see `make test` and CI)
+- Run: `make test` or `cd server && go test -p 1 ./...`
 
 ## CI & Release
 
