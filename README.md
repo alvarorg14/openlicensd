@@ -61,6 +61,10 @@
 
 Use it to gate access to your software, issue time-limited keys, track validation usage, and optionally provide short-lived Harbor registry credentials to licensed clients.
 
+<div align="center">
+  <img src="docs/screenshots/admin-ui-licenses.png" alt="OpenLicensd admin UI licenses list" width="900">
+</div>
+
 ## 🤔 Why OpenLicensd?
 
 - **Self-hosted** — no third-party license service dependency
