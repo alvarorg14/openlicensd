@@ -1,0 +1,16 @@
+{
+  "name": "openlicensd-docs",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@12.0.2",
+  "scripts": {
+    "docs:dev": "node scripts/prepare-public.mjs && vitepress dev",
+    "docs:build": "node scripts/prepare-public.mjs && vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "@rollup/plugin-yaml": "^5.0.0",
+    "vitepress": "^1.6.4",
+    "vitepress-openapi": "^0.2.4"
+  }
+}

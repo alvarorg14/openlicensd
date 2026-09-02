@@ -1,0 +1,58 @@
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../../brand/fonts/SpaceGrotesk-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../../brand/fonts/SpaceGrotesk-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../../brand/fonts/SpaceGrotesk-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --vp-font-family-base: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+
+  --vp-c-brand-1: #2f6fff;
+  --vp-c-brand-2: #4d8dff;
+  --vp-c-brand-3: #1a5ae6;
+  --vp-c-brand-soft: rgba(47, 111, 255, 0.14);
+
+  --vp-c-text-1: #1a2238;
+  --vp-c-text-2: #6e7c93;
+  --vp-c-divider: #e6ebf3;
+  --vp-c-bg: #f7f9fc;
+  --vp-c-bg-soft: #ffffff;
+  --vp-c-bg-alt: #eef2f8;
+}
+
+.dark {
+  --vp-c-brand-1: #4d8dff;
+  --vp-c-brand-2: #2f6fff;
+  --vp-c-brand-3: #7aadff;
+  --vp-c-brand-soft: rgba(77, 141, 255, 0.16);
+
+  --vp-c-text-1: #e8edf7;
+  --vp-c-text-2: #9aa8be;
+  --vp-c-divider: #2a3550;
+  --vp-c-bg: #111c34;
+  --vp-c-bg-soft: #1c2438;
+  --vp-c-bg-alt: #162033;
+}
+
+.VPHero .name {
+  letter-spacing: -0.02em;
+}
