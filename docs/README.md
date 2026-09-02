@@ -5,6 +5,7 @@
 | [openapi.yaml](openapi.yaml) | OpenAPI 3.1 specification (single source of truth for the HTTP API) |
 | [api.md](api.md) | Authentication flow, curl examples, and how to view the spec |
 | [architecture.md](architecture.md) | Components, request flows, data model, and key format |
+| [comparison.md](comparison.md) | Positioning vs Keygen, Cryptlex, and LicenseSpring |
 | [configuration.md](configuration.md) | Environment variables, Helm values, and secret management |
 | [metrics.md](metrics.md) | Prometheus metrics endpoint and exported series |
 | [oidc-sso.md](oidc-sso.md) | OIDC SSO setup, provider walkthroughs, and troubleshooting |
