@@ -75,6 +75,7 @@ Allowed `sort` values vary by resource:
 | Products | `created_at`, `updated_at`, `name`, `code` |
 | Users | `created_at`, `updated_at`, `name`, `email`, `role`, `last_login_at` |
 | API tokens | `created_at`, `updated_at`, `name`, `role`, `last_used_at`, `expires_at` |
+| Audit events | `occurred_at`, `action`, `resource_type`, `actor_name` |
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/products \
@@ -165,6 +166,20 @@ curl -s http://localhost:8080/api/v1/auth/me \
 
 Token management endpoints (`/api/v1/api-tokens`) require an admin session — a Bearer token cannot create or revoke other tokens. Revoke with `PATCH /api/v1/api-tokens/{id}/revoke` or delete with `DELETE /api/v1/api-tokens/{id}`.
 
+### 7. Audit log
+
+Every successful admin mutation is recorded in an append-only `audit_events` table (actor, action, resource, IP, user agent, request ID). Admins can browse the log in the **Audit Log** UI page or export it via the API.
+
+```bash
+# List recent audit events (admin session or Bearer token)
+curl -s -b cookies.txt "http://localhost:8080/api/v1/audit-events?page_size=10&sort=occurred_at&order=desc"
+
+# Filter by action and resource type
+curl -s -b cookies.txt "http://localhost:8080/api/v1/audit-events?action=product.create&resource_type=product"
+```
+
+Audit events are never updated or deleted through the API. Only successful mutations (HTTP 2xx) are recorded.
+
 ## Roles and RBAC
 
 | Role | Permissions |
@@ -212,6 +227,7 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `POST` | `/api/v1/api-tokens` | `admin` (session only) |
 | `PATCH` | `/api/v1/api-tokens/{id}/revoke` | `admin` (session only) |
 | `DELETE` | `/api/v1/api-tokens/{id}` | `admin` (session only) |
+| `GET` | `/api/v1/audit-events` | `admin` |
 
 ## Public endpoints
 

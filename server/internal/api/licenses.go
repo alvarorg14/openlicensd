@@ -151,6 +151,8 @@ func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), lic.ID, lic.Label)
+
 	writeJSON(w, http.StatusCreated, licenseToResponse(lic, rawKey))
 }
 
@@ -291,6 +293,8 @@ func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), lic.ID, lic.Label)
+
 	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }
 
@@ -331,6 +335,8 @@ func (s *Server) handleRevokeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), lic.ID, lic.Label)
+
 	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }
 
@@ -350,6 +356,8 @@ func (s *Server) handleUnrevokeLicense(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "license not found")
 		return
 	}
+
+	auditResource(r.Context(), lic.ID, lic.Label)
 
 	writeJSON(w, http.StatusOK, licenseToResponse(lic, ""))
 }

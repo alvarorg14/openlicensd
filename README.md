@@ -85,6 +85,7 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - **API tokens** — scoped, revocable Bearer credentials for CI, Terraform, and other automation
+- **Audit log** — append-only record of admin mutations (who, what, when, IP) for compliance
 - Single binary distribution with embedded UI
 - PostgreSQL storage with automatic migrations
 - Prometheus metrics on a dedicated listener (`/metrics` on `:9090` by default)
@@ -156,6 +157,7 @@ All endpoints are under `/api/v1`. The full specification is in [docs/openapi.ya
 | `POST` | `/api/v1/api-tokens` | Session (admin) | Create an API token (raw value returned once) |
 | `PATCH` | `/api/v1/api-tokens/{id}/revoke` | Session (admin) | Revoke an API token |
 | `DELETE` | `/api/v1/api-tokens/{id}` | Session (admin) | Delete an API token |
+| `GET` | `/api/v1/audit-events` | Session or Bearer (admin) | List audit events (paginated) |
 
 See [docs/api.md](docs/api.md) for authentication flow and curl examples. Admin endpoints accept a session cookie or a scoped API token (`Authorization: Bearer`); token management requires a session.
 

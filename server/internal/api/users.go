@@ -161,6 +161,8 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), user.ID, user.Name)
+
 	writeJSON(w, http.StatusCreated, userToResponse(user))
 }
 
@@ -204,6 +206,8 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "user not found")
 		return
 	}
+
+	auditResource(r.Context(), user.ID, user.Name)
 
 	writeJSON(w, http.StatusOK, userToResponse(user))
 }
@@ -269,6 +273,8 @@ func (s *Server) handleDisableUser(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
+	auditResource(r.Context(), user.ID, user.Name)
+
 	writeJSON(w, http.StatusOK, userToResponse(user))
 }
 
@@ -288,6 +294,8 @@ func (s *Server) handleEnableUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "user not found")
 		return
 	}
+
+	auditResource(r.Context(), user.ID, user.Name)
 
 	writeJSON(w, http.StatusOK, userToResponse(user))
 }

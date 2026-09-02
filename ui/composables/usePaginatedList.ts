@@ -53,7 +53,9 @@ export const usePaginatedList = <T, P extends Record<string, unknown> = Record<s
       total.value = result.total
       totalPages.value = result.total_pages
       page.value = result.page
-      pageSize.value = result.page_size
+      if (pageSize.value !== result.page_size) {
+        pageSize.value = result.page_size
+      }
     } catch {
       if (currentRequest !== requestId) {
         return

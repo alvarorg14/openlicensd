@@ -1,5 +1,7 @@
 import type {
   ApiToken,
+  AuditEvent,
+  AuditEventListQueryParams,
   CreateApiTokenInput,
   CreateLicenseInput,
   CreatePolicyInput,
@@ -209,6 +211,9 @@ export const useApi = () => {
       method: 'DELETE'
     })
 
+  const listAuditEvents = (params?: AuditEventListQueryParams) =>
+    authFetch<Paginated<AuditEvent>>(`/api/v1/audit-events${buildQuery(params as Record<string, string | number | undefined | null>)}`)
+
   return {
     authFetch,
     listLicenses,
@@ -240,6 +245,7 @@ export const useApi = () => {
     listApiTokens,
     createApiToken,
     revokeApiToken,
-    deleteApiToken
+    deleteApiToken,
+    listAuditEvents
   }
 }

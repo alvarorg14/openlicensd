@@ -131,6 +131,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.auth.Middleware)
+			r.Use(s.auditMutations)
 
 			r.Get("/auth/me", s.handleMe)
 			r.Post("/auth/logout", s.handleLogout)
@@ -182,6 +183,8 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Post("/api-tokens", s.handleCreateAPIToken)
 				r.Patch("/api-tokens/{id}/revoke", s.handleRevokeAPIToken)
 				r.Delete("/api-tokens/{id}", s.handleDeleteAPIToken)
+
+				r.Get("/audit-events", s.handleListAuditEvents)
 			})
 		})
 	})

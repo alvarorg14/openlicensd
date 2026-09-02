@@ -126,6 +126,8 @@ func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auditResource(r.Context(), policy.ID, policy.Name)
+
 	writeJSON(w, http.StatusCreated, policyToResponse(policy))
 }
 
@@ -235,6 +237,8 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "policy not found")
 		return
 	}
+
+	auditResource(r.Context(), policy.ID, policy.Name)
 
 	writeJSON(w, http.StatusOK, policyToResponse(policy))
 }

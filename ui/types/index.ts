@@ -162,6 +162,37 @@ export interface CreateApiTokenInput {
   expires_at?: string
 }
 
+export interface AuditEvent {
+  id: string
+  occurred_at: string
+  action: string
+  resource_type: string
+  resource_id?: string | null
+  resource_label?: string | null
+  actor_user_id?: string | null
+  actor_token_id?: string | null
+  actor_name: string
+  actor_email?: string | null
+  actor_token_prefix?: string | null
+  actor_role: string
+  auth_method: string
+  client_ip?: string | null
+  user_agent?: string | null
+  request_id?: string | null
+  request_method: string
+  request_path: string
+  response_status: number
+  metadata?: Record<string, unknown> | null
+}
+
+export interface AuditEventListQueryParams extends ListQueryParams {
+  action?: string
+  resource_type?: string
+  actor_user_id?: string
+  from?: string
+  to?: string
+}
+
 export interface Paginated<T> {
   items: T[]
   page: number
