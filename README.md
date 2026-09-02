@@ -41,6 +41,7 @@
   - [📋 Table of Contents](#-table-of-contents)
   - [📖 Overview](#-overview)
   - [🤔 Why OpenLicensd?](#-why-openlicensd)
+  - [⚖️ Comparison](#️-comparison)
   - [✨ Features](#-features)
   - [🚀 Quick Start](#-quick-start)
   - [📡 API](#-api)
@@ -73,6 +74,28 @@ Use it to gate access to your software, issue time-limited keys, track validatio
 - **Harbor integration** — optional short-lived registry credentials for container image distribution
 - **OIDC SSO** — optional single sign-on via any standards-compliant identity provider
 - **Kubernetes-ready** — Helm chart with Ingress, External Secrets, and health probes
+
+## ⚖️ Comparison
+
+How OpenLicensd compares to [Keygen](https://keygen.sh/), [Cryptlex](https://cryptlex.com/), and
+[LicenseSpring](https://licensespring.com/). See [docs/comparison.md](docs/comparison.md) for the
+full breakdown with source links.
+
+| | OpenLicensd | Keygen | Cryptlex | LicenseSpring |
+|---|---|---|---|---|
+| **License** | Apache 2.0 (fully OSS) | Fair Core (source-available) | Proprietary | Proprietary |
+| **Managed SaaS** | No | Yes (Keygen Cloud) | Yes | Yes |
+| **Self-host option** | Yes (only model) | Yes (CE free, EE paid) | Yes (Enterprise) | Yes (Enterprise) |
+| **Cost model** | Free (your infra) | CE free; EE + Cloud paid | Subscription tiers | Subscription tiers |
+| **Self-host runtime** | Single binary + PostgreSQL | Rails + PostgreSQL + Redis | Multi-service platform | Vendor platform + on-prem server |
+
+**Choose OpenLicensd when** you want a fully open-source, single-binary, self-hosted license server
+with no per-seat fees, a simple validation API, Harbor credential integration, and Kubernetes-ready
+deployment.
+
+**Consider an alternative when** you need managed SaaS, offline/signed licenses, entitlements,
+webhooks, floating seats with heartbeats, a customer self-service portal, release distribution,
+built-in billing, or client SDKs beyond Go.
 
 ## ✨ Features
 
