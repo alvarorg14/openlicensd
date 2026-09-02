@@ -2118,6 +2118,9 @@ components:
           type: string
         actor_email:
           type: ["string", "null"]
+        actor_token_prefix:
+          type: ["string", "null"]
+          description: Display prefix for API token actors (e.g. olsd_abcd1234)
         actor_role:
           $ref: "#/components/schemas/Role"
         auth_method:

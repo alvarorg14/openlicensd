@@ -10,48 +10,50 @@ import (
 )
 
 type auditEventResponse struct {
-	ID             uuid.UUID       `json:"id"`
-	OccurredAt     string          `json:"occurred_at"`
-	Action         string          `json:"action"`
-	ResourceType   string          `json:"resource_type"`
-	ResourceID     *uuid.UUID      `json:"resource_id,omitempty"`
-	ResourceLabel  *string         `json:"resource_label,omitempty"`
-	ActorUserID    *uuid.UUID      `json:"actor_user_id,omitempty"`
-	ActorTokenID   *uuid.UUID      `json:"actor_token_id,omitempty"`
-	ActorName      string          `json:"actor_name"`
-	ActorEmail     *string         `json:"actor_email,omitempty"`
-	ActorRole      string          `json:"actor_role"`
-	AuthMethod     string          `json:"auth_method"`
-	ClientIP       *string         `json:"client_ip,omitempty"`
-	UserAgent      *string         `json:"user_agent,omitempty"`
-	RequestID      *string         `json:"request_id,omitempty"`
-	RequestMethod  string          `json:"request_method"`
-	RequestPath    string          `json:"request_path"`
-	ResponseStatus int             `json:"response_status"`
-	Metadata       json.RawMessage `json:"metadata,omitempty"`
+	ID               uuid.UUID       `json:"id"`
+	OccurredAt       string          `json:"occurred_at"`
+	Action           string          `json:"action"`
+	ResourceType     string          `json:"resource_type"`
+	ResourceID       *uuid.UUID      `json:"resource_id,omitempty"`
+	ResourceLabel    *string         `json:"resource_label,omitempty"`
+	ActorUserID      *uuid.UUID      `json:"actor_user_id,omitempty"`
+	ActorTokenID     *uuid.UUID      `json:"actor_token_id,omitempty"`
+	ActorName        string          `json:"actor_name"`
+	ActorEmail       *string         `json:"actor_email,omitempty"`
+	ActorTokenPrefix *string         `json:"actor_token_prefix,omitempty"`
+	ActorRole        string          `json:"actor_role"`
+	AuthMethod       string          `json:"auth_method"`
+	ClientIP         *string         `json:"client_ip,omitempty"`
+	UserAgent        *string         `json:"user_agent,omitempty"`
+	RequestID        *string         `json:"request_id,omitempty"`
+	RequestMethod    string          `json:"request_method"`
+	RequestPath      string          `json:"request_path"`
+	ResponseStatus   int             `json:"response_status"`
+	Metadata         json.RawMessage `json:"metadata,omitempty"`
 }
 
 func auditEventToResponse(ev *store.AuditEvent) auditEventResponse {
 	return auditEventResponse{
-		ID:             ev.ID,
-		OccurredAt:     ev.OccurredAt.Format(timeRFC3339),
-		Action:         ev.Action,
-		ResourceType:   ev.ResourceType,
-		ResourceID:     ev.ResourceID,
-		ResourceLabel:  ev.ResourceLabel,
-		ActorUserID:    ev.ActorUserID,
-		ActorTokenID:   ev.ActorTokenID,
-		ActorName:      ev.ActorName,
-		ActorEmail:     ev.ActorEmail,
-		ActorRole:      ev.ActorRole,
-		AuthMethod:     ev.AuthMethod,
-		ClientIP:       ev.ClientIP,
-		UserAgent:      ev.UserAgent,
-		RequestID:      ev.RequestID,
-		RequestMethod:  ev.RequestMethod,
-		RequestPath:    ev.RequestPath,
-		ResponseStatus: ev.ResponseStatus,
-		Metadata:       ev.Metadata,
+		ID:               ev.ID,
+		OccurredAt:       ev.OccurredAt.Format(timeRFC3339),
+		Action:           ev.Action,
+		ResourceType:     ev.ResourceType,
+		ResourceID:       ev.ResourceID,
+		ResourceLabel:    ev.ResourceLabel,
+		ActorUserID:      ev.ActorUserID,
+		ActorTokenID:     ev.ActorTokenID,
+		ActorName:        ev.ActorName,
+		ActorEmail:       ev.ActorEmail,
+		ActorTokenPrefix: ev.ActorTokenPrefix,
+		ActorRole:        ev.ActorRole,
+		AuthMethod:       ev.AuthMethod,
+		ClientIP:         ev.ClientIP,
+		UserAgent:        ev.UserAgent,
+		RequestID:        ev.RequestID,
+		RequestMethod:    ev.RequestMethod,
+		RequestPath:      ev.RequestPath,
+		ResponseStatus:   ev.ResponseStatus,
+		Metadata:         ev.Metadata,
 	}
 }
 

@@ -173,6 +173,7 @@ export interface AuditEvent {
   actor_token_id?: string | null
   actor_name: string
   actor_email?: string | null
+  actor_token_prefix?: string | null
   actor_role: string
   auth_method: string
   client_ip?: string | null

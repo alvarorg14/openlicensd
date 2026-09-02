@@ -24,30 +24,30 @@ type auditRouteInfo struct {
 // auditRoutes maps "METHOD routePattern" to audit metadata. Route patterns must match
 // chi.RouteContext(ctx).RoutePattern() for authenticated mutating handlers.
 var auditRoutes = map[string]auditRouteInfo{
-	"POST /api/v1/auth/logout":                    {Action: "auth.logout", ResourceType: "session"},
-	"POST /api/v1/auth/password":                  {Action: "auth.password_change", ResourceType: "user", IDParam: "self"},
-	"POST /api/v1/licenses":                       {Action: "license.create", ResourceType: "license"},
-	"PATCH /api/v1/licenses/{id}":                 {Action: "license.update", ResourceType: "license", IDParam: "id"},
-	"DELETE /api/v1/licenses/{id}":                {Action: "license.delete", ResourceType: "license", IDParam: "id"},
-	"PATCH /api/v1/licenses/{id}/revoke":          {Action: "license.revoke", ResourceType: "license", IDParam: "id"},
-	"PATCH /api/v1/licenses/{id}/unrevoke":        {Action: "license.unrevoke", ResourceType: "license", IDParam: "id"},
-	"PATCH /api/v1/licenses/{id}/machines/{machineId}": {Action: "machine.update", ResourceType: "machine", IDParam: "machineId"},
+	"POST /api/v1/auth/logout":                          {Action: "auth.logout", ResourceType: "session"},
+	"POST /api/v1/auth/password":                        {Action: "auth.password_change", ResourceType: "user", IDParam: "self"},
+	"POST /api/v1/licenses":                             {Action: "license.create", ResourceType: "license"},
+	"PATCH /api/v1/licenses/{id}":                       {Action: "license.update", ResourceType: "license", IDParam: "id"},
+	"DELETE /api/v1/licenses/{id}":                      {Action: "license.delete", ResourceType: "license", IDParam: "id"},
+	"PATCH /api/v1/licenses/{id}/revoke":                {Action: "license.revoke", ResourceType: "license", IDParam: "id"},
+	"PATCH /api/v1/licenses/{id}/unrevoke":              {Action: "license.unrevoke", ResourceType: "license", IDParam: "id"},
+	"PATCH /api/v1/licenses/{id}/machines/{machineId}":  {Action: "machine.update", ResourceType: "machine", IDParam: "machineId"},
 	"DELETE /api/v1/licenses/{id}/machines/{machineId}": {Action: "machine.release", ResourceType: "machine", IDParam: "machineId"},
-	"POST /api/v1/products":                       {Action: "product.create", ResourceType: "product"},
-	"PATCH /api/v1/products/{id}":                 {Action: "product.update", ResourceType: "product", IDParam: "id"},
-	"DELETE /api/v1/products/{id}":                {Action: "product.delete", ResourceType: "product", IDParam: "id"},
-	"POST /api/v1/policies":                       {Action: "policy.create", ResourceType: "policy"},
-	"PATCH /api/v1/policies/{id}":                 {Action: "policy.update", ResourceType: "policy", IDParam: "id"},
-	"DELETE /api/v1/policies/{id}":                {Action: "policy.delete", ResourceType: "policy", IDParam: "id"},
-	"POST /api/v1/users":                          {Action: "user.create", ResourceType: "user"},
-	"PATCH /api/v1/users/{id}":                    {Action: "user.update", ResourceType: "user", IDParam: "id"},
-	"PATCH /api/v1/users/{id}/password":           {Action: "user.password_set", ResourceType: "user", IDParam: "id"},
-	"PATCH /api/v1/users/{id}/disable":            {Action: "user.disable", ResourceType: "user", IDParam: "id"},
-	"PATCH /api/v1/users/{id}/enable":             {Action: "user.enable", ResourceType: "user", IDParam: "id"},
-	"DELETE /api/v1/users/{id}":                   {Action: "user.delete", ResourceType: "user", IDParam: "id"},
-	"POST /api/v1/api-tokens":                     {Action: "api_token.create", ResourceType: "api_token"},
-	"PATCH /api/v1/api-tokens/{id}/revoke":        {Action: "api_token.revoke", ResourceType: "api_token", IDParam: "id"},
-	"DELETE /api/v1/api-tokens/{id}":               {Action: "api_token.delete", ResourceType: "api_token", IDParam: "id"},
+	"POST /api/v1/products":                             {Action: "product.create", ResourceType: "product"},
+	"PATCH /api/v1/products/{id}":                       {Action: "product.update", ResourceType: "product", IDParam: "id"},
+	"DELETE /api/v1/products/{id}":                      {Action: "product.delete", ResourceType: "product", IDParam: "id"},
+	"POST /api/v1/policies":                             {Action: "policy.create", ResourceType: "policy"},
+	"PATCH /api/v1/policies/{id}":                       {Action: "policy.update", ResourceType: "policy", IDParam: "id"},
+	"DELETE /api/v1/policies/{id}":                      {Action: "policy.delete", ResourceType: "policy", IDParam: "id"},
+	"POST /api/v1/users":                                {Action: "user.create", ResourceType: "user"},
+	"PATCH /api/v1/users/{id}":                          {Action: "user.update", ResourceType: "user", IDParam: "id"},
+	"PATCH /api/v1/users/{id}/password":                 {Action: "user.password_set", ResourceType: "user", IDParam: "id"},
+	"PATCH /api/v1/users/{id}/disable":                  {Action: "user.disable", ResourceType: "user", IDParam: "id"},
+	"PATCH /api/v1/users/{id}/enable":                   {Action: "user.enable", ResourceType: "user", IDParam: "id"},
+	"DELETE /api/v1/users/{id}":                         {Action: "user.delete", ResourceType: "user", IDParam: "id"},
+	"POST /api/v1/api-tokens":                           {Action: "api_token.create", ResourceType: "api_token"},
+	"PATCH /api/v1/api-tokens/{id}/revoke":              {Action: "api_token.revoke", ResourceType: "api_token", IDParam: "id"},
+	"DELETE /api/v1/api-tokens/{id}":                    {Action: "api_token.delete", ResourceType: "api_token", IDParam: "id"},
 }
 
 type auditRecorderKey struct{}
@@ -146,11 +146,15 @@ func (s *Server) auditMutations(next http.Handler) http.Handler {
 		}
 
 		var actorUserID, actorTokenID *uuid.UUID
-		var actorEmail *string
+		var actorEmail, actorTokenPrefix *string
 		if principal.AuthMethod == auth.AuthMethodAPIToken {
 			if principal.TokenID != uuid.Nil {
 				id := principal.TokenID
 				actorTokenID = &id
+			}
+			if principal.TokenPrefix != "" {
+				prefix := principal.TokenPrefix
+				actorTokenPrefix = &prefix
 			}
 		} else {
 			if principal.UserID != uuid.Nil {
@@ -175,23 +179,24 @@ func (s *Server) auditMutations(next http.Handler) http.Handler {
 		}
 
 		event := store.AuditEvent{
-			Action:         info.Action,
-			ResourceType:   info.ResourceType,
-			ResourceID:     resourceID,
-			ResourceLabel:  rec.resourceLabel,
-			ActorUserID:    actorUserID,
-			ActorTokenID:   actorTokenID,
-			ActorName:      principal.Name,
-			ActorEmail:     actorEmail,
-			ActorRole:      string(principal.Role),
-			AuthMethod:     string(principal.AuthMethod),
-			ClientIP:       clientIP,
-			UserAgent:      userAgent,
-			RequestID:      requestID,
-			RequestMethod:  r.Method,
-			RequestPath:    r.URL.Path,
-			ResponseStatus: status,
-			Metadata:       rec.metadata,
+			Action:           info.Action,
+			ResourceType:     info.ResourceType,
+			ResourceID:       resourceID,
+			ResourceLabel:    rec.resourceLabel,
+			ActorUserID:      actorUserID,
+			ActorTokenID:     actorTokenID,
+			ActorName:        principal.Name,
+			ActorEmail:       actorEmail,
+			ActorTokenPrefix: actorTokenPrefix,
+			ActorRole:        string(principal.Role),
+			AuthMethod:       string(principal.AuthMethod),
+			ClientIP:         clientIP,
+			UserAgent:        userAgent,
+			RequestID:        requestID,
+			RequestMethod:    r.Method,
+			RequestPath:      r.URL.Path,
+			ResponseStatus:   status,
+			Metadata:         rec.metadata,
 		}
 
 		writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)

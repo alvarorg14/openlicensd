@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS audit_events (
     actor_token_id UUID REFERENCES api_tokens (id) ON DELETE SET NULL,
     actor_name TEXT NOT NULL,
     actor_email TEXT,
+    actor_token_prefix TEXT,
     actor_role TEXT NOT NULL,
     auth_method TEXT NOT NULL,
     client_ip TEXT,

@@ -104,6 +104,13 @@ func TestAuditEventOnProductCreateBearerToken(t *testing.T) {
 	if event["actor_token_id"] == nil {
 		t.Fatal("expected actor_token_id for api token auth")
 	}
+	prefix, _ := event["actor_token_prefix"].(string)
+	if prefix == "" {
+		t.Fatal("expected actor_token_prefix for api token auth")
+	}
+	if prefix != operatorToken[:13] {
+		t.Fatalf("actor_token_prefix=%q want %q", prefix, operatorToken[:13])
+	}
 }
 
 func TestAuditEventListRequiresAdmin(t *testing.T) {

@@ -59,6 +59,7 @@ type Principal struct {
 	HasPassword  bool
 	AuthMethod   AuthMethod
 	TokenID      uuid.UUID
+	TokenPrefix  string
 }
 
 func (p *Principal) ActingUserID() *uuid.UUID {
@@ -262,10 +263,11 @@ func (s *Service) authenticateAPIToken(r *http.Request, rawToken string) (*Princ
 	}
 
 	return &Principal{
-		Name:       tok.Name,
-		Role:       tok.Role,
-		AuthMethod: AuthMethodAPIToken,
-		TokenID:    tok.ID,
+		Name:        tok.Name,
+		Role:        tok.Role,
+		AuthMethod:  AuthMethodAPIToken,
+		TokenID:     tok.ID,
+		TokenPrefix: tok.TokenPrefix,
 	}, nil
 }
 

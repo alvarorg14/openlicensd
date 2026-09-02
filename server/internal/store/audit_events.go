@@ -9,30 +9,31 @@ import (
 )
 
 type AuditEvent struct {
-	ID             uuid.UUID
-	OccurredAt     time.Time
-	Action         string
-	ResourceType   string
-	ResourceID     *uuid.UUID
-	ResourceLabel  *string
-	ActorUserID    *uuid.UUID
-	ActorTokenID   *uuid.UUID
-	ActorName      string
-	ActorEmail     *string
-	ActorRole      string
-	AuthMethod     string
-	ClientIP       *string
-	UserAgent      *string
-	RequestID      *string
-	RequestMethod  string
-	RequestPath    string
-	ResponseStatus int
-	Metadata       json.RawMessage
+	ID               uuid.UUID
+	OccurredAt       time.Time
+	Action           string
+	ResourceType     string
+	ResourceID       *uuid.UUID
+	ResourceLabel    *string
+	ActorUserID      *uuid.UUID
+	ActorTokenID     *uuid.UUID
+	ActorName        string
+	ActorEmail       *string
+	ActorTokenPrefix *string
+	ActorRole        string
+	AuthMethod       string
+	ClientIP         *string
+	UserAgent        *string
+	RequestID        *string
+	RequestMethod    string
+	RequestPath      string
+	ResponseStatus   int
+	Metadata         json.RawMessage
 }
 
 const auditEventColumns = `
 	id, occurred_at, action, resource_type, resource_id, resource_label,
-	actor_user_id, actor_token_id, actor_name, actor_email, actor_role,
+	actor_user_id, actor_token_id, actor_name, actor_email, actor_token_prefix, actor_role,
 	auth_method, client_ip, user_agent, request_id, request_method,
 	request_path, response_status, metadata
 `
@@ -41,11 +42,11 @@ func (s *Store) CreateAuditEvent(ctx context.Context, event AuditEvent) error {
 	const q = `
 		INSERT INTO audit_events (
 			action, resource_type, resource_id, resource_label,
-			actor_user_id, actor_token_id, actor_name, actor_email, actor_role,
+			actor_user_id, actor_token_id, actor_name, actor_email, actor_token_prefix, actor_role,
 			auth_method, client_ip, user_agent, request_id, request_method,
 			request_path, response_status, metadata
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
 
 	_, err := s.pool.Exec(ctx, q,
@@ -57,6 +58,7 @@ func (s *Store) CreateAuditEvent(ctx context.Context, event AuditEvent) error {
 		event.ActorTokenID,
 		event.ActorName,
 		event.ActorEmail,
+		event.ActorTokenPrefix,
 		event.ActorRole,
 		event.AuthMethod,
 		event.ClientIP,
@@ -121,7 +123,7 @@ func (s *Store) ListAuditEvents(ctx context.Context, params AuditEventListParams
 		var ev AuditEvent
 		if err := rows.Scan(
 			&ev.ID, &ev.OccurredAt, &ev.Action, &ev.ResourceType, &ev.ResourceID, &ev.ResourceLabel,
-			&ev.ActorUserID, &ev.ActorTokenID, &ev.ActorName, &ev.ActorEmail, &ev.ActorRole,
+			&ev.ActorUserID, &ev.ActorTokenID, &ev.ActorName, &ev.ActorEmail, &ev.ActorTokenPrefix, &ev.ActorRole,
 			&ev.AuthMethod, &ev.ClientIP, &ev.UserAgent, &ev.RequestID, &ev.RequestMethod,
 			&ev.RequestPath, &ev.ResponseStatus, &ev.Metadata,
 			&totalCount,
