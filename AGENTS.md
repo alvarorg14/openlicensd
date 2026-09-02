@@ -289,6 +289,18 @@ Runs [CodeQL](https://codeql.github.com/) static analysis separately from CI and
 
 Languages: Go (`server/` and `sdk/go/` via manual `go build`) and TypeScript/JavaScript (`ui/`). Config: `.github/codeql/codeql-config.yml`.
 
+### Trivy (`.github/workflows/trivy.yml`)
+
+Runs [Trivy](https://trivy.dev/) container image scanning separately from CI, CodeQL, and govulncheck:
+
+| Trigger | Purpose |
+|---------|---------|
+| Weekly schedule (Mondays 06:00 UTC) | Re-scan `ghcr.io/alvarorg14/openlicensd:latest` |
+| `workflow_dispatch` | Manual on-demand scan of GHCR `latest` |
+| Pull request to `main` | Build `Dockerfile` and upload SARIF to GitHub code scanning |
+
+Release workflow (`.github/workflows/release.yml`) also scans the published GHCR image after GoReleaser completes. The `aquasecurity/trivy-action` reference is pinned to a commit SHA.
+
 ### Dependency updates (Renovate)
 
 [Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions. Pull requests are labeled `dependencies` or `ci` to satisfy the PR policy below.
