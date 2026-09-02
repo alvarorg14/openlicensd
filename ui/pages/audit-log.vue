@@ -19,15 +19,16 @@
           @update:model-value="setSearch"
         />
         <USelect
-          v-model="actionFilter"
-          :items="actionOptions"
-          placeholder="All actions"
-          class="sm:w-48"
-        />
-        <USelect
           v-model="resourceTypeFilter"
           :items="resourceTypeOptions"
           placeholder="All resources"
+          class="sm:w-48"
+        />
+        <USelect
+          v-model="actionFilter"
+          :items="actionOptions"
+          placeholder="All actions"
+          :disabled="!resourceTypeFilter"
           class="sm:w-48"
         />
       </div>
@@ -61,8 +62,18 @@
             <span>{{ formatDate(row.original.occurred_at) }}</span>
           </template>
 
+          <template #resource_type-cell="{ row }">
+            <UBadge
+              :color="resourceTypeBadgeColor(row.original.resource_type)"
+              variant="subtle"
+              size="sm"
+            >
+              {{ formatResourceTypeLabel(row.original.resource_type) }}
+            </UBadge>
+          </template>
+
           <template #action-cell="{ row }">
-            <code class="text-xs font-mono text-toned">{{ row.original.action }}</code>
+            <span class="text-sm text-highlighted">{{ formatActionLabel(row.original.action) }}</span>
           </template>
 
           <template #resource-cell="{ row }">
@@ -75,17 +86,30 @@
           <template #actor-cell="{ row }">
             <div class="flex flex-col">
               <span class="text-sm text-highlighted">{{ row.original.actor_name }}</span>
-              <span class="text-xs text-muted capitalize">{{ row.original.auth_method.replace('_', ' ') }}</span>
+              <span
+                v-if="row.original.auth_method === 'session'"
+                class="text-xs text-muted"
+              >
+                {{ row.original.actor_email || '—' }}
+              </span>
+              <code
+                v-else-if="row.original.actor_token_prefix"
+                class="text-xs font-mono text-muted"
+              >
+                {{ row.original.actor_token_prefix }}…
+              </code>
             </div>
-          </template>
-
-          <template #client_ip-cell="{ row }">
-            <span>{{ row.original.client_ip || '—' }}</span>
           </template>
         </UTable>
 
-        <div v-if="totalPages > 1" class="flex justify-end pt-4 border-t border-default mt-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-default mt-4">
+          <USelect
+            v-model="pageSize"
+            :items="pageSizeOptions"
+            class="sm:w-32"
+          />
           <UPagination
+            v-if="totalPages > 1"
             :page="page"
             :items-per-page="pageSize"
             :total="total"
@@ -97,7 +121,7 @@
 
     <DetailsModal
       v-model:open="showDetails"
-      :title="detailsEvent?.action ?? 'Event details'"
+      :title="detailsTitle"
       icon="i-lucide-scroll-text"
       icon-bg-class="bg-brand-100 dark:bg-brand-900/40"
       icon-class="text-brand-600 dark:text-brand-400"
@@ -108,6 +132,12 @@
 
 <script setup lang="ts">
 import type { AuditEvent, DetailItem } from '~/types'
+import {
+  actionsByResourceType,
+  formatActionLabel,
+  formatResourceTypeLabel,
+  resourceTypeBadgeColors
+} from '~/utils/auditLog'
 
 definePageMeta({
   middleware: ['auth', 'admin']
@@ -141,30 +171,10 @@ const detailsEvent = ref<AuditEvent | null>(null)
 
 const columns = [
   { accessorKey: 'occurred_at', header: 'When', enableSorting: true },
+  { accessorKey: 'resource_type', header: 'Type', enableSorting: true },
   { accessorKey: 'action', header: 'Action', enableSorting: true },
   { accessorKey: 'resource', header: 'Resource' },
-  { accessorKey: 'actor', header: 'Actor', enableSorting: true },
-  { accessorKey: 'client_ip', header: 'IP' }
-]
-
-const actionOptions = [
-  { label: 'All actions', value: undefined },
-  { label: 'license.create', value: 'license.create' },
-  { label: 'license.update', value: 'license.update' },
-  { label: 'license.delete', value: 'license.delete' },
-  { label: 'license.revoke', value: 'license.revoke' },
-  { label: 'product.create', value: 'product.create' },
-  { label: 'product.update', value: 'product.update' },
-  { label: 'product.delete', value: 'product.delete' },
-  { label: 'policy.create', value: 'policy.create' },
-  { label: 'policy.update', value: 'policy.update' },
-  { label: 'policy.delete', value: 'policy.delete' },
-  { label: 'user.create', value: 'user.create' },
-  { label: 'user.update', value: 'user.update' },
-  { label: 'user.delete', value: 'user.delete' },
-  { label: 'api_token.create', value: 'api_token.create' },
-  { label: 'api_token.revoke', value: 'api_token.revoke' },
-  { label: 'api_token.delete', value: 'api_token.delete' }
+  { accessorKey: 'actor', header: 'Actor', enableSorting: true }
 ]
 
 const resourceTypeOptions = [
@@ -174,11 +184,44 @@ const resourceTypeOptions = [
   { label: 'Policy', value: 'policy' },
   { label: 'Machine', value: 'machine' },
   { label: 'User', value: 'user' },
-  { label: 'API token', value: 'api_token' },
-  { label: 'Session', value: 'session' }
+  { label: 'API token', value: 'api_token' }
 ]
 
+const pageSizeOptions = [
+  { label: '25 / page', value: 25 },
+  { label: '50 / page', value: 50 },
+  { label: '100 / page', value: 100 }
+]
+
+const actionOptions = computed(() => {
+  const options: Array<{ label: string, value: string | undefined }> = [
+    { label: 'All actions', value: undefined }
+  ]
+  if (!resourceTypeFilter.value) {
+    return options
+  }
+  const actions = actionsByResourceType[resourceTypeFilter.value] ?? []
+  for (const action of actions) {
+    options.push({
+      label: formatActionLabel(action),
+      value: action
+    })
+  }
+  return options
+})
+
+const resourceTypeBadgeColor = (resourceType: string) => {
+  return resourceTypeBadgeColors[resourceType] ?? 'neutral'
+}
+
 const formatDate = (value: string) => new Date(value).toLocaleString()
+
+const detailsTitle = computed(() => {
+  if (!detailsEvent.value) {
+    return 'Event details'
+  }
+  return formatActionLabel(detailsEvent.value.action)
+})
 
 const detailsItems = computed((): DetailItem[] => {
   const event = detailsEvent.value
@@ -188,7 +231,7 @@ const detailsItems = computed((): DetailItem[] => {
   const items: DetailItem[] = [
     { label: 'When', value: formatDate(event.occurred_at) },
     { label: 'Action', value: event.action, mono: true },
-    { label: 'Resource type', value: event.resource_type },
+    { label: 'Resource type', value: formatResourceTypeLabel(event.resource_type) },
     { label: 'Resource', value: event.resource_label || '—' },
     { label: 'Resource ID', value: event.resource_id || '—', mono: true },
     { label: 'Actor', value: event.actor_name },
@@ -213,6 +256,14 @@ watch(actionFilter, (value) => {
 
 watch(resourceTypeFilter, (value) => {
   setFilter('resource_type', value)
+  if (!value) {
+    actionFilter.value = undefined
+    return
+  }
+  const validActions = actionsByResourceType[value] ?? []
+  if (actionFilter.value && !validActions.includes(actionFilter.value)) {
+    actionFilter.value = undefined
+  }
 })
 
 const openDetails = (event: AuditEvent) => {
