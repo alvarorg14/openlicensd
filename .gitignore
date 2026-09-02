@@ -16,6 +16,10 @@ ui/node_modules/
 ui/.nuxt/
 ui/.output/
 ui/dist
+docs/node_modules/
+docs/public/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
 
 # Embedded UI build artifacts (generated)
 server/internal/static/dist/*
