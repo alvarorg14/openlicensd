@@ -1,5 +1,7 @@
 # OpenLicensd Documentation
 
+Published site: **https://alvarorg14.github.io/openlicensd/**
+
 | Document | Description |
 |----------|-------------|
 | [openapi.yaml](openapi.yaml) | OpenAPI 3.1 specification (single source of truth for the HTTP API) |
