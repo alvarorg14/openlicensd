@@ -99,7 +99,6 @@ func TestAuditEventListDateFilters(t *testing.T) {
 	st := openTestStore(t)
 	ctx := context.Background()
 
-	now := time.Now().UTC().Format(time.RFC3339)
 	past := time.Now().Add(-48 * time.Hour).UTC().Format(time.RFC3339)
 
 	event := store.AuditEvent{
@@ -116,10 +115,12 @@ func TestAuditEventListDateFilters(t *testing.T) {
 		t.Fatalf("create audit event: %v", err)
 	}
 
+	to := time.Now().UTC().Add(time.Minute).Format(time.RFC3339)
+
 	events, total, err := st.ListAuditEvents(ctx, store.AuditEventListParams{
 		ListParams: store.ListParams{Sort: "occurred_at", Order: "desc", Limit: 25},
 		From:       &past,
-		To:         &now,
+		To:         &to,
 	})
 	if err != nil {
 		t.Fatalf("list with date filters: %v", err)
