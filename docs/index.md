@@ -6,7 +6,8 @@ hero:
   text: Open source license server
   tagline: Self-hosted. Single binary. PostgreSQL-backed.
   image:
-    src: /brand/logo-light.svg
+    light: /brand/logo-light.svg
+    dark: /brand/logo-dark.svg
     alt: OpenLicensd
   actions:
     - theme: brand

@@ -1,8 +1,9 @@
 import yaml from '@rollup/plugin-yaml'
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 import { repoLinksPlugin } from './plugins/repoLinks'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   base: '/openlicensd/',
   title: 'OpenLicensd',
   description: 'Open source license server for creating and validating license keys',
@@ -14,7 +15,8 @@ export default defineConfig({
   ],
 
   head: [
-    ['link', { rel: 'icon', href: '/openlicensd/brand/mark-light.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/openlicensd/brand/mark-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' }],
+    ['link', { rel: 'icon', href: '/openlicensd/brand/mark-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' }],
   ],
 
   vite: {
@@ -30,7 +32,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/brand/mark-light.svg',
+    logo: { light: '/brand/mark-light.svg', dark: '/brand/mark-dark.svg' },
     siteTitle: 'OpenLicensd',
 
     nav: [
@@ -111,4 +113,4 @@ export default defineConfig({
   sitemap: {
     hostname: 'https://alvarorg14.github.io',
   },
-})
+}))

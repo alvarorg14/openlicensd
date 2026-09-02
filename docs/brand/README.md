@@ -7,6 +7,7 @@ Design source files for the OpenLicensd visual identity.
 | File | Use |
 |------|-----|
 | `logo-light.svg` | Combined mark + wordmark on light backgrounds (README, docs) |
+| `logo-dark.svg` | Combined mark + wordmark on dark backgrounds (white + accent `#2F6FFF`) |
 | `mark-light.svg` | Mark on light backgrounds (navy `#111C34` + accent `#2F6FFF`) |
 | `mark-dark.svg` | Mark on dark backgrounds (white + accent `#2F6FFF`) |
 | `wordmark-light.svg` | Full wordmark on light backgrounds |
