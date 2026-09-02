@@ -12,6 +12,7 @@
 [![SDK CI](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml)
 [![Vulnerability Scan](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml)
 [![CodeQL](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml)
+[![Trivy](https://github.com/alvarorg14/openlicensd/actions/workflows/trivy.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/trivy.yml)
 [![Release](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/releases)
 [![License](https://img.shields.io/github/license/alvarorg14/openlicensd)](https://github.com/alvarorg14/openlicensd/blob/main/LICENSE)
@@ -311,6 +312,8 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 **Vulnerability scanning:** A separate Vulnerability Scan workflow runs govulncheck weekly, on demand, and on pull requests (non-blocking) to detect known vulnerabilities in Go dependencies.
 
 **Static analysis:** A CodeQL workflow runs on push, pull requests, and weekly to scan Go (server and SDK) and TypeScript (admin UI) source for security issues. Results appear in the repository [Security tab](https://github.com/alvarorg14/openlicensd/security/code-scanning).
+
+**Container scanning:** A Trivy workflow scans the OpenLicensd container image on pull requests (built from `Dockerfile`), after server releases (published GHCR tag), and weekly on `ghcr.io/alvarorg14/openlicensd:latest`. Results appear in the repository [Security tab](https://github.com/alvarorg14/openlicensd/security/code-scanning).
 
 ## 📄 License
 
