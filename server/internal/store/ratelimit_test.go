@@ -18,7 +18,7 @@ func TestTakeRateLimitTokenBurstThenDeny(t *testing.T) {
 	scope := "public"
 	key := "burst-" + uuid.NewString()
 	burst := 2.0
-	refill := 60.0
+	refill := 0.5 // tokens per second
 
 	for i := 0; i < 2; i++ {
 		available, err := st.TakeRateLimitToken(ctx, scope, key, burst, refill)
@@ -46,7 +46,7 @@ func TestTakeRateLimitTokenRefillsAfterWait(t *testing.T) {
 	scope := "public"
 	key := "refill-" + uuid.NewString()
 	burst := 1.0
-	refill := 120.0
+	refill := 1.0 // tokens per second
 
 	available, err := st.TakeRateLimitToken(ctx, scope, key, burst, refill)
 	if err != nil {
@@ -64,7 +64,7 @@ func TestTakeRateLimitTokenRefillsAfterWait(t *testing.T) {
 		t.Fatal("expected second take to be denied")
 	}
 
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1100 * time.Millisecond)
 
 	available, err = st.TakeRateLimitToken(ctx, scope, key, burst, refill)
 	if err != nil {
@@ -81,7 +81,7 @@ func TestTakeRateLimitTokenScopesAreIsolated(t *testing.T) {
 
 	key := "scope-" + uuid.NewString()
 	burst := 1.0
-	refill := 60.0
+	refill := 0.5 // tokens per second
 
 	available, err := st.TakeRateLimitToken(ctx, "login", key, burst, refill)
 	if err != nil {
@@ -114,7 +114,7 @@ func TestDeleteIdleRateLimitBucketsRemovesStaleRows(t *testing.T) {
 
 	scope := "public"
 	key := "idle-" + uuid.NewString()
-	if _, err := st.TakeRateLimitToken(ctx, scope, key, 2, 60); err != nil {
+	if _, err := st.TakeRateLimitToken(ctx, scope, key, 2, 0.5); err != nil {
 		t.Fatalf("seed bucket: %v", err)
 	}
 
@@ -134,13 +134,14 @@ func TestTakeRateLimitTokenConcurrentBurst(t *testing.T) {
 	scope := "public"
 	key := "concurrent-" + uuid.NewString()
 	burst := 5.0
-	refill := 60.0
+	refill := 0.5 // tokens per second
 
 	const workers = 20
 	var allowed atomic.Int64
 	var wg sync.WaitGroup
 	wg.Add(workers)
 
+	start := time.Now()
 	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
@@ -156,9 +157,11 @@ func TestTakeRateLimitTokenConcurrentBurst(t *testing.T) {
 	}
 
 	wg.Wait()
+	elapsed := time.Since(start)
 
-	if got := allowed.Load(); got > int64(burst) {
-		t.Fatalf("allowed=%d want <= %d", got, int(burst))
+	ceiling := burst + refill*elapsed.Seconds() + 1e-6
+	if got := float64(allowed.Load()); got > ceiling {
+		t.Fatalf("allowed=%v want <= %v (burst=%v refill=%v elapsed=%s)", got, ceiling, burst, refill, elapsed)
 	}
 	if got := allowed.Load(); got == 0 {
 		t.Fatal("expected at least one admission")
@@ -171,7 +174,7 @@ func TestTakeRateLimitTokenUsesDistinctKeys(t *testing.T) {
 
 	scope := "public"
 	burst := 1.0
-	refill := 60.0
+	refill := 0.5 // tokens per second
 
 	for i := 0; i < 3; i++ {
 		key := fmt.Sprintf("distinct-%s-%d", uuid.NewString(), i)

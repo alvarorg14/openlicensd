@@ -8,14 +8,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/alvarorg14/openlicensd/server/internal/api"
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/google/uuid"
 )
+
+var testRemoteAddrCounter atomic.Int64
 
 func setupRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) http.Handler {
 	t.Helper()
@@ -85,14 +88,14 @@ func TestRateLimitValidateReturns429(t *testing.T) {
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
 		Backend:         "memory",
-		PublicPerMinute: 60,
+		PublicPerMinute: 1,
 		PublicBurst:     2,
-		LoginPerMinute:  30,
+		LoginPerMinute:  1,
 		LoginBurst:      10,
 		IdleMinutes:     10,
 	})
 
-	remoteAddr := fmt.Sprintf("203.0.113.%d:12345", time.Now().UnixNano()%200+1)
+	remoteAddr := uniqueTestRemoteAddr()
 
 	for i := 0; i < 2; i++ {
 		resp := doJSONWithRemoteAddr(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
@@ -127,7 +130,7 @@ func TestRateLimitDisabledNeverReturns429(t *testing.T) {
 		Enabled: false,
 	})
 
-	remoteAddr := fmt.Sprintf("203.0.113.%d:12345", time.Now().UnixNano()%200+1)
+	remoteAddr := uniqueTestRemoteAddr()
 
 	for i := 0; i < 5; i++ {
 		resp := doJSONWithRemoteAddr(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
@@ -146,12 +149,12 @@ func TestRateLimitLoginReturns429(t *testing.T) {
 		Backend:         "memory",
 		PublicPerMinute: 600,
 		PublicBurst:     60,
-		LoginPerMinute:  30,
+		LoginPerMinute:  1,
 		LoginBurst:      2,
 		IdleMinutes:     10,
 	})
 
-	remoteAddr := fmt.Sprintf("198.51.100.%d:12345", time.Now().UnixNano()%200+1)
+	remoteAddr := uniqueTestRemoteAddr()
 
 	for i := 0; i < 2; i++ {
 		resp := doJSONWithRemoteAddr(t, handler, http.MethodPost, "/api/v1/auth/login", map[string]string{
@@ -176,9 +179,9 @@ func TestRateLimitPostgresBackendReturns429(t *testing.T) {
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
 		Backend:         "postgres",
-		PublicPerMinute: 60,
+		PublicPerMinute: 1,
 		PublicBurst:     2,
-		LoginPerMinute:  30,
+		LoginPerMinute:  1,
 		LoginBurst:      10,
 		IdleMinutes:     10,
 	})
@@ -217,9 +220,9 @@ func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
 		RateLimit: config.RateLimitConfig{
 			Enabled:         true,
 			Backend:         "postgres",
-			PublicPerMinute: 60,
+			PublicPerMinute: 1,
 			PublicBurst:     2,
-			LoginPerMinute:  30,
+			LoginPerMinute:  1,
 			LoginBurst:      10,
 			IdleMinutes:     10,
 		},
@@ -268,6 +271,7 @@ func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
 }
 
 func uniqueTestRemoteAddr() string {
-	id := time.Now().UnixNano()
-	return fmt.Sprintf("198.51.%d.%d:12345", (id>>8)%250+1, id%250+1)
+	id := testRemoteAddrCounter.Add(1)
+	u := uuid.New()
+	return fmt.Sprintf("198.51.%d.%d:12345", int(u[10])%250+1, int(u[11]^byte(id))%250+1)
 }
