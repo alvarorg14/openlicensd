@@ -20,6 +20,9 @@ on:
       - ".github/workflows/sdk-release-drafter.yml"
       - ".github/release-drafter-sdk.yml"
 
+permissions:
+  contents: read
+
 jobs:
   server:
     name: Server

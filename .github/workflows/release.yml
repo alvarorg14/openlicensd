@@ -5,12 +5,7 @@ on:
     types: [published]
 
 permissions:
-  contents: write
-  packages: write
-  security-events: write
-  id-token: write
-  attestations: write
-  artifact-metadata: write
+  contents: read
 
 jobs:
   release:
@@ -201,6 +196,9 @@ jobs:
     name: Publish Helm chart
     if: ${{ !startsWith(github.event.release.tag_name, 'sdk/go/') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
