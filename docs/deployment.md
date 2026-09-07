@@ -339,7 +339,7 @@ curl -s -o /dev/null -w "%{http_code}\n" localhost:8080/readyz
 
 ## Releases
 
-Publish a GitHub release to trigger cross-platform binaries, Docker images, and Helm chart packaging:
+Server version history lives in [CHANGELOG.md](../CHANGELOG.md). Publish a GitHub release to trigger cross-platform binaries, Docker images, and Helm chart packaging:
 
 ```bash
 gh release create vX.Y.Z --generate-notes

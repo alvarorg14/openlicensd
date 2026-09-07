@@ -8,6 +8,7 @@ on:
       - 'README.md'
       - 'QUICKSTART.md'
       - 'CONTRIBUTING.md'
+      - 'CHANGELOG.md'
       - '.github/workflows/docs.yml'
   pull_request:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'README.md'
       - 'QUICKSTART.md'
       - 'CONTRIBUTING.md'
+      - 'CHANGELOG.md'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 

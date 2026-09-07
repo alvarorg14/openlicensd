@@ -36,7 +36,7 @@ This document provides context and guidelines for AI coding assistants working o
 - **Location**: `docs/` (content) and `docs/.vitepress/` (site config)
 - **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference and `vitepress-plugin-mermaid` for Mermaid diagrams
 - **Published at**: `https://alvarorg14.github.io/openlicensd/` (GitHub Pages via `.github/workflows/docs.yml`)
-- **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, and `CONTRIBUTING.md` included via VitePress file includes (no duplication)
+- **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, and `CHANGELOG.md` included via VitePress file includes (no duplication)
 - **Build**: `make docs-build` (or `cd docs && npm run docs:build`); `make docs-dev` for local preview
 
 ### Go SDK
@@ -189,6 +189,7 @@ Do not commit version bumps to `main` after each publish.
 | `docs/openapi.yaml` | OpenAPI 3.1 specification |
 | `docs/.vitepress/config.ts` | VitePress site config (nav, sidebar, GitHub Pages base path) |
 | `.github/pull_request_template.md` | Default GitHub PR description template |
+| `CHANGELOG.md` | In-repo server version history (Keep a Changelog) |
 | `.goreleaser.yaml` | Release and container image publishing |
 
 ## Development Workflow
@@ -350,7 +351,7 @@ On push to `main`, maintains draft releases for the server and Go SDK independen
 | Server (stable + prerelease) | `.github/workflows/release-drafter.yml` | `release-drafter-template.yml` | `vX.Y.Z`, `vX.Y.Z-rc.N` |
 | Go SDK (stable + prerelease) | `.github/workflows/sdk-release-drafter.yml` | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
 
-SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files). Pure SDK-only PRs are excluded from server drafts via `pre-exclude` in `release-drafter-template.yml`.
+SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files). Pure SDK-only PRs are excluded from server drafts via `pre-exclude` in `release-drafter-template.yml`. Before publishing a server release, copy the draft body into [`CHANGELOG.md`](CHANGELOG.md) (see [CONTRIBUTING.md](CONTRIBUTING.md#server)). GoReleaser generates a commit-based changelog as a fallback for empty GitHub release bodies; `release.mode: keep-existing` in `.goreleaser.yaml` preserves Release Drafter notes on publish.
 
 ### Release (`.github/workflows/release.yml`)
 

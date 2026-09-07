@@ -45,7 +45,30 @@ snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  disable: true
+  sort: asc
+  abbrev: -1
+  groups:
+    - title: New Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Improvements
+      regexp: '^.*?(enhancement|perf|refactor)(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Documentation
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: CI
+      regexp: '^.*?(ci|chore)(\([[:word:]]+\))??!?:.+$'
+      order: 4
+    - title: Other Changes
+      order: 999
+  filters:
+    exclude:
+      - '^Merge '
+      - '^wip:'
 
 release:
   mode: keep-existing

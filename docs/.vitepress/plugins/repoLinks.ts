@@ -4,12 +4,13 @@ import type MarkdownIt from 'markdown-it'
 const GITHUB_BLOB = 'https://github.com/alvarorg14/openlicensd/blob/main/'
 
 /** Wrapper pages include root-level markdown; all other pages live under docs/. */
-const ROOT_PAGES = new Set(['overview.md', 'quickstart.md', 'contributing.md'])
+const ROOT_PAGES = new Set(['overview.md', 'quickstart.md', 'contributing.md', 'changelog.md'])
 
 const SITE_PAGES: Record<string, string> = {
   'README.md': '/overview',
   'QUICKSTART.md': '/quickstart',
   'CONTRIBUTING.md': '/contributing',
+  'CHANGELOG.md': '/changelog',
   'docs/openapi.yaml': '/api-reference',
 }
 
