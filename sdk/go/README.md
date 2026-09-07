@@ -68,6 +68,28 @@ Pass `WithAnyProduct()` only when you intentionally want unscoped validation.
 | `WithHTTPClient(c)` | Custom `*http.Client` |
 | `WithRetry(n, delay)` | Retry `Validate` on 429/5xx/network errors (default 2 attempts) |
 | `WithAnyProduct()` | Disable product scoping |
+| `WithFingerprint(fp)` | Machine fingerprint sent on validation requests (required when the server enforces `max_activations`) |
+| `WithHostname(hostname)` | Send this hostname instead of `os.Hostname()` |
+| `WithoutHostname()` | Do not send a hostname on validation requests |
+
+### Machine fingerprint
+
+When the server enforces `max_activations`, configure the client with a stable machine fingerprint. Without one, validation returns `fingerprint_required`; new fingerprints beyond the limit return `activation_limit`.
+
+```go
+fp, err := openlicensd.Fingerprint("my-cli")
+if err != nil {
+    log.Fatal(err)
+}
+
+client, err := openlicensd.New(
+    "https://licenses.example.com",
+    "acme-widget",
+    openlicensd.WithFingerprint(fp),
+)
+```
+
+`Fingerprint(appName)` persists a UUID under the OS user config directory at `<UserConfigDir>/<appName>/machine-id`. Use `FingerprintAt(path)` when you need a custom location (for example a mounted volume in CI). The SDK sends `os.Hostname()` by default; pass `WithHostname(name)` to override it or `WithoutHostname()` to omit it.
 
 ## API methods
 
@@ -113,10 +135,19 @@ if !openlicensd.ValidateKeyFormat(key) {
 
 ## Cached validation
 
+Reduce server round-trips with a TTL cache over `Validate`:
+
 ```go
 validator := openlicensd.NewCachedValidator(client, 5*time.Minute)
 result, err := validator.Validate(ctx, key)
 ```
+
+| API | Description |
+|-----|-------------|
+| `NewCachedValidator(client, ttl)` | Wrap a client with a TTL cache (defaults to 5m when `ttl <= 0`) |
+| `Validate(ctx, key)` | Return a cached result when available and not expired |
+| `Invalidate(key)` | Remove one key from the cache |
+| `Clear()` | Remove all cached entries |
 
 ## Background guard
 
@@ -136,6 +167,15 @@ if !guard.Valid() {
     log.Fatal("license invalid")
 }
 ```
+
+| Option / method | Description |
+|-----------------|-------------|
+| `WithInterval(d)` | How often to revalidate (default 1h) |
+| `WithOfflineGrace(d)` | How long the guard stays valid after the last successful validation when the server is unreachable (default 24h) |
+| `Valid()` | Whether the license is currently considered valid |
+| `Last()` | Most recent validation result |
+| `LastError()` | Most recent validation error, if any |
+| `Stop()` | End background revalidation and wait for the goroutine to exit |
 
 ## Compatibility
 
