@@ -119,6 +119,78 @@ jobs:
             exit 1
           fi
 
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: openlicensd
+          POSTGRES_PASSWORD: openlicensd
+          POSTGRES_DB: openlicensd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openlicensd -d openlicensd"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('ui/package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        working-directory: ui
+        run: npx playwright install --with-deps chromium
+
+      - name: Build UI and server
+        run: make ui && make server
+
+      - name: Run Playwright smoke test
+        env:
+          OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable
+          OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: admin@example.com
+          OPENLICENSD_BOOTSTRAP_ADMIN_NAME: Administrator
+          OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH: $2a$10$w6lsMGg4BZVLWv0dqUXT2eUWcWhbh99FIECbPlBNeE.pu089T5E/2
+          OPENLICENSD_COOKIE_SECURE: false
+          OPENLICENSD_LOCAL_LOGIN_ENABLED: true
+          OPENLICENSD_METRICS_ENABLED: false
+          CI: true
+        run: make test-ui
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report
+          path: ui/playwright-report/
+          retention-days: 7
+
   goreleaser:
     name: GoReleaser
     runs-on: ubuntu-latest

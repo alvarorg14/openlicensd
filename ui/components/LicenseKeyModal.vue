@@ -22,7 +22,12 @@
         </div>
 
         <div class="flex gap-2">
-          <UInput :model-value="licenseKey" readonly class="flex-1 font-mono text-sm" />
+          <UInput
+            :model-value="licenseKey"
+            readonly
+            aria-label="License key"
+            class="flex-1 font-mono text-sm"
+          />
           <UButton
             :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
             :color="copied ? 'success' : 'primary'"
