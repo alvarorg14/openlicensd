@@ -220,6 +220,90 @@ func TestValidateRetryOn429(t *testing.T) {
 	}
 }
 
+func TestValidateRetryOn5xx(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts == 1 {
+			writeAPIError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		_ = json.NewEncoder(w).Encode(ValidationResult{Valid: true})
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(2, 10*time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	result, err := client.Validate(context.Background(), "TEST-KEY")
+	if err != nil {
+		t.Fatalf("Validate() error: %v", err)
+	}
+	if !result.Valid {
+		t.Fatal("expected valid after retry")
+	}
+	if attempts != 2 {
+		t.Fatalf("attempts = %d, want 2", attempts)
+	}
+}
+
+func TestValidateRetryOn5xxExhausted(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		writeAPIError(w, http.StatusServiceUnavailable, "service unavailable")
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(2, 10*time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	_, err = client.Validate(context.Background(), "TEST-KEY")
+	if err == nil {
+		t.Fatal("expected error after retries exhausted")
+	}
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("error = %v, want ErrUnavailable", err)
+	}
+	if attempts != 2 {
+		t.Fatalf("attempts = %d, want 2", attempts)
+	}
+}
+
+func TestValidateProduct(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req validateRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if req.Key != "TEST-KEY" || req.Product != "other-product" {
+			t.Fatalf("request = %+v", req)
+		}
+		_ = json.NewEncoder(w).Encode(ValidationResult{Valid: true, Product: "other-product"})
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(1, time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	result, err := client.ValidateProduct(context.Background(), "TEST-KEY", "other-product")
+	if err != nil {
+		t.Fatalf("ValidateProduct() error: %v", err)
+	}
+	if !result.Valid {
+		t.Fatal("expected valid license")
+	}
+	if result.Product != "other-product" {
+		t.Fatalf("product = %q", result.Product)
+	}
+}
+
 func TestRegistryCredentialsForbidden(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		writeAPIError(w, http.StatusForbidden, "expired")
