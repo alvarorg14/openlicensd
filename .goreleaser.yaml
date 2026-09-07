@@ -31,6 +31,11 @@ builds:
 archives:
   - formats:
       - tar.gz
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+      - NOTICE*
 
 checksum:
   name_template: checksums.txt

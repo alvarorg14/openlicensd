@@ -5,6 +5,7 @@ type: application
 # Placeholder; release.yml stamps version/appVersion from the git tag (strip leading v).
 version: 0.0.0-dev
 appVersion: "0.0.0-dev"
+license: Apache-2.0
 keywords:
   - license
   - licensing
@@ -15,3 +16,5 @@ sources:
 maintainers:
   - name: alvarorg14
     url: https://github.com/alvarorg14
+annotations:
+  artifacthub.io/license: Apache-2.0
