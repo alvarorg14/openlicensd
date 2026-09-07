@@ -1,8 +1,14 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Questions and usage
+    url: https://github.com/alvarorg14/openlicensd/discussions
+    about: Ask questions and discuss usage in GitHub Discussions
+  - name: Support policy
+    url: https://github.com/alvarorg14/openlicensd/blob/main/SUPPORT.md
+    about: Support channels, supported versions, and response expectations
   - name: Security vulnerability
     url: https://github.com/alvarorg14/openlicensd/security/advisories/new
     about: Report a security vulnerability via a private GitHub security advisory
   - name: Documentation
-    url: https://github.com/alvarorg14/openlicensd/tree/main/docs
-    about: Browse the documentation
+    url: https://alvarorg14.github.io/openlicensd/
+    about: Browse the published documentation site

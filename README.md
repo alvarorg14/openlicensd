@@ -300,6 +300,7 @@ Contributions are welcome! Issues and pull requests help make this project bette
 - See [ROADMAP.md](ROADMAP.md) for the path to v1.0 and open work
 - Read [CHANGELOG.md](CHANGELOG.md) for server version history
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow
+- Read [SUPPORT.md](SUPPORT.md) for support channels and version guidance
 - Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
 - See [AGENTS.md](AGENTS.md) if you're an AI assistant or want deeper architecture context
 
