@@ -70,9 +70,9 @@ test-sdk: ## Run Go SDK tests
 	cd sdk/go && go test ./...
 
 test-ui: server ## Run Playwright UI smoke tests (requires Postgres and Chromium)
-	@test -f .env || (echo "Missing .env. Copy from .env.example: cp .env.example .env" && exit 1)
 	@test -f bin/openlicensd || (echo "Missing bin/openlicensd. Run: make server" && exit 1)
-	@set -a && . ./.env && set +a && \
+	@test -n "$$OPENLICENSD_DATABASE_URL" || test -f .env || (echo "Missing .env or OPENLICENSD_DATABASE_URL. Copy from .env.example: cp .env.example .env" && exit 1)
+	@set -a && [ -f .env ] && . ./.env; set +a && \
 	OPENLICENSD_COOKIE_SECURE=false OPENLICENSD_METRICS_ENABLED=false \
 	cd ui && npm run test:e2e
 
