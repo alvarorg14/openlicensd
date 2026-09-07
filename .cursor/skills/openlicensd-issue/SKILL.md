@@ -157,7 +157,7 @@ Out of scope (and why):
 - [ ] <ordered implementation to-do, one per logical unit>
 - [ ] Run `make lint`, `make build`, `make test`
 - [ ] Assign and relabel issue #<N>
-- [ ] Open PR with `Closes #<N>`, one policy label, and body per `smart-commit-and-pr` template
+- [ ] Open PR with `Closes #<N>`, one policy label, and body per `.github/pull_request_template.md`
 ```
 
 Plan-specific notes:
@@ -250,10 +250,10 @@ Derive it from the issue's type label. When several could apply, pick by precede
 `dependencies` > `ci`. Add the matching `area/*` labels to the PR too — they are not enforced but keep
 the release drafter accurate.
 
-5. **PR description** must follow the structured template in the `smart-commit-and-pr` skill — read
-   `~/.cursor/skills/smart-commit-and-pr/pr-template.md` before writing the body. Fill every section
-   from the diff against `main` (`git diff main...HEAD`); remove a section only when it truly does not
-   apply. Weave these OpenLicensd-specific details into the template sections:
+5. **PR description** must follow [`.github/pull_request_template.md`](.github/pull_request_template.md)
+   (same structure as the `smart-commit-and-pr` skill). Fill every section from the diff against
+   `main` (`git diff main...HEAD`); remove a section only when it truly does not apply. Weave these
+   OpenLicensd-specific details into the template sections:
 
    | Template section | OpenLicensd additions |
    |------------------|----------------------|
@@ -271,7 +271,7 @@ Finally, report: branch name, commits, PR URL, gate results, and anything left f
 - [ ] Tests added or updated for new logic
 - [ ] Every documentation obligation from Step 2 satisfied
 - [ ] Issue assigned, correctly labeled, and in the right milestone
-- [ ] PR opened with `Closes #<N>`, exactly one policy label, and structured description per `smart-commit-and-pr` template
+- [ ] PR opened with `Closes #<N>`, exactly one policy label, and structured description per `.github/pull_request_template.md`
 - [ ] Anything discovered but deliberately out of scope reported to the user as a follow-up
 
 ## Edge Cases

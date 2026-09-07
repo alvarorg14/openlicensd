@@ -188,6 +188,7 @@ Do not commit version bumps to `main` after each publish.
 | `charts/openlicensd/values.yaml` | Helm defaults |
 | `docs/openapi.yaml` | OpenAPI 3.1 specification |
 | `docs/.vitepress/config.ts` | VitePress site config (nav, sidebar, GitHub Pages base path) |
+| `.github/pull_request_template.md` | Default GitHub PR description template |
 | `.goreleaser.yaml` | Release and container image publishing |
 
 ## Development Workflow
@@ -336,7 +337,7 @@ Cosign is pinned in the release workflow; Renovate proposes updates. Verificatio
 
 ### PR Policy (`.github/workflows/pr-policy.yml`)
 
-Pull requests must carry **exactly one** label:
+New pull requests are pre-filled from [`.github/pull_request_template.md`](.github/pull_request_template.md). Pull requests must carry **exactly one** label:
 
 - `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, `ci`
 

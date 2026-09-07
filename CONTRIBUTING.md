@@ -122,6 +122,8 @@ See [docs/upgrade.md](docs/upgrade.md) for how migrations behave in production u
 
 ## Pull requests
 
+GitHub pre-fills new pull requests from [`.github/pull_request_template.md`](.github/pull_request_template.md). Fill every section; include `Closes #<N>` in the TL;DR when the PR resolves an issue.
+
 - Keep changes focused and well-scoped.
 - Update documentation when behavior or configuration changes.
 - Use conventional commit messages when possible (e.g. `feat:`, `fix:`, `docs:`).
