@@ -57,6 +57,7 @@ When deploying OpenLicensd:
 5. **Password hashing**: Use `make hash-password` to generate bcrypt hashes. Do not store plaintext admin passwords.
 6. **Harbor credentials**: Harbor admin credentials are the highest-value secret in a Harbor-enabled deployment. Use Kubernetes Secrets or External Secrets Operator.
 7. **Browser security headers**: The server sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options` on all HTTP responses. When `OPENLICENSD_COOKIE_SECURE=true`, it also sets `Strict-Transport-Security`. Keep `OPENLICENSD_COOKIE_SECURE=false` for local HTTP development so browsers do not pin HSTS.
+8. **Verify container images**: When deploying from GHCR, verify Cosign signatures and GitHub Artifact Attestations for release images. See [docs/deployment.md](docs/deployment.md#releases) for commands.
 
 ### Known Security Considerations
 

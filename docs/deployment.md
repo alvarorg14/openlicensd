@@ -351,6 +351,22 @@ GoReleaser builds Linux amd64/arm64 binaries and pushes Docker images to `ghcr.i
 
 The release job also stamps `docs/openapi.yaml` `info.version` from the tag and attaches the stamped copy to the GitHub release. The stamp is publish-time only — git keeps the `0.0.0-dev` placeholder, and the workflow marks the file skip-worktree so GoReleaser still sees a clean worktree.
 
+Published GHCR images are signed with keyless Cosign and include a GitHub Artifact Attestation with SLSA build provenance. Verify a release image:
+
+```bash
+# Resolve the image digest (example tag 0.5.0)
+DIGEST=$(docker buildx imagetools inspect ghcr.io/alvarorg14/openlicensd:0.5.0 --format '{{json .Manifest.Digest}}' | tr -d '"')
+
+cosign verify \
+  --certificate-identity-regexp 'https://github.com/alvarorg14/openlicensd/\.github/workflows/release\.yml@.*' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  "ghcr.io/alvarorg14/openlicensd@${DIGEST}"
+
+gh attestation verify oci://ghcr.io/alvarorg14/openlicensd:0.5.0 -R alvarorg14/openlicensd
+```
+
+Replace `0.5.0` with the image tag (semver without the `v` prefix). Images published before signing was enabled are unsigned.
+
 ## Related
 
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
