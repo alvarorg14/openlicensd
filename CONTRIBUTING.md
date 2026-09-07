@@ -37,6 +37,12 @@ make build
 # Run Go tests
 make test
 
+# Run Playwright UI smoke tests (requires Postgres, built binary, and Chromium)
+make dev-db
+make build
+cd ui && npm run test:e2e:install
+make test-ui
+
 # Lint (go vet + golangci-lint + ESLint)
 make lint
 

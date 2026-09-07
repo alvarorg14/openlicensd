@@ -210,6 +210,7 @@ make server        # Build binary to bin/openlicensd
 make build         # ui + server
 make test          # Go tests (loads .env if present)
 make test-sdk      # Go SDK tests
+make test-ui       # Playwright UI smoke (requires Postgres, build, Chromium)
 make lint          # go vet + golangci-lint + ESLint (same as CI)
 make lint-server   # go vet + golangci-lint
 make lint-ui       # ESLint
@@ -235,6 +236,7 @@ make release       # Local GoReleaser release
 - API tests require a live PostgreSQL instance (`OPENLICENSD_DATABASE_URL`)
 - Server tests run with `-p 1` because all packages share one PostgreSQL instance (see `make test` and CI)
 - Run: `make test` or `cd server && go test -p 1 ./...`
+- UI smoke tests live in `ui/e2e/` (Playwright, Chromium). Run `make test-ui` after `make build` and `cd ui && npm run test:e2e:install`; requires Postgres and bootstrap admin from `.env`
 
 ## CI & Release
 
@@ -250,6 +252,7 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 |-----|---------|
 | Server | `make lint-server`, `go test` (with coverage upload to Codecov), `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
+| E2E | `make ui`, `make server`, Playwright smoke (`login` → create product/policy/license → `POST /validate`) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
 | OpenAPI | pinned `@redocly/cli` lint of `docs/openapi.yaml` |

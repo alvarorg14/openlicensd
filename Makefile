@@ -1,4 +1,4 @@
-.PHONY: help dev dev-db dev-db-reset dev-server dev-ui docs-dev docs-build stack-up stack-down stack-logs ui server test test-sdk lint lint-server lint-ui lint-sdk vuln hash-password build release
+.PHONY: help dev dev-db dev-db-reset dev-server dev-ui docs-dev docs-build stack-up stack-down stack-logs ui server test test-sdk test-ui lint lint-server lint-ui lint-sdk vuln hash-password build release
 
 .DEFAULT_GOAL := help
 
@@ -68,6 +68,13 @@ test: test-sdk ## Run Go tests
 
 test-sdk: ## Run Go SDK tests
 	cd sdk/go && go test ./...
+
+test-ui: server ## Run Playwright UI smoke tests (requires Postgres and Chromium)
+	@test -f .env || (echo "Missing .env. Copy from .env.example: cp .env.example .env" && exit 1)
+	@test -f bin/openlicensd || (echo "Missing bin/openlicensd. Run: make server" && exit 1)
+	@set -a && . ./.env && set +a && \
+	OPENLICENSD_COOKIE_SECURE=false OPENLICENSD_METRICS_ENABLED=false \
+	cd ui && npm run test:e2e
 
 lint: lint-server lint-ui lint-sdk ## Run all linters
 
