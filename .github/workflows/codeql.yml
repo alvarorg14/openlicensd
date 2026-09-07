@@ -15,7 +15,6 @@ permissions:
   actions: read
   contents: read
   packages: read
-  security-events: write
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +24,11 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
     timeout-minutes: 30
     strategy:
       fail-fast: false

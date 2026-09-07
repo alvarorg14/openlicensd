@@ -238,6 +238,8 @@ make release       # Local GoReleaser release
 
 ## CI & Release
 
+Every workflow under `.github/workflows/` declares a top-level `permissions:` block with `contents: read` (or narrower) so `GITHUB_TOKEN` is not inherited from the repository default. Jobs that publish releases, upload SARIF, deploy Pages, or push OCI artifacts declare the additional write scopes they need.
+
 ### CI (`.github/workflows/ci.yml`)
 
 Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path filters in the workflow):
