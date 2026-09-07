@@ -69,3 +69,26 @@ func TestGuardOfflineGrace(t *testing.T) {
 		t.Fatal("expected guard to remain valid within offline grace")
 	}
 }
+
+func TestGuardFirstUnreachable(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "unavailable", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(1, time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	ctx := context.Background()
+	guard, err := NewGuard(ctx, client, "TEST-KEY")
+	if err == nil {
+		guard.Stop()
+		t.Fatal("expected NewGuard() error when first Validate fails")
+	}
+	if guard != nil {
+		guard.Stop()
+		t.Fatal("expected nil guard when first Validate fails")
+	}
+}

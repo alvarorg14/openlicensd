@@ -149,6 +149,8 @@ result, err := validator.Validate(ctx, key)
 | `Invalidate(key)` | Remove one key from the cache |
 | `Clear()` | Remove all cached entries |
 
+**Caveats:** Any `ValidationResult` returned without error is cached, including `Valid: false`. Transport errors are not cached. The cache map has no size limit; expired entries are skipped on read but not pruned automatically. Call `Invalidate` or `Clear` when validating many distinct keys.
+
 ## Background guard
 
 For long-running services, `Guard` revalidates on an interval and tolerates transient outages:
@@ -176,6 +178,8 @@ if !guard.Valid() {
 | `Last()` | Most recent validation result |
 | `LastError()` | Most recent validation error, if any |
 | `Stop()` | End background revalidation and wait for the goroutine to exit |
+
+**Caveats:** `NewGuard` runs the first `Validate` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start. An invalid license (`Valid: false` with a nil error) still constructs the guard.
 
 ## Compatibility
 
