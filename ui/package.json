@@ -1,6 +1,7 @@
 {
   "name": "openlicensd-ui",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "packageManager": "npm@12.0.2",
   "scripts": {
