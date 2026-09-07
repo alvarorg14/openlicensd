@@ -120,6 +120,7 @@ See [docs/upgrade.md](docs/upgrade.md) for how migrations behave in production u
 - Update documentation when behavior or configuration changes.
 - Use conventional commit messages when possible (e.g. `feat:`, `fix:`, `docs:`).
 - Ensure CI passes before requesting review.
+- Go coverage is uploaded to [Codecov](https://codecov.io/gh/alvarorg14/openlicensd) from CI; status checks are informational and do not block merges.
 - Add exactly one policy label to your PR: `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, or `ci`.
 - New GitHub Actions workflows must declare a top-level `permissions:` block (typically `contents: read`) and grant write scopes only on the jobs that need them.
 - Pin every `uses:` reference to a full commit SHA with a `# vX.Y.Z` comment (see existing workflows for the pattern); do not use floating `@v` tags.
