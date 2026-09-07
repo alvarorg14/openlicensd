@@ -7,6 +7,11 @@ import (
 )
 
 // CachedValidator caches Validate results for a TTL to reduce server round-trips.
+//
+// Any ValidationResult returned without error is cached, including Valid=false.
+// Transport errors are not cached. The cache map has no size limit; expired
+// entries are skipped on read but not pruned automatically. Use Invalidate or
+// Clear to remove entries when many distinct keys are validated.
 type CachedValidator struct {
 	client *Client
 	ttl    time.Duration
@@ -32,7 +37,9 @@ func NewCachedValidator(client *Client, ttl time.Duration) *CachedValidator {
 	}
 }
 
-// Validate returns a cached result when available and not expired.
+// Validate returns a cached result when available and not expired. Invalid
+// licenses (Valid=false) are cached for the TTL when Validate returns a nil
+// error. Transport errors are returned immediately and are not stored.
 func (v *CachedValidator) Validate(ctx context.Context, key string) (ValidationResult, error) {
 	cacheKey := v.client.product + "\x00" + NormalizeKey(key) + "\x00" + v.client.fingerprint
 

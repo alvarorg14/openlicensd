@@ -103,6 +103,8 @@ Reduce server round-trips with a TTL cache:
 validator := openlicensd.NewCachedValidator(client, 5*time.Minute)
 ```
 
+Any `ValidationResult` returned without error is cached, including `Valid: false`. Transport errors are not cached. The cache map has no size limit; expired entries are skipped on read but not pruned automatically. Call `Invalidate` or `Clear` when validating many distinct keys.
+
 ### Background guard
 
 For services that need continuous license enforcement with offline tolerance:
@@ -114,6 +116,8 @@ guard, err := openlicensd.NewGuard(ctx, client, key,
 )
 defer guard.Stop()
 ```
+
+`NewGuard` runs the first `Validate` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start.
 
 ### Key format validation
 

@@ -25,7 +25,8 @@ func WithOfflineGrace(d time.Duration) GuardOption {
 }
 
 // Guard periodically revalidates a license key and exposes the latest result.
-// It tolerates transient network failures within an offline grace window.
+// After a successful start, it tolerates transient network failures within an
+// offline grace window configured by WithOfflineGrace.
 type Guard struct {
 	client *Client
 	key    string
@@ -44,6 +45,12 @@ type Guard struct {
 }
 
 // NewGuard starts background revalidation for key. Call Stop to release resources.
+//
+// The first Validate call runs synchronously. If it returns a non-nil error
+// (for example when the server is unreachable), NewGuard returns that error
+// and does not start the background loop. Offline grace applies only to later
+// transport failures after a successful start. An invalid license (Valid=false
+// with a nil error) still constructs the guard.
 func NewGuard(ctx context.Context, client *Client, key string, opts ...GuardOption) (*Guard, error) {
 	g := &Guard{
 		client:       client,

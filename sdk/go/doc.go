@@ -11,6 +11,7 @@
 // Product is required unless WithAnyProduct is passed. Prefer New with a
 // build-time URL in vendor binaries; NewFromEnv is for operator-controlled
 // servers. When the server enforces max activations, use Fingerprint with
-// WithFingerprint. CachedValidator and Guard wrap Validate for TTL caching
-// and background revalidation with an offline grace window.
+// WithFingerprint. CachedValidator caches nil-error results (including
+// Valid=false) for a TTL. Guard revalidates in the background and is
+// fail-closed at construction when the first Validate returns an error.
 package openlicensd
