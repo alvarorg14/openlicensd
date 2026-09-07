@@ -19,10 +19,12 @@ Published site: **https://alvarorg14.github.io/openlicensd/**
 | [scaling.md](scaling.md) | HA, scaling, session stickiness, and multi-replica caveats |
 | [troubleshooting.md](troubleshooting.md) | Common failures: database, migrations, OIDC, and Harbor |
 | [CHANGELOG.md](../CHANGELOG.md) | Server version history (Keep a Changelog) |
+| [SUPPORT.md](../SUPPORT.md) | Support channels, supported versions, and response expectations |
 
 ## Quick links
 
 - [QUICKSTART.md](../QUICKSTART.md) — get running in minutes
 - [README.md](../README.md) — project overview
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — development workflow
+- [SUPPORT.md](../SUPPORT.md) — getting help
 - [AGENTS.md](../AGENTS.md) — AI assistant guidelines

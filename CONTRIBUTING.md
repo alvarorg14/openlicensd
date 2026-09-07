@@ -62,7 +62,7 @@ make docs-dev
 make docs-build
 ```
 
-When editing `docs/*.md`, changes appear in the dev server immediately. Root-level guides (`README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`) are included in the site via VitePress file includes — edit those source files, not the wrapper pages in `docs/`.
+When editing `docs/*.md`, changes appear in the dev server immediately. Root-level guides (`README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SUPPORT.md`) are included in the site via VitePress file includes — edit those source files, not the wrapper pages in `docs/`.
 
 ## Releasing
 
@@ -136,7 +136,7 @@ GitHub pre-fills new pull requests from [`.github/pull_request_template.md`](.gi
 
 ## Reporting issues
 
-Please include:
+See [SUPPORT.md](SUPPORT.md) for where to ask questions vs. open bugs. When reporting a bug, please include:
 
 - OpenLicensd version (release tag or image tag)
 - Deployment method (Helm, Docker, binary, local dev)
