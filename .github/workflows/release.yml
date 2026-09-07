@@ -81,7 +81,7 @@ jobs:
         uses: anchore/sbom-action/download-syft@v0
         with:
           # renovate: datasource=github-releases depName=anchore/syft
-          syft-version: 1.51.1
+          syft-version: v1.51.1
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
