@@ -8,6 +8,8 @@ Open source license server for creating and validating license keys
 
 Requires an external PostgreSQL database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md), [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md), [scaling](https://github.com/alvarorg14/openlicensd/blob/main/docs/scaling.md), and [troubleshooting](https://github.com/alvarorg14/openlicensd/blob/main/docs/troubleshooting.md) for operator-owned upgrade, backup, HA, and diagnostic procedures.
 
+Published GHCR application images (`ghcr.io/alvarorg14/openlicensd`) are signed with keyless Cosign and include SLSA build provenance attestations. See [deployment releases](https://github.com/alvarorg14/openlicensd/blob/main/docs/deployment.md#releases) for verification commands.
+
 ```bash
 helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --version X.Y.Z \
