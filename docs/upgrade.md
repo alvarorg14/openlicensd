@@ -19,7 +19,7 @@ For HA, replica-count, and rate-limiting caveats during multi-replica deployment
 
 ## Before you upgrade
 
-1. **Read the release notes** — open the [GitHub release](https://github.com/alvarorg14/openlicensd/releases) for the target version. Check the **Breaking Changes** section first. Pull requests labeled `breaking-change` land there and may require config, API client, or operational changes before you deploy.
+1. **Read the release notes** — open the [GitHub release](https://github.com/alvarorg14/openlicensd/releases) for the target version, or the in-repo [CHANGELOG.md](../CHANGELOG.md). Check the **Breaking Changes** section first. Pull requests labeled `breaking-change` land there and may require config, API client, or operational changes before you deploy.
 2. **Pin a version** — do not rely on floating tags in production:
    - Helm: `--version X.Y.Z` (OCI chart from `oci://ghcr.io/alvarorg14/charts/openlicensd`)
    - Docker image: `ghcr.io/alvarorg14/openlicensd:X.Y.Z` (not `latest`)

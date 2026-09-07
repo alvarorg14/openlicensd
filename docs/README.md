@@ -18,6 +18,7 @@ Published site: **https://alvarorg14.github.io/openlicensd/**
 | [backup-restore.md](backup-restore.md) | PostgreSQL backup and restore procedures, RPO/RTO guidance |
 | [scaling.md](scaling.md) | HA, scaling, session stickiness, and multi-replica caveats |
 | [troubleshooting.md](troubleshooting.md) | Common failures: database, migrations, OIDC, and Harbor |
+| [CHANGELOG.md](../CHANGELOG.md) | Server version history (Keep a Changelog) |
 
 ## Quick links
 
