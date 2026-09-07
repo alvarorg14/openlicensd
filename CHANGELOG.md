@@ -33,6 +33,9 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Documentation
 
+- docs: add NOTICE and Apache-2.0 license metadata (#209)
+- docs: add SUPPORT.md with support channels and version guidance (#208)
+- docs: add CHANGELOG.md and re-enable GoReleaser changelog (#207)
 - docs(ci): add GitHub pull request description template (#206)
 - docs: publish docs/ as VitePress site on GitHub Pages (#183)
 - docs(readme): defer API catalog to OpenAPI spec (#182)
