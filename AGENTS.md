@@ -240,6 +240,8 @@ make release       # Local GoReleaser release
 
 Every workflow under `.github/workflows/` declares a top-level `permissions:` block with `contents: read` (or narrower) so `GITHUB_TOKEN` is not inherited from the repository default. Jobs that publish releases, upload SARIF, deploy Pages, or push OCI artifacts declare the additional write scopes they need.
 
+Every `uses:` reference in workflow files is pinned to a full commit SHA with a `# vX.Y.Z` comment (for example `actions/checkout@<sha> # v7`). Renovate's `helpers:pinGitHubActionDigests` preset keeps those digests current.
+
 ### CI (`.github/workflows/ci.yml`)
 
 Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path filters in the workflow):
@@ -250,7 +252,7 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
-| OpenAPI | `@redocly/cli lint docs/openapi.yaml` |
+| OpenAPI | pinned `@redocly/cli` lint of `docs/openapi.yaml` |
 
 ### Docs (`.github/workflows/docs.yml`)
 
@@ -301,7 +303,7 @@ Runs [Trivy](https://trivy.dev/) container image scanning separately from CI, Co
 | `workflow_dispatch` | Manual on-demand scan of GHCR `latest` |
 | Pull request to `main` | Build `Dockerfile` and upload SARIF to GitHub code scanning |
 
-Release workflow (`.github/workflows/release.yml`) also scans the published GHCR image after GoReleaser completes. The `aquasecurity/trivy-action` reference is pinned to a commit SHA.
+Release workflow (`.github/workflows/release.yml`) also scans the published GHCR image after GoReleaser completes. Trivy, Cosign, and `actions/attest` references are pinned to commit SHAs like all other workflow actions.
 
 ### SBOM generation (Syft)
 
@@ -327,7 +329,7 @@ Cosign is pinned in the release workflow; Renovate proposes updates. Verificatio
 
 ### Dependency updates (Renovate)
 
-[Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions. Pull requests are labeled `dependencies` or `ci` to satisfy the PR policy below.
+[Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions (including digest bumps via `helpers:pinGitHubActionDigests`). The OpenAPI CI job pins `@redocly/cli` via a custom regex manager. Pull requests are labeled `dependencies` or `ci` to satisfy the PR policy below.
 
 ### PR Policy (`.github/workflows/pr-policy.yml`)
 

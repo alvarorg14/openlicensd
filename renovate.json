@@ -3,7 +3,8 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
-    ":dependencyDashboard"
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigests"
   ],
   "packageRules": [
     {
@@ -44,6 +45,7 @@
     {
       "matchManagers": ["custom.regex"],
       "matchDepNames": [
+        "@redocly/cli",
         "anchore/syft",
         "golangci/golangci-lint",
         "goreleaser/goreleaser",
@@ -64,7 +66,8 @@
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z_]+ \\?= (?<currentValue>\\S+)",
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+version: (?<currentValue>\\S+)",
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+syft-version: (?<currentValue>\\S+)",
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+cosign-release: (?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+cosign-release: (?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+run: npx @redocly/cli@(?<currentValue>\\S+)"
       ]
     }
   ]
