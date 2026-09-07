@@ -122,6 +122,7 @@ See [docs/upgrade.md](docs/upgrade.md) for how migrations behave in production u
 - Ensure CI passes before requesting review.
 - Add exactly one policy label to your PR: `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, or `ci`.
 - New GitHub Actions workflows must declare a top-level `permissions:` block (typically `contents: read`) and grant write scopes only on the jobs that need them.
+- Pin every `uses:` reference to a full commit SHA with a `# vX.Y.Z` comment (see existing workflows for the pattern); do not use floating `@v` tags.
 
 ## Reporting issues
 
