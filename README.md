@@ -10,6 +10,7 @@
 
 [![CI](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/ci.yml)
 [![SDK CI](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/sdk-ci.yml)
+[![codecov](https://codecov.io/gh/alvarorg14/openlicensd/graph/badge.svg)](https://codecov.io/gh/alvarorg14/openlicensd)
 [![Vulnerability Scan](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/vuln.yml)
 [![CodeQL](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/codeql.yml)
 [![Trivy](https://github.com/alvarorg14/openlicensd/actions/workflows/trivy.yml/badge.svg)](https://github.com/alvarorg14/openlicensd/actions/workflows/trivy.yml)

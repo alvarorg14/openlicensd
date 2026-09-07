@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
@@ -65,7 +67,16 @@ jobs:
         working-directory: server
         env:
           OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable
-        run: go test -p 1 ./...
+        run: go test -p 1 -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          disable_search: true
+          fail_ci_if_error: true
+          files: server/coverage.out
+          flags: server
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build
         working-directory: server

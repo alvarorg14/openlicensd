@@ -248,7 +248,7 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 
 | Job | Command |
 |-----|---------|
-| Server | `make lint-server`, `go test`, `go build` |
+| Server | `make lint-server`, `go test` (with coverage upload to Codecov), `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
@@ -269,7 +269,7 @@ Triggers on push/PR to `main` when `sdk/**` or the workflow file changes:
 
 | Job | Command |
 |-----|---------|
-| Go SDK | `make lint-sdk`, `make test-sdk` (Go 1.26) |
+| Go SDK | `make lint-sdk`, `go test` (with coverage upload to Codecov) (Go 1.26) |
 
 ### Vulnerability scanning (`.github/workflows/vuln.yml`)
 
