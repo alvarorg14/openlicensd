@@ -44,6 +44,7 @@
     {
       "matchManagers": ["custom.regex"],
       "matchDepNames": [
+        "anchore/syft",
         "golangci/golangci-lint",
         "goreleaser/goreleaser",
         "golang.org/x/vuln"
@@ -60,7 +61,8 @@
       ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z_]+ \\?= (?<currentValue>\\S+)",
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+version: (?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+version: (?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+syft-version: (?<currentValue>\\S+)"
       ]
     }
   ]

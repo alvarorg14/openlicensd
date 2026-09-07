@@ -77,6 +77,12 @@ jobs:
             exit 1
           fi
 
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+        with:
+          # renovate: datasource=github-releases depName=anchore/syft
+          syft-version: 1.51.1
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -86,6 +92,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event.release.tag_name }}
+
+      - name: Generate container image SBOMs
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG#v}"
+          IMAGE="ghcr.io/alvarorg14/openlicensd:${VERSION}"
+          for platform in linux/amd64 linux/arm64; do
+            arch="${platform#linux/}"
+            outfile="openlicensd_${VERSION}_${arch}.spdx.json"
+            syft "${IMAGE}" --platform "${platform}" --output "spdx-json=${outfile}"
+          done
+
+      - name: Upload image SBOMs to GitHub release
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${TAG#v}"
+          gh release upload "${TAG}" \
+            "openlicensd_${VERSION}_amd64.spdx.json" \
+            "openlicensd_${VERSION}_arm64.spdx.json"
 
   trivy:
     name: Scan GHCR image

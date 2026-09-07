@@ -146,6 +146,12 @@ jobs:
           if [ -z "$TAG" ]; then TAG=v0.0.0; fi
           echo "GORELEASER_CURRENT_TAG=$TAG" >> "$GITHUB_ENV"
 
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+        with:
+          # renovate: datasource=github-releases depName=anchore/syft
+          syft-version: 1.51.1
+
       - name: Run GoReleaser snapshot
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -154,6 +160,17 @@ jobs:
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify archive SBOMs were generated
+        run: |
+          count=$(find dist -name '*.spdx.json' | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "No SPDX SBOM files found under dist/"
+            find dist -type f || true
+            exit 1
+          fi
+          echo "Generated $count SPDX SBOM file(s):"
+          find dist -name '*.spdx.json'
 
   helm:
     name: Helm
