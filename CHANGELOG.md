@@ -11,6 +11,8 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-08
+
 ### New Features
 
 - feat(server): add append-only audit log for admin mutations (#178)
@@ -23,6 +25,8 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Updated Dependencies
 
+- fix(deps): update module golang.org/x/oauth2 to v0.37.0 (#216)
+- fix(deps): update module github.com/jackc/pgx/v5 to v5.11.0 (#215)
 - chore(deps): update dependency @nuxt/ui to v4.11.1 (#199)
 - chore(deps): update dependency @iconify-json/lucide to v1.2.130 (#198)
 - fix(deps): update module github.com/go-jose/go-jose/v4 to v4.1.5 (#196)
@@ -282,7 +286,8 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 - Initial release
 
-[Unreleased]: https://github.com/alvarorg14/openlicensd/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/alvarorg14/openlicensd/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/alvarorg14/openlicensd/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/alvarorg14/openlicensd/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/alvarorg14/openlicensd/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/alvarorg14/openlicensd/compare/v0.4.0...v0.5.0
