@@ -2,13 +2,14 @@
 
 OpenLicensd is on a path toward a stable **v1.0.0** release. v1.0 is a promise of API stability and production operability — not just a feature checklist.
 
-Work is organized into four release phases, plus a post-1.0 backlog. Track progress on GitHub:
+Work is organized into five release phases, plus a post-1.0 backlog. Track progress on GitHub:
 
 | Phase | Milestone | Tracking issue | Focus |
 |-------|-----------|----------------|-------|
 | **v0.6.0** | [v0.6.0](https://github.com/alvarorg14/openlicensd/milestone/1) | [#67](https://github.com/alvarorg14/openlicensd/issues/67) | Fix the foundations — module paths, version hygiene, API completeness, UI correctness |
 | **v0.7.0** | [v0.7.0](https://github.com/alvarorg14/openlicensd/milestone/2) | [#68](https://github.com/alvarorg14/openlicensd/issues/68) | Make it operable — observability, scaling docs, Helm hardening |
 | **v0.8.0** | [v0.8.0](https://github.com/alvarorg14/openlicensd/milestone/3) | [#69](https://github.com/alvarorg14/openlicensd/issues/69) | Make it adoptable — API tokens, audit log, CI supply chain, docs site |
+| **v0.9.0** | [v0.9.0](https://github.com/alvarorg14/openlicensd/milestone/6) | [#248](https://github.com/alvarorg14/openlicensd/issues/248) | Harden the contract — API shape, safety guards, schema, discrete DB config |
 | **v1.0.0** | [v1.0.0](https://github.com/alvarorg14/openlicensd/milestone/4) | [#70](https://github.com/alvarorg14/openlicensd/issues/70) | Commit to stability — deprecation policy, support window, release |
 | **Post-1.0** | [Post-1.0](https://github.com/alvarorg14/openlicensd/milestone/5) | [#71](https://github.com/alvarorg14/openlicensd/issues/71) | Roadmap features — offline licenses, entitlements, webhooks, more SDKs |
 
@@ -27,6 +28,10 @@ Production readiness: structured logging, Prometheus metrics, database pool tuni
 ## v0.8.0 — Make it adoptable
 
 Adoption blockers: scoped API tokens for automation, an append-only audit log, README polish (screenshot, positioning), a published docs site, supply-chain CI (CodeQL, Trivy, SBOM, cosign), UI smoke tests, and SDK v1.0 prep (`doc.go`, documentation parity, test gaps).
+
+## v0.9.0 — Harden the contract
+
+Pre-freeze hardening before the v1.0 stability promise: true partial PATCH semantics, consistent API response shapes (`/auth/me`, timestamps), safety guards (last-admin protection, session revocation on password reset), schema fixes (bootstrap idempotency, audit retention, cleanup indexes), discrete database connection variables (replacing `OPENLICENSD_DATABASE_URL`), UI/SDK freeze prep (typecheck in CI, expanded E2E), OpenAPI contract tests, and operator docs (security hardening, production checklist).
 
 ## v1.0.0 — Commit to stability
 
