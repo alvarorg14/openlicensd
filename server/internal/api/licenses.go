@@ -28,20 +28,20 @@ type updateLicenseRequest struct {
 }
 
 type licenseResponse struct {
-	ID              uuid.UUID  `json:"id"`
-	Label           string     `json:"label"`
-	Key             string     `json:"key,omitempty"`
-	KeyPrefix       string     `json:"key_prefix"`
-	ProductID       uuid.UUID  `json:"product_id"`
-	ProductCode     string     `json:"product_code"`
-	ProductName     string     `json:"product_name"`
-	PolicyID        uuid.UUID  `json:"policy_id"`
-	PolicyName      string     `json:"policy_name"`
-	ExpiresAt       *time.Time `json:"expires_at"`
-	ActivatedAt     *time.Time `json:"activated_at"`
-	Revoked         bool       `json:"revoked"`
-	CreatedAt       time.Time  `json:"created_at"`
-	LastValidatedAt *time.Time `json:"last_validated_at"`
+	ID              uuid.UUID `json:"id"`
+	Label           string    `json:"label"`
+	Key             string    `json:"key,omitempty"`
+	KeyPrefix       string    `json:"key_prefix"`
+	ProductID       uuid.UUID `json:"product_id"`
+	ProductCode     string    `json:"product_code"`
+	ProductName     string    `json:"product_name"`
+	PolicyID        uuid.UUID `json:"policy_id"`
+	PolicyName      string    `json:"policy_name"`
+	ExpiresAt       *string   `json:"expires_at"`
+	ActivatedAt     *string   `json:"activated_at"`
+	Revoked         bool      `json:"revoked"`
+	CreatedAt       string    `json:"created_at"`
+	LastValidatedAt *string   `json:"last_validated_at"`
 	ValidationCount int64      `json:"validation_count"`
 	MaxActivations  *int       `json:"max_activations"`
 	ActivationCount int64      `json:"activation_count"`
@@ -61,11 +61,11 @@ func licenseToResponse(lic *store.License, rawKey string) licenseResponse {
 		ProductName:     lic.ProductName,
 		PolicyID:        lic.PolicyID,
 		PolicyName:      lic.PolicyName,
-		ExpiresAt:       lic.ExpiresAt,
-		ActivatedAt:     lic.ActivatedAt,
+		ExpiresAt:       formatRFC3339Ptr(lic.ExpiresAt),
+		ActivatedAt:     formatRFC3339Ptr(lic.ActivatedAt),
 		Revoked:         lic.Revoked,
-		CreatedAt:       lic.CreatedAt,
-		LastValidatedAt: lic.LastValidatedAt,
+		CreatedAt:       formatRFC3339(lic.CreatedAt),
+		LastValidatedAt: formatRFC3339Ptr(lic.LastValidatedAt),
 		ValidationCount: lic.ValidationCount,
 		MaxActivations:  lic.MaxActivations,
 		ActivationCount: lic.ActivationCount,

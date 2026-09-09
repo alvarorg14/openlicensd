@@ -38,16 +38,13 @@ func machineToResponse(m *store.Machine) machineResponse {
 		Name:            m.Name,
 		Hostname:        m.Hostname,
 		DisplayName:     store.MachineDisplayName(m),
-		FirstSeenAt:     m.FirstSeenAt.Format(timeRFC3339),
-		LastSeenAt:      m.LastSeenAt.Format(timeRFC3339),
+		FirstSeenAt:     formatRFC3339(m.FirstSeenAt),
+		LastSeenAt:      formatRFC3339(m.LastSeenAt),
 		LastSeenIP:      m.LastSeenIP,
 		ValidationCount: m.ValidationCount,
 		DeactivatedBy:   m.DeactivatedBy,
 	}
-	if m.DeactivatedAt != nil {
-		formatted := m.DeactivatedAt.Format(timeRFC3339)
-		resp.DeactivatedAt = &formatted
-	}
+	resp.DeactivatedAt = formatRFC3339Ptr(m.DeactivatedAt)
 	return resp
 }
 

@@ -43,21 +43,12 @@ func apiTokenToResponse(tok *store.APIToken) apiTokenResponse {
 		TokenPrefix: tok.TokenPrefix,
 		Role:        string(tok.Role),
 		CreatedBy:   tok.CreatedBy,
-		CreatedAt:   tok.CreatedAt.Format(timeRFC3339),
-		UpdatedAt:   tok.UpdatedAt.Format(timeRFC3339),
+		CreatedAt:   formatRFC3339(tok.CreatedAt),
+		UpdatedAt:   formatRFC3339(tok.UpdatedAt),
 	}
-	if tok.LastUsedAt != nil {
-		formatted := tok.LastUsedAt.Format(timeRFC3339)
-		resp.LastUsedAt = &formatted
-	}
-	if tok.ExpiresAt != nil {
-		formatted := tok.ExpiresAt.Format(timeRFC3339)
-		resp.ExpiresAt = &formatted
-	}
-	if tok.RevokedAt != nil {
-		formatted := tok.RevokedAt.Format(timeRFC3339)
-		resp.RevokedAt = &formatted
-	}
+	resp.LastUsedAt = formatRFC3339Ptr(tok.LastUsedAt)
+	resp.ExpiresAt = formatRFC3339Ptr(tok.ExpiresAt)
+	resp.RevokedAt = formatRFC3339Ptr(tok.RevokedAt)
 	return resp
 }
 

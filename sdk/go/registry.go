@@ -3,6 +3,7 @@ package openlicensd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -19,7 +20,7 @@ type registryCredentialsResponse struct {
 	Registry  string `json:"registry"`
 	Username  string `json:"username"`
 	Secret    string `json:"secret"`
-	ExpiresAt int64  `json:"expires_at"`
+	ExpiresAt string `json:"expires_at"`
 }
 
 // RegistryCredentials issues short-lived Harbor registry credentials for a
@@ -41,10 +42,15 @@ func (c *Client) RegistryCredentials(ctx context.Context, key string) (*Registry
 		return nil, err
 	}
 
+	expiresAt, err := time.Parse(time.RFC3339, raw.ExpiresAt)
+	if err != nil {
+		return nil, fmt.Errorf("parse expires_at: %w", err)
+	}
+
 	return &RegistryCredentials{
 		Registry:  raw.Registry,
 		Username:  raw.Username,
 		Secret:    raw.Secret,
-		ExpiresAt: time.Unix(raw.ExpiresAt, 0),
+		ExpiresAt: expiresAt,
 	}, nil
 }

@@ -136,6 +136,8 @@ key = openlicensd.NormalizeKey(key)
 
 `RegistryCredentials` does **not** retry — the endpoint creates a Harbor robot account as a side effect.
 
+`expires_at` on both `ValidationResult` and `RegistryCredentials` is an RFC3339 timestamp string on the wire. The SDK unmarshals it into `time.Time` (or `*time.Time` for validation).
+
 ## Compatibility
 
 SDK releases are independent from server releases:

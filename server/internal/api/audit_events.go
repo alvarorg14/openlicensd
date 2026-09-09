@@ -35,7 +35,7 @@ type auditEventResponse struct {
 func auditEventToResponse(ev *store.AuditEvent) auditEventResponse {
 	return auditEventResponse{
 		ID:               ev.ID,
-		OccurredAt:       ev.OccurredAt.Format(timeRFC3339),
+		OccurredAt:       formatRFC3339(ev.OccurredAt),
 		Action:           ev.Action,
 		ResourceType:     ev.ResourceType,
 		ResourceID:       ev.ResourceID,

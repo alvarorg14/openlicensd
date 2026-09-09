@@ -160,6 +160,12 @@ func TestAPIIntegration(t *testing.T) {
 		t.Fatalf("expected product %s, got %q", productCode, validation.Product)
 	}
 
+	var validateBody map[string]any
+	if err := json.Unmarshal(validateResp.Body.Bytes(), &validateBody); err != nil {
+		t.Fatalf("decode validate response map: %v", err)
+	}
+	assertRFC3339StringField(t, "expires_at", validateBody["expires_at"])
+
 	mismatchResp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
 		"key":     rawKey,
 		"product": "wrong-product",
@@ -215,6 +221,8 @@ func TestAPIIntegration(t *testing.T) {
 	if fetched["id"] != licenseID {
 		t.Fatalf("expected license id %s, got %+v", licenseID, fetched["id"])
 	}
+	assertRFC3339StringField(t, "created_at", fetched["created_at"])
+
 	if fetched["label"] != "integration-test" {
 		t.Fatalf("expected label integration-test, got %+v", fetched["label"])
 	}

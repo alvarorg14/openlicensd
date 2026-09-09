@@ -207,4 +207,10 @@ func TestRegistryCredentialsEnabled(t *testing.T) {
 	if validResp.Code != http.StatusOK {
 		t.Fatalf("valid key status=%d body=%s", validResp.Code, validResp.Body.String())
 	}
+
+	var creds map[string]any
+	if err := json.Unmarshal(validResp.Body.Bytes(), &creds); err != nil {
+		t.Fatalf("decode registry credentials response: %v", err)
+	}
+	assertRFC3339StringField(t, "expires_at", creds["expires_at"])
 }

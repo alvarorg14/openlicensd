@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -173,6 +174,24 @@ func createTestAPIToken(t *testing.T, st *store.Store, name string, role store.R
 		t.Fatalf("create api token: %v", err)
 	}
 	return raw
+}
+
+func assertRFC3339StringField(t *testing.T, field string, value any) {
+	t.Helper()
+
+	if value == nil {
+		return
+	}
+	formatted, ok := value.(string)
+	if !ok {
+		t.Fatalf("%s: expected string, got %T (%v)", field, value, value)
+	}
+	if strings.Contains(formatted, ".") {
+		t.Fatalf("%s: expected second precision without fractional seconds, got %q", field, formatted)
+	}
+	if _, err := time.Parse(time.RFC3339, formatted); err != nil {
+		t.Fatalf("%s: invalid RFC3339 timestamp %q: %v", field, formatted, err)
+	}
 }
 
 func doJSONWithToken(t *testing.T, handler http.Handler, method, path string, body any, token string) *httptest.ResponseRecorder {

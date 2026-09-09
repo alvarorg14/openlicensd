@@ -20,11 +20,35 @@ type validateRequest struct {
 	Hostname    string `json:"hostname"`
 }
 
+type validationResponse struct {
+	Valid           bool    `json:"valid"`
+	ExpiresAt       *string `json:"expires_at,omitempty"`
+	Reason          string  `json:"reason,omitempty"`
+	Product         string  `json:"product,omitempty"`
+	Policy          string  `json:"policy,omitempty"`
+	InGracePeriod   bool    `json:"in_grace_period,omitempty"`
+	ActivationCount *int64  `json:"activation_count,omitempty"`
+	MaxActivations  *int    `json:"max_activations,omitempty"`
+}
+
 type registryCredentialsResponse struct {
 	Registry  string `json:"registry"`
 	Username  string `json:"username"`
 	Secret    string `json:"secret"`
-	ExpiresAt int64  `json:"expires_at"`
+	ExpiresAt string `json:"expires_at"`
+}
+
+func validationToResponse(result license.ValidationResult) validationResponse {
+	return validationResponse{
+		Valid:           result.Valid,
+		ExpiresAt:       formatRFC3339Ptr(result.ExpiresAt),
+		Reason:          result.Reason,
+		Product:         result.Product,
+		Policy:          result.Policy,
+		InGracePeriod:   result.InGracePeriod,
+		ActivationCount: result.ActivationCount,
+		MaxActivations:  result.MaxActivations,
+	}
 }
 
 func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProduct, fingerprint, hostname, clientIP string) (*store.License, license.ValidationResult, error) {
@@ -175,7 +199,7 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logValidationOutcome(r, lic, req.Key, req.Product, result)
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, validationToResponse(result))
 }
 
 func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Request) {
@@ -233,6 +257,6 @@ func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Reques
 		Registry:  s.harbor.RegistryHost(),
 		Username:  creds.Name,
 		Secret:    creds.Secret,
-		ExpiresAt: creds.ExpiresAt,
+		ExpiresAt: formatUnixRFC3339(creds.ExpiresAt),
 	})
 }
