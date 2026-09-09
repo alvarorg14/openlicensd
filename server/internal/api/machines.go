@@ -116,7 +116,7 @@ func (s *Server) handleUpdateLicenseMachine(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	machineID, err := uuid.Parse(chi.URLParam(r, "machineId"))
+	machineID, err := uuid.Parse(chi.URLParam(r, "machine_id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid machine id")
 		return
@@ -150,7 +150,7 @@ func (s *Server) handleReleaseLicenseMachine(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	machineID, err := uuid.Parse(chi.URLParam(r, "machineId"))
+	machineID, err := uuid.Parse(chi.URLParam(r, "machine_id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid machine id")
 		return

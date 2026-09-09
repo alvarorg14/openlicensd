@@ -157,8 +157,8 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Delete("/licenses/{id}", s.handleDeleteLicense)
 				r.Patch("/licenses/{id}/revoke", s.handleRevokeLicense)
 				r.Patch("/licenses/{id}/unrevoke", s.handleUnrevokeLicense)
-				r.Patch("/licenses/{id}/machines/{machineId}", s.handleUpdateLicenseMachine)
-				r.Delete("/licenses/{id}/machines/{machineId}", s.handleReleaseLicenseMachine)
+				r.Patch("/licenses/{id}/machines/{machine_id}", s.handleUpdateLicenseMachine)
+				r.Delete("/licenses/{id}/machines/{machine_id}", s.handleReleaseLicenseMachine)
 
 				r.Post("/products", s.handleCreateProduct)
 				r.Patch("/products/{id}", s.handleUpdateProduct)
