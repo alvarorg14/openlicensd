@@ -174,6 +174,26 @@ func (s *Server) handleListPolicies(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
+func (s *Server) handleGetPolicy(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid policy id")
+		return
+	}
+
+	policy, err := s.store.GetPolicy(r.Context(), id)
+	if err != nil {
+		writeInternalError(w, r, err, "failed to load policy")
+		return
+	}
+	if policy == nil {
+		writeError(w, http.StatusNotFound, "policy not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, policyToResponse(policy))
+}
+
 func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {

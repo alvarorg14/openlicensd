@@ -299,10 +299,12 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `POST` | `/api/v1/registry-credentials` | None | Only when Harbor enabled |
 | `POST` | `/api/v1/products` | Session | Create product |
 | `GET` | `/api/v1/products` | Session | List products (paginated) |
+| `GET` | `/api/v1/products/{id}` | Session | Get product by ID |
 | `PATCH` | `/api/v1/products/{id}` | Session | Update product |
 | `DELETE` | `/api/v1/products/{id}` | Session | Delete product |
 | `POST` | `/api/v1/policies` | Session | Create policy |
 | `GET` | `/api/v1/policies` | Session | List policies (paginated; `?product_id=` filter) |
+| `GET` | `/api/v1/policies/{id}` | Session | Get policy by ID |
 | `PATCH` | `/api/v1/policies/{id}` | Session | Update policy |
 | `DELETE` | `/api/v1/policies/{id}` | Session | Delete policy |
 | `POST` | `/api/v1/licenses` | Session | Create license |
@@ -314,6 +316,7 @@ OIDC authenticates users but does not authorize them: roles remain local and are
 | `PATCH` | `/api/v1/licenses/{id}/revoke` | Session | Revoke license |
 | `PATCH` | `/api/v1/licenses/{id}/unrevoke` | Session | Unrevoke license |
 | `GET` | `/api/v1/users` | Session or Bearer (admin) | List users (paginated) |
+| `GET` | `/api/v1/users/{id}` | Session or Bearer (admin) | Get user by ID |
 | `GET` | `/api/v1/api-tokens` | Session (admin) | List API tokens (paginated) |
 | `POST` | `/api/v1/api-tokens` | Session (admin) | Create API token (raw value returned once) |
 | `PATCH` | `/api/v1/api-tokens/{id}/revoke` | Session (admin) | Revoke API token |

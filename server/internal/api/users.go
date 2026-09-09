@@ -138,6 +138,26 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
+func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	user, err := s.store.GetUserByID(r.Context(), id)
+	if err != nil {
+		writeInternalError(w, r, err, "failed to load user")
+		return
+	}
+	if user == nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, userToResponse(user))
+}
+
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

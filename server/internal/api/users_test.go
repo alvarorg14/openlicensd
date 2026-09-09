@@ -108,3 +108,99 @@ func TestSetUserPasswordValidation(t *testing.T) {
 		t.Fatalf("new password login status=%d want 200", meResp.Code)
 	}
 }
+
+func TestGetUser(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+
+	email := fmt.Sprintf("get-user-%d@example.com", time.Now().UnixNano())
+	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    email,
+		"name":     "Get User Test",
+		"password": "valid-pass",
+		"role":     "viewer",
+	}, adminCookies)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("create user status=%d body=%s", createResp.Code, createResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	userID := created["id"].(string)
+
+	getResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/"+userID, nil, adminCookies)
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("get user status=%d body=%s", getResp.Code, getResp.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(getResp.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode get response: %v", err)
+	}
+	if got["id"] != userID {
+		t.Fatalf("id=%v want %s", got["id"], userID)
+	}
+	if got["email"] != email {
+		t.Fatalf("email=%v want %s", got["email"], email)
+	}
+	if got["role"] != "viewer" {
+		t.Fatalf("role=%v want viewer", got["role"])
+	}
+	if _, hasPassword := got["password_hash"]; hasPassword {
+		t.Fatalf("response must not include password_hash")
+	}
+	if _, hasPassword := got["password"]; hasPassword {
+		t.Fatalf("response must not include password")
+	}
+
+	badIDResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/not-a-uuid", nil, adminCookies)
+	if badIDResp.Code != http.StatusBadRequest {
+		t.Fatalf("invalid user id status=%d want 400", badIDResp.Code)
+	}
+
+	missingID := "00000000-0000-0000-0000-000000000000"
+	notFoundResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/"+missingID, nil, adminCookies)
+	if notFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing user status=%d want 404", notFoundResp.Code)
+	}
+
+	unauthResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/"+userID, nil, nil)
+	if unauthResp.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated get user status=%d want 401", unauthResp.Code)
+	}
+
+	viewerEmail := fmt.Sprintf("get-user-viewer-%d@example.com", time.Now().UnixNano())
+	createViewer := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    viewerEmail,
+		"name":     "User Viewer",
+		"password": "viewer-password",
+		"role":     "viewer",
+	}, adminCookies)
+	if createViewer.Code != http.StatusCreated {
+		t.Fatalf("create viewer status=%d body=%s", createViewer.Code, createViewer.Body.String())
+	}
+	viewerCookies := login(t, handler, viewerEmail, "viewer-password")
+
+	viewerGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/"+userID, nil, viewerCookies)
+	if viewerGetResp.Code != http.StatusForbidden {
+		t.Fatalf("viewer get user status=%d want 403", viewerGetResp.Code)
+	}
+
+	operatorEmail := fmt.Sprintf("get-user-operator-%d@example.com", time.Now().UnixNano())
+	createOperator := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    operatorEmail,
+		"name":     "User Operator",
+		"password": "operator-password",
+		"role":     "operator",
+	}, adminCookies)
+	if createOperator.Code != http.StatusCreated {
+		t.Fatalf("create operator status=%d body=%s", createOperator.Code, createOperator.Body.String())
+	}
+	operatorCookies := login(t, handler, operatorEmail, "operator-password")
+
+	operatorGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/users/"+userID, nil, operatorCookies)
+	if operatorGetResp.Code != http.StatusForbidden {
+		t.Fatalf("operator get user status=%d want 403", operatorGetResp.Code)
+	}
+}
