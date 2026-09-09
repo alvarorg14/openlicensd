@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/alvarorg14/openlicensd/server/internal/store"
@@ -34,10 +35,10 @@ type createPolicyRequest struct {
 }
 
 type updatePolicyRequest struct {
-	Name            string  `json:"name"`
+	Name            *string `json:"name"`
 	Description     *string `json:"description"`
 	DurationDays    *int    `json:"duration_days"`
-	ExpirationBasis string  `json:"expiration_basis"`
+	ExpirationBasis *string `json:"expiration_basis"`
 	GracePeriodDays *int    `json:"grace_period_days"`
 	MaxActivations  *int    `json:"max_activations"`
 }
@@ -181,51 +182,69 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req updatePolicyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	patch, err := decodeJSONPatch(r, &req,
+		"name", "description", "duration_days", "expiration_basis", "grace_period_days", "max_activations",
+	)
+	if err != nil {
+		if errors.Is(err, errNoFieldsToUpdate) {
+			writeError(w, http.StatusBadRequest, "no fields to update")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if req.Name == "" {
-		writeError(w, http.StatusBadRequest, "name is required")
-		return
+	storePatch := store.PolicyPatch{}
+	if patch.Has("name") {
+		if req.Name == nil || *req.Name == "" {
+			writeError(w, http.StatusBadRequest, "name cannot be empty")
+			return
+		}
+		storePatch.Name = req.Name
 	}
-
-	expirationBasis := store.ExpirationOnCreation
-	if req.ExpirationBasis != "" {
-		var ok bool
-		expirationBasis, ok = parseExpirationBasis(req.ExpirationBasis)
+	if patch.Has("description") {
+		storePatch.DescriptionSet = true
+		storePatch.Description = req.Description
+	}
+	if patch.Has("duration_days") {
+		storePatch.DurationDaysSet = true
+		storePatch.DurationDays = req.DurationDays
+	}
+	if patch.Has("expiration_basis") {
+		if patch.IsNull("expiration_basis") {
+			writeError(w, http.StatusBadRequest, "expiration_basis cannot be null")
+			return
+		}
+		expirationBasis, ok := parseExpirationBasis(*req.ExpirationBasis)
 		if !ok {
 			writeError(w, http.StatusBadRequest, "invalid expiration_basis")
 			return
 		}
+		storePatch.ExpirationBasisSet = true
+		storePatch.ExpirationBasis = expirationBasis
 	}
-
-	gracePeriodDays := 0
-	if req.GracePeriodDays != nil {
-		gracePeriodDays = *req.GracePeriodDays
-	}
-
-	var maxActivations *int
-	if req.MaxActivations != nil {
-		var err error
-		maxActivations, err = parseMaxActivations(req.MaxActivations)
-		if err != nil {
-			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+	if patch.Has("grace_period_days") {
+		if patch.IsNull("grace_period_days") {
+			writeError(w, http.StatusBadRequest, "grace_period_days cannot be null")
 			return
 		}
+		storePatch.GracePeriodDaysSet = true
+		storePatch.GracePeriodDays = *req.GracePeriodDays
+	}
+	if patch.Has("max_activations") {
+		if req.MaxActivations != nil {
+			var err error
+			maxActivations, err := parseMaxActivations(req.MaxActivations)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+				return
+			}
+			storePatch.MaxActivations = maxActivations
+		}
+		storePatch.MaxActivationsSet = true
 	}
 
-	policy, err := s.store.UpdatePolicy(
-		r.Context(),
-		id,
-		req.Name,
-		req.Description,
-		req.DurationDays,
-		expirationBasis,
-		gracePeriodDays,
-		maxActivations,
-	)
+	policy, err := s.store.UpdatePolicy(r.Context(), id, storePatch)
 	if err != nil {
 		if writeStoreError(w, err, "") {
 			return

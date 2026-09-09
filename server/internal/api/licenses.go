@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -21,7 +22,7 @@ type createLicenseRequest struct {
 }
 
 type updateLicenseRequest struct {
-	Label          string     `json:"label"`
+	Label          *string    `json:"label"`
 	ExpiresAt      *time.Time `json:"expires_at"`
 	MaxActivations *int       `json:"max_activations"`
 }
@@ -266,24 +267,40 @@ func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req updateLicenseRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	patch, err := decodeJSONPatch(r, &req, "label", "expires_at", "max_activations")
+	if err != nil {
+		if errors.Is(err, errNoFieldsToUpdate) {
+			writeError(w, http.StatusBadRequest, "no fields to update")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if req.Label == "" {
-		writeError(w, http.StatusBadRequest, "label is required")
-		return
-	}
-
-	if req.MaxActivations != nil {
-		if _, err := parseMaxActivations(req.MaxActivations); err != nil {
-			writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+	storePatch := store.LicensePatch{}
+	if patch.Has("label") {
+		if req.Label == nil || *req.Label == "" {
+			writeError(w, http.StatusBadRequest, "label cannot be empty")
 			return
 		}
+		storePatch.Label = req.Label
+	}
+	if patch.Has("expires_at") {
+		storePatch.ExpiresAtSet = true
+		storePatch.ExpiresAt = req.ExpiresAt
+	}
+	if patch.Has("max_activations") {
+		if req.MaxActivations != nil {
+			if _, err := parseMaxActivations(req.MaxActivations); err != nil {
+				writeError(w, http.StatusBadRequest, "max_activations must be at least 1")
+				return
+			}
+		}
+		storePatch.MaxActivationsSet = true
+		storePatch.MaxActivations = req.MaxActivations
 	}
 
-	lic, err := s.store.UpdateLicense(r.Context(), id, req.Label, req.ExpiresAt, req.MaxActivations)
+	lic, err := s.store.UpdateLicense(r.Context(), id, storePatch)
 	if err != nil {
 		writeInternalError(w, r, err, "failed to update license")
 		return

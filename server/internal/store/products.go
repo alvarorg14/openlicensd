@@ -115,14 +115,32 @@ func (s *Store) GetProductByCode(ctx context.Context, code string) (*Product, er
 	return p, nil
 }
 
-func (s *Store) UpdateProduct(ctx context.Context, id uuid.UUID, name, code string, description *string) (*Product, error) {
-	const q = `
-		UPDATE products
-		SET name = $2, code = $3, description = $4, updated_at = NOW()
-		WHERE id = $1
-		RETURNING ` + productColumns
+func (s *Store) UpdateProduct(ctx context.Context, id uuid.UUID, patch ProductPatch) (*Product, error) {
+	b := newSetBuilder(2)
+	if patch.Name != nil {
+		b.add("name", *patch.Name)
+	}
+	if patch.Code != nil {
+		b.add("code", *patch.Code)
+	}
+	if patch.DescriptionSet {
+		b.add("description", patch.Description)
+	}
+	b.addExpr("updated_at = NOW()")
 
-	row := s.pool.QueryRow(ctx, q, id, name, code, description)
+	setClause, args, err := b.expr()
+	if err != nil {
+		return nil, err
+	}
+
+	q := fmt.Sprintf(`
+		UPDATE products
+		SET %s
+		WHERE id = $1
+		RETURNING `+productColumns, setClause)
+
+	allArgs := append([]any{id}, args...)
+	row := s.pool.QueryRow(ctx, q, allArgs...)
 	p, err := scanProduct(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

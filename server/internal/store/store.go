@@ -255,14 +255,31 @@ func (s *Store) SetLicenseRevoked(ctx context.Context, id uuid.UUID, revoked boo
 	return s.GetLicenseByID(ctx, id)
 }
 
-func (s *Store) UpdateLicense(ctx context.Context, id uuid.UUID, label string, expiresAt *time.Time, maxActivations *int) (*License, error) {
-	const q = `
-		UPDATE licenses
-		SET label = $2, expires_at = $3, max_activations = $4
-		WHERE id = $1
-	`
+func (s *Store) UpdateLicense(ctx context.Context, id uuid.UUID, patch LicensePatch) (*License, error) {
+	b := newSetBuilder(2)
+	if patch.Label != nil {
+		b.add("label", *patch.Label)
+	}
+	if patch.ExpiresAtSet {
+		b.add("expires_at", patch.ExpiresAt)
+	}
+	if patch.MaxActivationsSet {
+		b.add("max_activations", patch.MaxActivations)
+	}
 
-	tag, err := s.pool.Exec(ctx, q, id, label, expiresAt, maxActivations)
+	setClause, args, err := b.expr()
+	if err != nil {
+		return nil, err
+	}
+
+	q := fmt.Sprintf(`
+		UPDATE licenses
+		SET %s
+		WHERE id = $1
+	`, setClause)
+
+	allArgs := append([]any{id}, args...)
+	tag, err := s.pool.Exec(ctx, q, allArgs...)
 	if err != nil {
 		return nil, err
 	}

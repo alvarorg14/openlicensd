@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/alvarorg14/openlicensd/server/internal/store"
@@ -25,8 +26,8 @@ type createProductRequest struct {
 }
 
 type updateProductRequest struct {
-	Name        string  `json:"name"`
-	Code        string  `json:"code"`
+	Name        *string `json:"name"`
+	Code        *string `json:"code"`
 	Description *string `json:"description"`
 }
 
@@ -111,21 +112,37 @@ func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req updateProductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	patch, err := decodeJSONPatch(r, &req, "name", "code", "description")
+	if err != nil {
+		if errors.Is(err, errNoFieldsToUpdate) {
+			writeError(w, http.StatusBadRequest, "no fields to update")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if req.Name == "" {
-		writeError(w, http.StatusBadRequest, "name is required")
-		return
+	storePatch := store.ProductPatch{}
+	if patch.Has("name") {
+		if req.Name == nil || *req.Name == "" {
+			writeError(w, http.StatusBadRequest, "name cannot be empty")
+			return
+		}
+		storePatch.Name = req.Name
 	}
-	if req.Code == "" {
-		writeError(w, http.StatusBadRequest, "code is required")
-		return
+	if patch.Has("code") {
+		if req.Code == nil || *req.Code == "" {
+			writeError(w, http.StatusBadRequest, "code cannot be empty")
+			return
+		}
+		storePatch.Code = req.Code
+	}
+	if patch.Has("description") {
+		storePatch.DescriptionSet = true
+		storePatch.Description = req.Description
 	}
 
-	product, err := s.store.UpdateProduct(r.Context(), id, req.Name, req.Code, req.Description)
+	product, err := s.store.UpdateProduct(r.Context(), id, storePatch)
 	if err != nil {
 		if writeStoreError(w, err, "") {
 			return

@@ -290,6 +290,10 @@ These endpoints do not require authentication:
 
 See the [endpoint access matrix](#endpoint-access-matrix) for role requirements on all other authenticated routes.
 
+### PATCH semantics (licenses, products, policies)
+
+`PATCH` endpoints accept partial JSON bodies. Only keys present in the request are updated; omitted keys keep their current database values. Set a nullable field to JSON `null` to clear it (for example, `expires_at: null` on a license). An empty object (`{}`) returns `400` with `no fields to update`. Non-nullable fields such as `label`, `name`, and `code` cannot be empty or `null` when included.
+
 ## User management (admin only)
 
 ```bash
