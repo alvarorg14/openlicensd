@@ -146,7 +146,9 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 				r.Get("/licenses/{id}", s.handleGetLicense)
 				r.Get("/licenses/{id}/machines", s.handleListLicenseMachines)
 				r.Get("/products", s.handleListProducts)
+				r.Get("/products/{id}", s.handleGetProduct)
 				r.Get("/policies", s.handleListPolicies)
+				r.Get("/policies/{id}", s.handleGetPolicy)
 			})
 
 			r.Group(func(r chi.Router) {
@@ -174,6 +176,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 				r.Post("/users", s.handleCreateUser)
 				r.Get("/users", s.handleListUsers)
+				r.Get("/users/{id}", s.handleGetUser)
 				r.Patch("/users/{id}", s.handleUpdateUser)
 				r.Patch("/users/{id}/password", s.handleSetUserPassword)
 				r.Patch("/users/{id}/disable", s.handleDisableUser)

@@ -822,3 +822,159 @@ func TestGetLicense(t *testing.T) {
 		t.Fatalf("missing license machines status=%d want 404", machinesNotFoundResp.Code)
 	}
 }
+
+func TestGetProduct(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("get-product-%d", time.Now().UnixNano())
+	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Get Product Test",
+		"code": productCode,
+	}, adminCookies)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", createResp.Code, createResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	productID := created["id"].(string)
+
+	getResp := doJSON(t, handler, http.MethodGet, "/api/v1/products/"+productID, nil, adminCookies)
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("get product status=%d body=%s", getResp.Code, getResp.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(getResp.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode get response: %v", err)
+	}
+	if got["id"] != productID {
+		t.Fatalf("id=%v want %s", got["id"], productID)
+	}
+	if got["name"] != "Get Product Test" {
+		t.Fatalf("name=%v want Get Product Test", got["name"])
+	}
+	if got["code"] != productCode {
+		t.Fatalf("code=%v want %s", got["code"], productCode)
+	}
+
+	badIDResp := doJSON(t, handler, http.MethodGet, "/api/v1/products/not-a-uuid", nil, adminCookies)
+	if badIDResp.Code != http.StatusBadRequest {
+		t.Fatalf("invalid product id status=%d want 400", badIDResp.Code)
+	}
+
+	missingID := "00000000-0000-0000-0000-000000000000"
+	notFoundResp := doJSON(t, handler, http.MethodGet, "/api/v1/products/"+missingID, nil, adminCookies)
+	if notFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing product status=%d want 404", notFoundResp.Code)
+	}
+
+	unauthResp := doJSON(t, handler, http.MethodGet, "/api/v1/products/"+productID, nil, nil)
+	if unauthResp.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated get product status=%d want 401", unauthResp.Code)
+	}
+
+	viewerEmail := fmt.Sprintf("get-product-viewer-%d@example.com", time.Now().UnixNano())
+	createViewer := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    viewerEmail,
+		"name":     "Product Viewer",
+		"password": "viewer-password",
+		"role":     "viewer",
+	}, adminCookies)
+	if createViewer.Code != http.StatusCreated {
+		t.Fatalf("create viewer status=%d body=%s", createViewer.Code, createViewer.Body.String())
+	}
+	viewerCookies := login(t, handler, viewerEmail, "viewer-password")
+
+	viewerGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/products/"+productID, nil, viewerCookies)
+	if viewerGetResp.Code != http.StatusOK {
+		t.Fatalf("viewer get product status=%d body=%s", viewerGetResp.Code, viewerGetResp.Body.String())
+	}
+}
+
+func TestGetPolicy(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("get-policy-product-%d", time.Now().UnixNano())
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Get Policy Product",
+		"code": productCode,
+	}, adminCookies)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product response: %v", err)
+	}
+	productID := product["id"].(string)
+
+	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "Get Policy Test",
+		"expiration_basis": "on_creation",
+	}, adminCookies)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", createResp.Code, createResp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	policyID := created["id"].(string)
+
+	getResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/"+policyID, nil, adminCookies)
+	if getResp.Code != http.StatusOK {
+		t.Fatalf("get policy status=%d body=%s", getResp.Code, getResp.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(getResp.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode get response: %v", err)
+	}
+	if got["id"] != policyID {
+		t.Fatalf("id=%v want %s", got["id"], policyID)
+	}
+	if got["name"] != "Get Policy Test" {
+		t.Fatalf("name=%v want Get Policy Test", got["name"])
+	}
+	if got["product_id"] != productID {
+		t.Fatalf("product_id=%v want %s", got["product_id"], productID)
+	}
+
+	badIDResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/not-a-uuid", nil, adminCookies)
+	if badIDResp.Code != http.StatusBadRequest {
+		t.Fatalf("invalid policy id status=%d want 400", badIDResp.Code)
+	}
+
+	missingID := "00000000-0000-0000-0000-000000000000"
+	notFoundResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/"+missingID, nil, adminCookies)
+	if notFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing policy status=%d want 404", notFoundResp.Code)
+	}
+
+	unauthResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/"+policyID, nil, nil)
+	if unauthResp.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated get policy status=%d want 401", unauthResp.Code)
+	}
+
+	viewerEmail := fmt.Sprintf("get-policy-viewer-%d@example.com", time.Now().UnixNano())
+	createViewer := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    viewerEmail,
+		"name":     "Policy Viewer",
+		"password": "viewer-password",
+		"role":     "viewer",
+	}, adminCookies)
+	if createViewer.Code != http.StatusCreated {
+		t.Fatalf("create viewer status=%d body=%s", createViewer.Code, createViewer.Body.String())
+	}
+	viewerCookies := login(t, handler, viewerEmail, "viewer-password")
+
+	viewerGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/"+policyID, nil, viewerCookies)
+	if viewerGetResp.Code != http.StatusOK {
+		t.Fatalf("viewer get policy status=%d body=%s", viewerGetResp.Code, viewerGetResp.Body.String())
+	}
+}

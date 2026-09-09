@@ -233,7 +233,9 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `GET` | `/api/v1/licenses` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/licenses/{id}` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/products` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/products/{id}` | `viewer`, `operator`, or `admin` |
 | `GET` | `/api/v1/policies` | `viewer`, `operator`, or `admin` |
+| `GET` | `/api/v1/policies/{id}` | `viewer`, `operator`, or `admin` |
 | `POST` | `/api/v1/licenses` | `operator` or `admin` |
 | `PATCH` | `/api/v1/licenses/{id}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/licenses/{id}` | `operator` or `admin` |
@@ -249,6 +251,7 @@ Insufficient role returns `403` with `{"error":"forbidden"}`.
 | `PATCH` | `/api/v1/policies/{id}` | `operator` or `admin` |
 | `DELETE` | `/api/v1/policies/{id}` | `operator` or `admin` |
 | `GET` | `/api/v1/users` | `admin` |
+| `GET` | `/api/v1/users/{id}` | `admin` |
 | `POST` | `/api/v1/users` | `admin` |
 | `PATCH` | `/api/v1/users/{id}` | `admin` |
 | `PATCH` | `/api/v1/users/{id}/password` | `admin` |

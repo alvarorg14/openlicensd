@@ -102,6 +102,26 @@ func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, newPageResponse(resp, params.Page, params.PageSize, total))
 }
 
+func (s *Server) handleGetProduct(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid product id")
+		return
+	}
+
+	product, err := s.store.GetProduct(r.Context(), id)
+	if err != nil {
+		writeInternalError(w, r, err, "failed to load product")
+		return
+	}
+	if product == nil {
+		writeError(w, http.StatusNotFound, "product not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, productToResponse(product))
+}
+
 func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {

@@ -359,6 +359,43 @@ paths:
     parameters:
       - $ref: "#/components/parameters/UserId"
 
+    get:
+      tags: [Users]
+      summary: Get a user
+      description: |
+        **Required role:** `admin`.
+
+        Returns a single user by ID. Password hashes are never included.
+      operationId: getUser
+      security:
+        - sessionAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
     patch:
       tags: [Users]
       summary: Update a user
@@ -852,6 +889,43 @@ paths:
     parameters:
       - $ref: "#/components/parameters/ProductId"
 
+    get:
+      tags: [Products]
+      summary: Get a product
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
+
+        Returns a single product by ID.
+      operationId: getProduct
+      security:
+        - sessionAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+
     patch:
       tags: [Products]
       summary: Update a product
@@ -1023,6 +1097,43 @@ paths:
   /api/v1/policies/{id}:
     parameters:
       - $ref: "#/components/parameters/PolicyId"
+
+    get:
+      tags: [Policies]
+      summary: Get a policy
+      description: |
+        **Required role:** `viewer`, `operator`, or `admin`.
+
+        Returns a single policy by ID.
+      operationId: getPolicy
+      security:
+        - sessionAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "400":
+          description: Invalid policy ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
     patch:
       tags: [Policies]
