@@ -195,7 +195,10 @@ paths:
       tags: [Auth]
       summary: Get current user
       description: |
-        Returns the currently authenticated user.
+        Returns the authenticated principal.
+
+        With a session cookie, returns the current user profile. With a Bearer API token,
+        returns the token identity (name, role, and token id).
 
         **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
       operationId: getCurrentUser
@@ -2020,16 +2023,49 @@ components:
           format: uri
           description: Profile photo URL from the OIDC provider (when available)
 
-    CurrentUser:
+    SessionCurrentUser:
       allOf:
         - $ref: "#/components/schemas/AuthUser"
         - type: object
-          required: [server_version]
+          required: [auth_method, server_version]
           properties:
+            auth_method:
+              type: string
+              const: session
             server_version:
               type: string
               description: Server build version ("dev" for unreleased builds)
               example: v0.2.0
+
+    APITokenCurrentUser:
+      type: object
+      required: [auth_method, name, role, token_id, server_version]
+      properties:
+        auth_method:
+          type: string
+          const: api_token
+        name:
+          type: string
+          description: API token display name
+        role:
+          $ref: "#/components/schemas/Role"
+        token_id:
+          type: string
+          format: uuid
+        server_version:
+          type: string
+          description: Server build version ("dev" for unreleased builds)
+          example: v0.2.0
+
+    CurrentUser:
+      oneOf:
+        - $ref: "#/components/schemas/SessionCurrentUser"
+        - $ref: "#/components/schemas/APITokenCurrentUser"
+      discriminator:
+        propertyName: auth_method
+        mapping:
+          session: "#/components/schemas/SessionCurrentUser"
+          api_token: "#/components/schemas/APITokenCurrentUser"
 
     User:
       type: object
