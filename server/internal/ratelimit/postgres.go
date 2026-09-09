@@ -41,6 +41,10 @@ func NewPostgres(cfg config.RateLimitConfig, deps Deps) Limiter {
 				burst:           cfg.LoginBurst,
 				refillPerSecond: perMinuteToRefillPerSecond(cfg.LoginPerMinute),
 			},
+			ScopeAuthenticated: {
+				burst:           cfg.AuthenticatedBurst,
+				refillPerSecond: perMinuteToRefillPerSecond(cfg.AuthenticatedPerMinute),
+			},
 		},
 		idle:    time.Duration(cfg.IdleMinutes) * time.Minute,
 		buckets: deps.Buckets,

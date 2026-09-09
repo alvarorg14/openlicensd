@@ -102,8 +102,10 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | config.oidc.redirectUrl | string | `""` | Callback URL registered with the IdP (maps to OPENLICENSD_OIDC_REDIRECT_URL) |
 | config.oidc.scopes | string | `"openid,profile,email"` | Comma-separated scopes (maps to OPENLICENSD_OIDC_SCOPES) |
 | config.rateLimit.backend | string | `"memory"` | Rate limit backend: memory (per-replica) or postgres (shared across replicas) (maps to OPENLICENSD_RATE_LIMIT_BACKEND) |
-| config.rateLimit.enabled | bool | `true` | Enable per-IP rate limiting on unauthenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED) |
-| config.rateLimit.idleMinutes | int | `10` | Minutes before unused per-IP buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES) |
+| config.rateLimit.enabled | bool | `true` | Enable rate limiting on public, login, and authenticated endpoints (maps to OPENLICENSD_RATE_LIMIT_ENABLED) |
+| config.rateLimit.idleMinutes | int | `10` | Minutes before unused rate limit buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES) |
+| config.rateLimit.authenticatedBurst | int | `60` | Burst capacity for authenticated admin endpoints (maps to OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST) |
+| config.rateLimit.authenticatedPerMinute | int | `300` | Sustained request rate for authenticated admin endpoints (maps to OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE) |
 | config.rateLimit.loginBurst | int | `10` | Burst capacity for login endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_BURST) |
 | config.rateLimit.loginPerMinute | int | `30` | Sustained request rate for login and OIDC endpoints (maps to OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE) |
 | config.rateLimit.publicBurst | int | `60` | Burst capacity for public endpoints (maps to OPENLICENSD_RATE_LIMIT_PUBLIC_BURST) |

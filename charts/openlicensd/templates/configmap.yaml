@@ -26,6 +26,8 @@ data:
   OPENLICENSD_RATE_LIMIT_PUBLIC_BURST: {{ .Values.config.rateLimit.publicBurst | quote }}
   OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE: {{ .Values.config.rateLimit.loginPerMinute | quote }}
   OPENLICENSD_RATE_LIMIT_LOGIN_BURST: {{ .Values.config.rateLimit.loginBurst | quote }}
+  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE: {{ .Values.config.rateLimit.authenticatedPerMinute | quote }}
+  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST: {{ .Values.config.rateLimit.authenticatedBurst | quote }}
   OPENLICENSD_RATE_LIMIT_IDLE_MINUTES: {{ .Values.config.rateLimit.idleMinutes | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: {{ .Values.config.bootstrapAdmin.email | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_NAME: {{ .Values.config.bootstrapAdmin.name | quote }}

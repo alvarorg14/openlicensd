@@ -40,13 +40,15 @@ type BootstrapAdminConfig struct {
 }
 
 type RateLimitConfig struct {
-	Enabled         bool
-	Backend         string
-	PublicPerMinute int
-	PublicBurst     int
-	LoginPerMinute  int
-	LoginBurst      int
-	IdleMinutes     int
+	Enabled                bool
+	Backend                string
+	PublicPerMinute        int
+	PublicBurst            int
+	LoginPerMinute         int
+	LoginBurst             int
+	AuthenticatedPerMinute int
+	AuthenticatedBurst     int
+	IdleMinutes            int
 }
 
 type LogConfig struct {
@@ -120,9 +122,11 @@ func Load() (*Config, error) {
 			Backend:         getEnv("OPENLICENSD_RATE_LIMIT_BACKEND", "memory"),
 			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
 			PublicBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", 60),
-			LoginPerMinute:  getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
-			LoginBurst:      getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_BURST", 10),
-			IdleMinutes:     getIntEnv("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES", 10),
+			LoginPerMinute:         getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
+			LoginBurst:             getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_BURST", 10),
+			AuthenticatedPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE", 300),
+			AuthenticatedBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST", 60),
+			IdleMinutes:            getIntEnv("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES", 10),
 		},
 		Harbor: HarborConfig{
 			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
@@ -273,6 +277,12 @@ func (r RateLimitConfig) validate() error {
 	}
 	if r.LoginBurst < 1 {
 		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_LOGIN_BURST must be at least 1")
+	}
+	if r.AuthenticatedPerMinute < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE must be at least 1")
+	}
+	if r.AuthenticatedBurst < 1 {
+		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST must be at least 1")
 	}
 	if r.IdleMinutes < 1 {
 		return fmt.Errorf("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES must be at least 1")

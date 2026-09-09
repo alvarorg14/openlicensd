@@ -131,6 +131,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.auth.Middleware)
+			r.Use(s.rateLimitPrincipal(ratelimit.ScopeAuthenticated))
 			r.Use(s.auditMutations)
 
 			r.Get("/auth/me", s.handleMe)

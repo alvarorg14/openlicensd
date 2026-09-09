@@ -320,6 +320,14 @@
               "type": "integer",
               "minimum": 1
             },
+            "authenticatedPerMinute": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "authenticatedBurst": {
+              "type": "integer",
+              "minimum": 1
+            },
             "idleMinutes": {
               "type": "integer",
               "minimum": 1
