@@ -260,7 +260,7 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 | E2E | `make ui`, `make server`, Playwright smoke (`login` → create product/policy/license → `POST /validate`) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |
-| OpenAPI | pinned `@redocly/cli` lint of `docs/openapi.yaml` |
+| OpenAPI | pinned `@redocly/cli` lint of `docs/openapi.yaml`; response-shape contract tests run in the Server job (`TestOpenAPIContract` in `server/internal/api/openapi_contract_test.go`) |
 
 ### Docs (`.github/workflows/docs.yml`)
 

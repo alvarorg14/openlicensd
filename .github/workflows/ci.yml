@@ -310,6 +310,7 @@ jobs:
       - name: Assert OpenAPI version placeholder
         run: "grep -q 'version: 0.0.0-dev' docs/openapi.yaml"
 
+      # Response-shape contract tests (handler vs spec) run in the Server go test job.
       - name: Lint OpenAPI spec
         # renovate: datasource=npm depName=@redocly/cli
         run: npx @redocly/cli@2.51.2 lint docs/openapi.yaml --config docs/redocly.yaml

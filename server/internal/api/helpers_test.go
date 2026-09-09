@@ -18,6 +18,7 @@ import (
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
 	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	oapivalidator "github.com/pb33f/libopenapi-validator"
 )
 
 type testEnv struct {
@@ -192,6 +193,64 @@ func assertRFC3339StringField(t *testing.T, field string, value any) {
 	if _, err := time.Parse(time.RFC3339, formatted); err != nil {
 		t.Fatalf("%s: invalid RFC3339 timestamp %q: %v", field, formatted, err)
 	}
+}
+
+type contractExchange struct {
+	Request  *http.Request
+	Recorder *httptest.ResponseRecorder
+}
+
+func performHTTP(t *testing.T, handler http.Handler, method, path string, body any, cookies []*http.Cookie, bearerToken string) contractExchange {
+	t.Helper()
+
+	var bodyReader io.Reader = http.NoBody
+	if body != nil {
+		payload, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("marshal body: %v", err)
+		}
+		bodyReader = bytes.NewReader(payload)
+	}
+
+	req := httptest.NewRequest(method, path, bodyReader)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
+	}
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	}
+	if isUnsafeMethod(method) && bearerToken == "" {
+		for _, cookie := range cookies {
+			if cookie.Name == auth.CSRFCookieName {
+				req.Header.Set(auth.CSRFHeaderName, cookie.Value)
+				break
+			}
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return contractExchange{Request: req, Recorder: rec}
+}
+
+func assertOpenAPIResponse(t *testing.T, v oapivalidator.Validator, ex contractExchange) {
+	t.Helper()
+
+	valid, errs := v.ValidateHttpResponse(ex.Request, ex.Recorder.Result())
+	if valid {
+		return
+	}
+
+	var messages []string
+	for _, e := range errs {
+		messages = append(messages, e.Message)
+	}
+	t.Fatalf("OpenAPI response mismatch for %s %s status=%d: %s\nbody=%s",
+		ex.Request.Method, ex.Request.URL.Path, ex.Recorder.Code,
+		strings.Join(messages, "; "), ex.Recorder.Body.String())
 }
 
 func doJSONWithToken(t *testing.T, handler http.Handler, method, path string, body any, token string) *httptest.ResponseRecorder {

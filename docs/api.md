@@ -439,6 +439,10 @@ npx @redocly/cli lint docs/openapi.yaml --config docs/redocly.yaml
 npx @redocly/cli preview-docs docs/openapi.yaml
 ```
 
+### Contract tests
+
+CI runs `TestOpenAPIContract` in `server/internal/api/openapi_contract_test.go` as part of the Server job (`make test`). The test drives each documented `operationId` through the live HTTP handlers (with PostgreSQL) and validates response status and JSON bodies against `docs/openapi.yaml` using `pb33f/libopenapi-validator`. A completeness check fails if the spec gains a new operation without a matching scenario.
+
 ### Swagger UI (Docker)
 
 ```bash
