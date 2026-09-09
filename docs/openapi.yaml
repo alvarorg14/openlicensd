@@ -137,6 +137,10 @@ paths:
                 $ref: "#/components/schemas/Error"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
       security: []
 
   /api/v1/auth/providers:
@@ -216,6 +220,10 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/auth/logout:
     post:
@@ -225,17 +233,29 @@ paths:
         Revokes the current session and clears session cookies.
 
         **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
+        **Authentication:** session cookie only (not Bearer tokens).
       operationId: logout
       security:
         - sessionAuth: []
-        - bearerAuth: []
       responses:
         "204":
           description: Logged out successfully
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Not available for API token authentication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: not available for api token authentication
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/auth/password:
     post:
@@ -248,10 +268,10 @@ paths:
         remains valid.
 
         **Required role:** any authenticated user (`admin`, `operator`, or `viewer`).
+        **Authentication:** session cookie only (not Bearer tokens).
       operationId: changeOwnPassword
       security:
         - sessionAuth: []
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -269,8 +289,20 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Not available for API token authentication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: not available for api token authentication
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/users:
     get:
@@ -1885,6 +1917,8 @@ components:
           - policy_name
           - last_validated_at
           - validation_count
+          - activation_count
+          - max_activations
         default: created_at
       description: Sort field for licenses
     ProductSort:
@@ -2605,6 +2639,7 @@ components:
         - duration_days
         - expiration_basis
         - grace_period_days
+        - max_activations
         - created_at
         - updated_at
       properties:
@@ -2726,7 +2761,7 @@ components:
         last_validated_at:
           type: ["string", "null"]
           format: date-time
-          description: Timestamp of the last successful validation; omitted when never validated successfully
+          description: Timestamp of the last successful validation; null when never validated successfully
         validation_count:
           type: integer
           format: int64

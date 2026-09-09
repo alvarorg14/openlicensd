@@ -130,7 +130,7 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/auth/logout \
   -H "X-CSRF-Token: $CSRF"
 ```
 
-`POST /api/v1/auth/logout` returns `204 No Content`.
+`POST /api/v1/auth/logout` returns `204 No Content`. Bearer API token authentication returns `403 Forbidden`.
 
 ### 4. Change your password
 
@@ -145,7 +145,7 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/auth/password \
   -d '{"current_password":"admin","password":"new-secure-password"}'
 ```
 
-Returns `204 No Content` on success. Other sessions for the same user are revoked; the current session remains valid.
+Returns `204 No Content` on success. Other sessions for the same user are revoked; the current session remains valid. Bearer API token authentication returns `403 Forbidden`.
 
 ### 5. OIDC SSO (optional)
 
@@ -422,7 +422,7 @@ Common status codes:
 |------|---------|
 | `400` | Invalid request body or parameters |
 | `401` | Missing or invalid session |
-| `403` | Forbidden (insufficient role or invalid license for registry-credentials) |
+| `403` | Forbidden (insufficient role, session-only endpoint called with a Bearer API token, or invalid license for registry-credentials) |
 | `404` | Resource not found |
 | `409` | Resource conflict (unique constraint or referential integrity violation) |
 | `429` | Rate limit exceeded (public, login, and authenticated endpoints; includes `Retry-After` header) |
