@@ -11,13 +11,15 @@ import (
 
 func testRateLimitConfig() config.RateLimitConfig {
 	return config.RateLimitConfig{
-		Enabled:         true,
-		Backend:         "memory",
-		PublicPerMinute: 60,
-		PublicBurst:     2,
-		LoginPerMinute:  30,
-		LoginBurst:      1,
-		IdleMinutes:     1,
+		Enabled:                true,
+		Backend:                "memory",
+		PublicPerMinute:        60,
+		PublicBurst:            2,
+		LoginPerMinute:         30,
+		LoginBurst:             1,
+		AuthenticatedPerMinute: 60,
+		AuthenticatedBurst:     2,
+		IdleMinutes:            1,
 	}
 }
 
@@ -122,6 +124,28 @@ func TestRetryAfterSeconds(t *testing.T) {
 	}
 	if got := ratelimit.RetryAfterSeconds(1500 * time.Millisecond); got != 2 {
 		t.Fatalf("RetryAfterSeconds(1500ms)=%d want 2", got)
+	}
+}
+
+func TestLimiterAuthenticatedScopeIsIsolated(t *testing.T) {
+	limiter := ratelimit.NewMemory(testRateLimitConfig())
+	ctx := context.Background()
+
+	for i := 0; i < 2; i++ {
+		allowed, delay := limiter.Allow(ctx, ratelimit.ScopeAuthenticated, "user:123")
+		if !allowed || delay != 0 {
+			t.Fatalf("authenticated burst request %d allowed=%v delay=%s", i, allowed, delay)
+		}
+	}
+
+	allowed, _ := limiter.Allow(ctx, ratelimit.ScopeAuthenticated, "user:123")
+	if allowed {
+		t.Fatal("expected authenticated scope to deny third request")
+	}
+
+	allowed, delay := limiter.Allow(ctx, ratelimit.ScopePublic, "1.2.3.4")
+	if !allowed || delay != 0 {
+		t.Fatalf("public scope should remain available, allowed=%v delay=%s", allowed, delay)
 	}
 }
 

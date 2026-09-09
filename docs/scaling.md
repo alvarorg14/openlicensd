@@ -56,21 +56,24 @@ Guidelines:
 
 ## Rate limiter behavior
 
-Rate limiting applies only to **unauthenticated** endpoints. Authenticated admin API routes, health probes, and static UI assets are not rate limited.
+Rate limiting applies to **public**, **login**, and **authenticated admin** endpoints. Health probes and static UI assets are not rate limited.
 
-| Scope | Routes | Default sustained rate | Default burst |
-|-------|--------|------------------------|---------------|
-| **Public** | `POST /api/v1/validate`, `POST /api/v1/registry-credentials` (when Harbor enabled) | 600/min | 60 |
-| **Login** | `POST /api/v1/auth/login`, `GET /api/v1/auth/oidc/login`, `GET /api/v1/auth/oidc/callback` | 30/min | 10 |
+| Scope | Routes | Bucket key | Default sustained rate | Default burst |
+|-------|--------|------------|------------------------|---------------|
+| **Public** | `POST /api/v1/validate`, `POST /api/v1/registry-credentials` (when Harbor enabled) | Client IP | 600/min | 60 |
+| **Login** | `POST /api/v1/auth/login`, `GET /api/v1/auth/oidc/login`, `GET /api/v1/auth/oidc/callback` | Client IP | 30/min | 10 |
+| **Authenticated** | All routes under session or Bearer auth (including `/auth/me`, licenses, users, API tokens, audit events) | User ID (`user:{uuid}`) or API token ID (`token:{uuid}`) | 300/min | 60 |
 
-Each client IP gets an independent token bucket. Denied requests return HTTP `429` with a `Retry-After` header.
+Public and login scopes key buckets by client IP. The authenticated scope keys buckets by principal after authentication: session users share one budget per user ID; each Bearer token has its own budget.
+
+Denied requests return HTTP `429` with a `Retry-After` header.
 
 ### Backends
 
 | Backend | Env / Helm | Behavior |
 |---------|------------|----------|
 | **`memory`** (default) | `OPENLICENSD_RATE_LIMIT_BACKEND=memory` | Buckets live in process memory. Each replica enforces its own budget. Unused buckets are evicted after `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` (default 10). |
-| **`postgres`** | `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` | Buckets stored in PostgreSQL `rate_limit_buckets`. All replicas share one global per-IP budget. Adds a database write on each rate-limited request. On backend errors, requests are **allowed** (fail-open); monitor `openlicensd_rate_limit_errors_total` — see [metrics.md](metrics.md). |
+| **`postgres`** | `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` | Buckets stored in PostgreSQL `rate_limit_buckets`. All replicas share one global budget per `(scope, bucket_key)`. Adds a database write on each rate-limited request — including every authenticated admin call when the authenticated scope is active. On backend errors, requests are **allowed** (fail-open); monitor `openlicensd_rate_limit_errors_total` — see [metrics.md](metrics.md). |
 
 Example: with `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE=600` and three replicas using the `memory` backend, a single client IP can sustain up to ~1800 requests/minute across the cluster. Switch to `postgres` to enforce 600/minute globally.
 

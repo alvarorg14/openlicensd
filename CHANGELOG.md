@@ -11,6 +11,9 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Enhancements
+
+- enhancement(server): rate limit authenticated admin endpoints per user or API token (#176)
 ## [0.8.0] - 2026-09-08
 
 ### New Features

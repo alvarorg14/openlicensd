@@ -381,7 +381,7 @@ Common status codes:
 | `403` | Forbidden (insufficient role or invalid license for registry-credentials) |
 | `404` | Resource not found |
 | `409` | Resource conflict (unique constraint or referential integrity violation) |
-| `429` | Rate limit exceeded (unauthenticated endpoints; includes `Retry-After` header) |
+| `429` | Rate limit exceeded (public, login, and authenticated endpoints; includes `Retry-After` header) |
 | `502` | Harbor API failure (registry-credentials only) |
 | `503` | Database unavailable (readyz only) |
 | `504` | Request deadline exceeded (`OPENLICENSD_REQUEST_TIMEOUT_SECONDS`) |

@@ -14,8 +14,9 @@ import (
 type Scope string
 
 const (
-	ScopePublic Scope = "public"
-	ScopeLogin  Scope = "login"
+	ScopePublic         Scope = "public"
+	ScopeLogin          Scope = "login"
+	ScopeAuthenticated  Scope = "authenticated"
 )
 
 // Limiter enforces per-scope, per-key token bucket limits.
@@ -91,6 +92,10 @@ func NewMemory(cfg config.RateLimitConfig) Limiter {
 			ScopeLogin: {
 				limit: rate.Limit(float64(cfg.LoginPerMinute) / 60.0),
 				burst: cfg.LoginBurst,
+			},
+			ScopeAuthenticated: {
+				limit: rate.Limit(float64(cfg.AuthenticatedPerMinute) / 60.0),
+				burst: cfg.AuthenticatedBurst,
 			},
 		},
 		idle:    time.Duration(cfg.IdleMinutes) * time.Minute,
@@ -194,6 +199,8 @@ func LogStartup(logger *slog.Logger, cfg config.RateLimitConfig) {
 		slog.Int("public_burst", cfg.PublicBurst),
 		slog.Int("login_per_minute", cfg.LoginPerMinute),
 		slog.Int("login_burst", cfg.LoginBurst),
+		slog.Int("authenticated_per_minute", cfg.AuthenticatedPerMinute),
+		slog.Int("authenticated_burst", cfg.AuthenticatedBurst),
 		slog.Int("idle_minutes", cfg.IdleMinutes),
 	)
 }

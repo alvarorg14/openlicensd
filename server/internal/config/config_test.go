@@ -257,6 +257,12 @@ func TestLoadRateLimitDefaults(t *testing.T) {
 	if cfg.RateLimit.LoginBurst != 10 {
 		t.Fatalf("login burst=%d want 10", cfg.RateLimit.LoginBurst)
 	}
+	if cfg.RateLimit.AuthenticatedPerMinute != 300 {
+		t.Fatalf("authenticated per minute=%d want 300", cfg.RateLimit.AuthenticatedPerMinute)
+	}
+	if cfg.RateLimit.AuthenticatedBurst != 60 {
+		t.Fatalf("authenticated burst=%d want 60", cfg.RateLimit.AuthenticatedBurst)
+	}
 	if cfg.RateLimit.IdleMinutes != 10 {
 		t.Fatalf("idle minutes=%d want 10", cfg.RateLimit.IdleMinutes)
 	}
@@ -285,6 +291,17 @@ func TestLoadRateLimitInvalidBackend(t *testing.T) {
 	_, err := config.Load()
 	if err == nil {
 		t.Fatalf("expected error for invalid rate limit backend")
+	}
+}
+
+func TestLoadRateLimitInvalidAuthenticatedBurst(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "true")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST", "0")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for invalid authenticated burst")
 	}
 }
 

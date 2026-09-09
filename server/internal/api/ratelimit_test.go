@@ -10,6 +10,7 @@ import (
 	"os"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/alvarorg14/openlicensd/server/internal/api"
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
@@ -84,15 +85,96 @@ func doJSONWithRemoteAddr(t *testing.T, handler http.Handler, method, path strin
 	return rec
 }
 
+func tightAuthenticatedRateLimitConfig() config.RateLimitConfig {
+	return config.RateLimitConfig{
+		Enabled:                true,
+		Backend:                "memory",
+		PublicPerMinute:        600,
+		PublicBurst:            60,
+		LoginPerMinute:         30,
+		LoginBurst:             10,
+		AuthenticatedPerMinute: 1,
+		AuthenticatedBurst:     2,
+		IdleMinutes:            10,
+	}
+}
+
+func setupAuthenticatedRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) testEnv {
+	t.Helper()
+
+	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("OPENLICENSD_DATABASE_URL not set")
+	}
+
+	passwordHash, err := auth.HashPassword("test-password")
+	if err != nil {
+		t.Fatalf("hash password: %v", err)
+	}
+
+	email := fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano())
+
+	cfg := &config.Config{
+		Addr:              ":8080",
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
+		LocalLoginEnabled: true,
+		RateLimit:         rateLimit,
+		BootstrapAdmin: config.BootstrapAdminConfig{
+			Email:        email,
+			Name:         "Test Admin",
+			PasswordHash: passwordHash,
+		},
+	}
+
+	ctx := context.Background()
+	st, err := store.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(st.Close)
+
+	userCount, err := st.CountUsers(ctx)
+	if err != nil {
+		t.Fatalf("count users: %v", err)
+	}
+
+	if err := store.BootstrapAdmin(ctx, st, cfg); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+
+	if userCount > 0 {
+		hash := cfg.BootstrapAdmin.PasswordHash
+		if _, err := st.CreateUser(ctx, email, cfg.BootstrapAdmin.Name, &hash, store.RoleAdmin, store.AuthProviderLocal, nil); err != nil {
+			t.Fatalf("create test admin: %v", err)
+		}
+	}
+
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
+
+	return testEnv{
+		Handler:  srv.Router(nil),
+		Store:    st,
+		Email:    email,
+		Password: "test-password",
+	}
+}
+
 func TestRateLimitValidateReturns429(t *testing.T) {
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
 		Backend:         "memory",
-		PublicPerMinute: 1,
-		PublicBurst:     2,
-		LoginPerMinute:  1,
-		LoginBurst:      10,
-		IdleMinutes:     10,
+		PublicPerMinute:        1,
+		PublicBurst:            2,
+		LoginPerMinute:         1,
+		LoginBurst:             10,
+		AuthenticatedPerMinute: 300,
+		AuthenticatedBurst:     60,
+		IdleMinutes:            10,
 	})
 
 	remoteAddr := uniqueTestRemoteAddr()
@@ -149,9 +231,11 @@ func TestRateLimitLoginReturns429(t *testing.T) {
 		Backend:         "memory",
 		PublicPerMinute: 600,
 		PublicBurst:     60,
-		LoginPerMinute:  1,
-		LoginBurst:      2,
-		IdleMinutes:     10,
+		LoginPerMinute:         1,
+		LoginBurst:             2,
+		AuthenticatedPerMinute: 300,
+		AuthenticatedBurst:     60,
+		IdleMinutes:            10,
 	})
 
 	remoteAddr := uniqueTestRemoteAddr()
@@ -179,11 +263,13 @@ func TestRateLimitPostgresBackendReturns429(t *testing.T) {
 	handler := setupRateLimitTestEnv(t, config.RateLimitConfig{
 		Enabled:         true,
 		Backend:         "postgres",
-		PublicPerMinute: 1,
-		PublicBurst:     2,
-		LoginPerMinute:  1,
-		LoginBurst:      10,
-		IdleMinutes:     10,
+		PublicPerMinute:        1,
+		PublicBurst:            2,
+		LoginPerMinute:         1,
+		LoginBurst:             10,
+		AuthenticatedPerMinute: 300,
+		AuthenticatedBurst:     60,
+		IdleMinutes:            10,
 	})
 
 	remoteAddr := uniqueTestRemoteAddr()
@@ -220,11 +306,13 @@ func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
 		RateLimit: config.RateLimitConfig{
 			Enabled:         true,
 			Backend:         "postgres",
-			PublicPerMinute: 1,
-			PublicBurst:     2,
-			LoginPerMinute:  1,
-			LoginBurst:      10,
-			IdleMinutes:     10,
+			PublicPerMinute:        1,
+			PublicBurst:            2,
+			LoginPerMinute:         1,
+			LoginBurst:             10,
+			AuthenticatedPerMinute: 300,
+			AuthenticatedBurst:     60,
+			IdleMinutes:            10,
 		},
 	}
 
@@ -265,6 +353,128 @@ func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
 	resp = doJSONWithRemoteAddr(t, handlerA, http.MethodPost, "/api/v1/validate", map[string]string{
 		"key": "invalid-key",
 	}, nil, remoteAddr)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("replica A request 3 status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+}
+
+func TestRateLimitAuthenticatedSessionReturns429(t *testing.T) {
+	env := setupAuthenticatedRateLimitTestEnv(t, tightAuthenticatedRateLimitConfig())
+	cookies := login(t, env.Handler, env.Email, env.Password)
+
+	for i := 0; i < 2; i++ {
+		resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, cookies)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("request %d status=%d body=%s", i, resp.Code, resp.Body.String())
+		}
+	}
+
+	resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, cookies)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+	if resp.Header().Get("Retry-After") == "" {
+		t.Fatal("expected Retry-After header")
+	}
+}
+
+func TestRateLimitAuthenticatedBearerReturns429(t *testing.T) {
+	env := setupAuthenticatedRateLimitTestEnv(t, tightAuthenticatedRateLimitConfig())
+	token := createTestAPIToken(t, env.Store, "rate-limit-test", store.RoleAdmin)
+
+	for i := 0; i < 2; i++ {
+		resp := doJSONWithToken(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, token)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("request %d status=%d body=%s", i, resp.Code, resp.Body.String())
+		}
+	}
+
+	resp := doJSONWithToken(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, token)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+}
+
+func TestRateLimitAuthenticatedPerPrincipalBuckets(t *testing.T) {
+	env := setupAuthenticatedRateLimitTestEnv(t, tightAuthenticatedRateLimitConfig())
+	cookies := login(t, env.Handler, env.Email, env.Password)
+
+	for i := 0; i < 2; i++ {
+		resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, cookies)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("admin request %d status=%d body=%s", i, resp.Code, resp.Body.String())
+		}
+	}
+
+	resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, cookies)
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("admin status=%d want 429 body=%s", resp.Code, resp.Body.String())
+	}
+
+	token := createTestAPIToken(t, env.Store, "other-principal", store.RoleAdmin)
+	resp = doJSONWithToken(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("token status=%d want 200 body=%s", resp.Code, resp.Body.String())
+	}
+}
+
+func TestRateLimitAuthenticatedPostgresSharedBudgetAcrossReplicas(t *testing.T) {
+	env := setupAuthenticatedRateLimitTestEnv(t, config.RateLimitConfig{
+		Enabled:                true,
+		Backend:                "postgres",
+		PublicPerMinute:        600,
+		PublicBurst:            60,
+		LoginPerMinute:         30,
+		LoginBurst:             10,
+		AuthenticatedPerMinute: 1,
+		AuthenticatedBurst:     2,
+		IdleMinutes:            10,
+	})
+
+	ctx := context.Background()
+	cfg := &config.Config{
+		Addr:              ":8080",
+		DatabaseURL:       os.Getenv("OPENLICENSD_DATABASE_URL"),
+		SessionTTLHours:   24,
+		CookieSecure:      false,
+		LocalLoginEnabled: true,
+		RateLimit: config.RateLimitConfig{
+			Enabled:                true,
+			Backend:                "postgres",
+			PublicPerMinute:        600,
+			PublicBurst:            60,
+			LoginPerMinute:         30,
+			LoginBurst:             10,
+			AuthenticatedPerMinute: 1,
+			AuthenticatedBurst:     2,
+			IdleMinutes:            10,
+		},
+	}
+
+	srvA, err := api.New(ctx, cfg, env.Store, testLogger())
+	if err != nil {
+		t.Fatalf("api server A: %v", err)
+	}
+	srvB, err := api.New(ctx, cfg, env.Store, testLogger())
+	if err != nil {
+		t.Fatalf("api server B: %v", err)
+	}
+
+	token := createTestAPIToken(t, env.Store, "postgres-shared", store.RoleAdmin)
+	handlerA := srvA.Router(nil)
+	handlerB := srvB.Router(nil)
+
+	resp := doJSONWithToken(t, handlerA, http.MethodGet, "/api/v1/licenses", nil, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("replica A request 1 status=%d body=%s", resp.Code, resp.Body.String())
+	}
+
+	resp = doJSONWithToken(t, handlerB, http.MethodGet, "/api/v1/licenses", nil, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("replica B request 1 status=%d body=%s", resp.Code, resp.Body.String())
+	}
+
+	resp = doJSONWithToken(t, handlerA, http.MethodGet, "/api/v1/licenses", nil, token)
 	if resp.Code != http.StatusTooManyRequests {
 		t.Fatalf("replica A request 3 status=%d want 429 body=%s", resp.Code, resp.Body.String())
 	}

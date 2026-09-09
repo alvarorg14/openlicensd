@@ -160,7 +160,9 @@ Open http://localhost:3000 and sign in with `admin` / `admin`.
 
 The HTTP API is specified in [docs/openapi.yaml](docs/openapi.yaml) (OpenAPI 3.1). That file is the source of truth for paths, schemas, and status codes. See [docs/api.md](docs/api.md) for authentication, roles, and curl examples.
 
-**Public** (no auth; rate limited): `POST /api/v1/validate` and, when Harbor is enabled, `POST /api/v1/registry-credentials`.
+**Public** (no auth; rate limited per client IP): `POST /api/v1/validate` and, when Harbor is enabled, `POST /api/v1/registry-credentials`.
+
+**Admin** (session or Bearer; rate limited per user or API token): all other `/api/v1/*` routes except login/OIDC callback and `GET /auth/providers`.
 
 **Admin** (session cookie or `Authorization: Bearer`; CSRF on session writes): products, policies, licenses, machines, users, API tokens, and audit events. Token management (`/api/v1/api-tokens`) requires an admin session.
 
