@@ -87,16 +87,14 @@ func userToResponse(u *store.User) userResponse {
 		Name:         u.Name,
 		Role:         string(u.Role),
 		AuthProvider: u.AuthProvider,
-		CreatedAt:    u.CreatedAt.Format(timeRFC3339),
-		UpdatedAt:    u.UpdatedAt.Format(timeRFC3339),
+		CreatedAt:    formatRFC3339(u.CreatedAt),
+		UpdatedAt:    formatRFC3339(u.UpdatedAt),
 	}
 	if u.DisabledAt != nil {
-		formatted := u.DisabledAt.Format(timeRFC3339)
-		resp.DisabledAt = &formatted
+		resp.DisabledAt = formatRFC3339Ptr(u.DisabledAt)
 	}
 	if u.LastLoginAt != nil {
-		formatted := u.LastLoginAt.Format(timeRFC3339)
-		resp.LastLoginAt = &formatted
+		resp.LastLoginAt = formatRFC3339Ptr(u.LastLoginAt)
 	}
 	return resp
 }

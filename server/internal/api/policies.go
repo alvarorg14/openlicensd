@@ -54,8 +54,8 @@ func policyToResponse(p *store.Policy) policyResponse {
 		ExpirationBasis: string(p.ExpirationBasis),
 		GracePeriodDays: p.GracePeriodDays,
 		MaxActivations:  p.MaxActivations,
-		CreatedAt:       p.CreatedAt.Format(timeRFC3339),
-		UpdatedAt:       p.UpdatedAt.Format(timeRFC3339),
+		CreatedAt:       formatRFC3339(p.CreatedAt),
+		UpdatedAt:       formatRFC3339(p.UpdatedAt),
 	}
 }
 

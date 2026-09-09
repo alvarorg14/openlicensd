@@ -37,12 +37,10 @@ func productToResponse(p *store.Product) productResponse {
 		Name:        p.Name,
 		Code:        p.Code,
 		Description: p.Description,
-		CreatedAt:   p.CreatedAt.Format(timeRFC3339),
-		UpdatedAt:   p.UpdatedAt.Format(timeRFC3339),
+		CreatedAt:   formatRFC3339(p.CreatedAt),
+		UpdatedAt:   formatRFC3339(p.UpdatedAt),
 	}
 }
-
-const timeRFC3339 = "2006-01-02T15:04:05Z07:00"
 
 func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req createProductRequest
