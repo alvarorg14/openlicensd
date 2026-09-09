@@ -721,6 +721,20 @@ func TestActivationLimits(t *testing.T) {
 	firstMachine := items[0].(map[string]any)
 	machineID := firstMachine["id"].(string)
 
+	patchResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/machines/"+machineID, map[string]any{
+		"name": "renamed-machine",
+	}, cookies)
+	if patchResp.Code != http.StatusOK {
+		t.Fatalf("rename machine status=%d body=%s", patchResp.Code, patchResp.Body.Bytes())
+	}
+	var renamed map[string]any
+	if err := json.Unmarshal(patchResp.Body.Bytes(), &renamed); err != nil {
+		t.Fatalf("decode renamed machine: %v", err)
+	}
+	if renamed["name"] != "renamed-machine" {
+		t.Fatalf("expected renamed machine name, got %+v", renamed)
+	}
+
 	releaseResp := doJSON(t, handler, http.MethodDelete, "/api/v1/licenses/"+licenseID+"/machines/"+machineID, nil, cookies)
 	if releaseResp.Code != http.StatusOK {
 		t.Fatalf("release machine status=%d body=%s", releaseResp.Code, releaseResp.Body.Bytes())

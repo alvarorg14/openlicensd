@@ -1486,10 +1486,10 @@ paths:
         "504":
           $ref: "#/components/responses/GatewayTimeout"
 
-  /api/v1/licenses/{id}/machines/{machineId}:
+  /api/v1/licenses/{id}/machines/{machine_id}:
     parameters:
       - $ref: "#/components/parameters/LicenseId"
-      - name: machineId
+      - name: machine_id
         in: path
         required: true
         schema:

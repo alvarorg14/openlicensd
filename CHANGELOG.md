@@ -18,6 +18,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Enhancements
 
+- enhancement(server): rename license machine path param from `machineId` to `machine_id` (#221)
 - enhancement(server): rate limit authenticated admin endpoints per user or API token (#176)
 ## [0.8.0] - 2026-09-08
 
