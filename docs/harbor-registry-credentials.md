@@ -24,7 +24,7 @@ sequenceDiagram
 ```
 
 1. A client sends a license key to `POST /api/v1/registry-credentials`.
-2. OpenLicensd validates the key (same logic as `/validate`, but returns HTTP 403 on failure).
+2. OpenLicensd validates the key (same logic as `/validate`, but returns HTTP 403 on failure). This dual envelope is intentional and frozen before v1.0 — see [api.md](api.md#frozen-validation-error-contract).
 3. If valid, OpenLicensd creates a short-lived Harbor robot account with pull access to the configured projects.
 4. Expired robots created by OpenLicensd are cleaned up (best-effort, errors are logged but not returned).
 5. The client uses the returned credentials with `docker login`.
@@ -178,6 +178,7 @@ docker pull harbor.example.com/myproject/myimage:latest
 | `403` | `product_mismatch` | Product code does not match the license |
 | `403` | `fingerprint_required` | Policy requires a machine fingerprint |
 | `403` | `activation_limit` | Max concurrent machine activations reached |
+| `403` | `invalid` | Defensive fallback when no specific reason is available |
 | `502` | `failed to issue registry credentials` | Harbor API failure |
 | `500` | `failed to validate license` | Database error |
 
@@ -185,7 +186,7 @@ When `OPENLICENSD_HARBOR_DEBUG=true`, `502` responses include the underlying Har
 
 ## Troubleshooting
 
-### `403` with `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, or `activation_limit`
+### `403` with `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, `activation_limit`, or `invalid`
 
 The license key is invalid or does not meet policy requirements. Verify the key is correct, not expired, not revoked, and matches the requested product. When the policy enforces machine activations, include a `fingerprint` in the request body.
 

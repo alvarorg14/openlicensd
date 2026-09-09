@@ -240,7 +240,7 @@ sequenceDiagram
   API-->>Client: 200 {valid, product, policy, reason?, activation_count?, max_activations?}
 ```
 
-Validation always returns HTTP 200. When validation succeeds (`valid: true`), `last_validated_at` and `validation_count` are updated. Failed lookups (not found, revoked, expired, product mismatch, fingerprint required, activation limit) do not increment usage. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
+Validation always returns HTTP 200 with a `ValidationResult` envelope (`valid` + optional `reason`). This dual envelope is frozen before v1.0: `/registry-credentials` returns HTTP 403 with `{ "error": "<reason>" }` for the same rejection codes. When validation succeeds (`valid: true`), `last_validated_at` and `validation_count` are updated. Failed lookups (not found, revoked, expired, product mismatch, fingerprint required, activation limit) do not increment usage. Activation limits count **distinct machine fingerprints**, not validation events. When a license has `max_activations`, clients must send a `fingerprint` or receive `fingerprint_required`. New fingerprints beyond the limit receive `activation_limit`.
 
 ### Harbor registry credentials
 
