@@ -398,15 +398,37 @@ Invalid response (HTTP 200 when the request is allowed):
 { "valid": false, "reason": "expired", "expires_at": "2026-01-01T00:00:00Z" }
 ```
 
-Possible `reason` values: `not_found`, `expired`, `revoked`, `product_mismatch`.
-
 When a license is within the policy grace period after expiry:
 
 ```json
 { "valid": true, "in_grace_period": true, "expires_at": "2026-01-01T00:00:00Z" }
 ```
 
-> **Note:** `/validate` returns HTTP 200 with a `valid` boolean when the request is allowed. Rate-limited requests return HTTP 429. The `/registry-credentials` endpoint returns HTTP 403 with an `error` field for invalid licenses instead.
+### Frozen validation error contract
+
+Before v1.0, the dual envelope for license validation is frozen:
+
+| Endpoint | Business outcome | HTTP status | Response shape |
+|----------|------------------|-------------|----------------|
+| `POST /api/v1/validate` | Valid or invalid license | **200** | `{ "valid": true\|false, "reason"?: "<code>", ... }` |
+| `POST /api/v1/registry-credentials` | Invalid license | **403** | `{ "error": "<code>" }` |
+
+Both endpoints share the same validation logic. `/validate` is a soft check clients poll via `valid` and `reason`. `/registry-credentials` treats an invalid license as a hard HTTP failure because issuing Harbor credentials is a privileged side effect.
+
+The `reason` / `error` codes are pinned in OpenAPI as `ValidationReason`. See `docs/openapi.yaml` for per-reason examples on both endpoints.
+
+| Code | Meaning |
+|------|---------|
+| `not_found` | License key hash not found |
+| `expired` | License is past expiry and the policy grace period |
+| `revoked` | License has been revoked |
+| `product_mismatch` | Optional `product` code does not match the license |
+| `fingerprint_required` | License has `max_activations` but the request omitted `fingerprint` |
+| `activation_limit` | All activation seats are in use by other machine fingerprints |
+
+On `/registry-credentials` only, the server may return `{ "error": "invalid" }` when no specific reason is available. This code is not used on `/validate`.
+
+Transport and protocol errors (`400`, `429`, `500`, `504`, and `502` on registry-credentials) use the standard `{ "error": "..." }` envelope described below.
 
 ## Error responses
 

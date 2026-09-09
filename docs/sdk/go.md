@@ -77,7 +77,7 @@ This reads `OPENLICENSD_URL` and `OPENLICENSD_PRODUCT` from the environment. The
 
 ## Validation semantics
 
-`/validate` always returns HTTP 200 for business outcomes. The SDK reflects this:
+The dual validation envelope is frozen before v1.0. `/validate` always returns HTTP 200 for business outcomes; `/registry-credentials` returns HTTP 403 with the same reason codes in the `error` field. The SDK reflects this:
 
 - `Validate` returns `(result, nil)` when the key is invalid — check `result.Valid` and `result.Reason`
 - Rejection reasons: `not_found`, `expired`, `revoked`, `product_mismatch`, `fingerprint_required`, `activation_limit`
@@ -91,7 +91,7 @@ client, err := openlicensd.New(baseURL, product, openlicensd.WithFingerprint(fp)
 
 `Fingerprint` persists a UUID under the OS user config directory (`<UserConfigDir>/my-cli/machine-id`). Use `FingerprintAt(path)` when you need a custom location (for example a mounted volume in CI). The SDK sends `os.Hostname()` by default; pass `openlicensd.WithoutHostname()` to omit it.
 
-`/registry-credentials` returns HTTP 403 for invalid licenses. The SDK maps this to `*LicenseError`.
+`/registry-credentials` returns HTTP 403 for invalid licenses (same reason codes, plus `invalid` as a fallback). The SDK maps this to `*LicenseError`.
 
 ## Advanced patterns
 

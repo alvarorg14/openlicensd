@@ -242,6 +242,19 @@ func TestOpenAPIContract(t *testing.T) {
 		"product": productCode,
 	}, nil, ""), http.StatusOK)
 
+	notFoundEx := performHTTP(t, env.Handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "invalid-key",
+	}, nil, "")
+	requireStatus(t, notFoundEx, http.StatusOK)
+	assertOpenAPIResponse(t, validator, notFoundEx)
+
+	fpRequiredEx := performHTTP(t, env.Handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key":     fpKey,
+		"product": productCode,
+	}, nil, "")
+	requireStatus(t, fpRequiredEx, http.StatusOK)
+	assertOpenAPIResponse(t, validator, fpRequiredEx)
+
 	requireStatus(t, suite.check("revokeLicense", http.MethodPatch, "/api/v1/licenses/"+licenseID+"/revoke", nil, suite.cookies, ""), http.StatusOK)
 	requireStatus(t, suite.check("unrevokeLicense", http.MethodPatch, "/api/v1/licenses/"+licenseID+"/unrevoke", nil, suite.cookies, ""), http.StatusOK)
 
@@ -463,6 +476,12 @@ func exerciseRegistryCredentialsContract(t *testing.T, suite *openAPIContractSui
 	if err := json.Unmarshal(licenseResp.Body.Bytes(), &license); err != nil {
 		t.Fatalf("decode license: %v", err)
 	}
+
+	invalidEx := performHTTP(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
+		"key": "invalid-key",
+	}, nil, "")
+	requireStatus(t, invalidEx, http.StatusForbidden)
+	assertOpenAPIResponse(t, suite.validator, invalidEx)
 
 	ex := performHTTP(t, handler, http.MethodPost, "/api/v1/registry-credentials", map[string]string{
 		"key": license["key"].(string),
