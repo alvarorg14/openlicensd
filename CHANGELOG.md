@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Bug Fixes
 
+- fix(server): normalize API response timestamps to RFC3339 strings (#220)
 - fix(server): support true partial PATCH updates for licenses, products, and policies (#218)
 
 ### Enhancements

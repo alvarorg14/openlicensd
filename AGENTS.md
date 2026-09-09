@@ -111,8 +111,9 @@ Do not commit version bumps to `main` after each publish.
 9. Structured JSON logs (configurable via `OPENLICENSD_LOG_LEVEL` / `OPENLICENSD_LOG_FORMAT`) include a `request_id` on every HTTP request and handler log line for correlation
 10. Prometheus metrics (configurable via `OPENLICENSD_METRICS_ENABLED` / `OPENLICENSD_METRICS_ADDR`) are served on a dedicated listener at `/metrics`, separate from the API/UI port
 11. Rate limiting uses token buckets: public and login scopes key by client IP; authenticated admin routes key by user ID or API token ID after auth. With `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, buckets are shared across replicas via PostgreSQL
-12. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
-13. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
+12. API response timestamps are RFC3339 strings at second precision (UTC); response DTOs format `time.Time` via `formatRFC3339` in `server/internal/api/time.go`
+13. UI sidebar (collapsible via `UDashboardSidebar`, state persisted in a cookie) shows deployed server version and OIDC profile photo from `GET /api/v1/auth/me` (`server_version`, `picture_url` fields)
+14. Health probes: `GET /healthz` is liveness (no dependency checks); `GET /readyz` is readiness (PostgreSQL ping, 2s timeout). Kubernetes and the Helm chart map liveness/readiness/startup to these paths.
 ```
 
 ## Configuration

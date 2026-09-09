@@ -331,7 +331,7 @@ func TestRegistryCredentialsSuccess(t *testing.T) {
 			Registry:  "harbor.example.com",
 			Username:  "robot$user",
 			Secret:    "secret",
-			ExpiresAt: 1725350400,
+			ExpiresAt: "2024-09-03T08:00:00Z",
 		})
 	}))
 	defer server.Close()
@@ -347,6 +347,10 @@ func TestRegistryCredentialsSuccess(t *testing.T) {
 	}
 	if creds.Registry != "harbor.example.com" {
 		t.Fatalf("registry = %q", creds.Registry)
+	}
+	expected := time.Date(2024, 9, 3, 8, 0, 0, 0, time.UTC)
+	if !creds.ExpiresAt.Equal(expected) {
+		t.Fatalf("expires_at = %v, want %v", creds.ExpiresAt, expected)
 	}
 }
 

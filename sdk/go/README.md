@@ -101,6 +101,8 @@ client, err := openlicensd.New(
 | `Health(ctx)` | `GET /healthz` | Liveness probe |
 | `Ready(ctx)` | `GET /readyz` | Readiness probe |
 
+`expires_at` on validation and registry credential responses is an RFC3339 timestamp string on the wire. The SDK unmarshals it into `time.Time` (or `*time.Time` for validation).
+
 ## Error handling
 
 ```go

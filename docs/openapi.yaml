@@ -2816,6 +2816,6 @@ components:
           type: string
           description: Robot account secret
         expires_at:
-          type: integer
-          format: int64
-          description: Unix timestamp when credentials expire
+          type: string
+          format: date-time
+          description: RFC3339 timestamp when credentials expire

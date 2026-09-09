@@ -151,7 +151,7 @@ Success response:
   "registry": "harbor.example.com",
   "username": "robot$myproject+openlicensd-x4f9k-123",
   "secret": "robot-secret",
-  "expires_at": 1767225600
+  "expires_at": "2025-12-31T23:59:59Z"
 }
 ```
 
@@ -165,7 +165,7 @@ echo "robot-secret" | docker login harbor.example.com \
 docker pull harbor.example.com/myproject/myimage:latest
 ```
 
-`expires_at` is a Unix timestamp indicating when the robot credentials expire.
+`expires_at` is an RFC3339 timestamp indicating when the robot credentials expire.
 
 ## Error responses
 
