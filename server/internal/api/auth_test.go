@@ -191,6 +191,18 @@ func TestGetCurrentUserIncludesServerVersion(t *testing.T) {
 		t.Fatalf("decode auth/me: %v", err)
 	}
 
+	for _, key := range []string{"id", "email", "name", "role", "auth_provider", "auth_method", "has_password", "picture_url", "server_version"} {
+		if _, ok := me[key]; !ok {
+			t.Fatalf("session auth/me missing %q: %#v", key, me)
+		}
+	}
+	if me["auth_method"] != string(auth.AuthMethodSession) {
+		t.Fatalf("auth_method=%v want session", me["auth_method"])
+	}
+	if _, ok := me["token_id"]; ok {
+		t.Fatalf("session auth/me must not include token_id: %#v", me["token_id"])
+	}
+
 	got, ok := me["server_version"].(string)
 	if !ok || got == "" {
 		t.Fatalf("server_version missing or empty: %#v", me["server_version"])

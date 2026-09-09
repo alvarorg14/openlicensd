@@ -13,6 +13,7 @@ export interface AuthUser {
 }
 
 export interface MeResponse extends AuthUser {
+  auth_method?: 'session' | 'api_token'
   server_version?: string
 }
 
