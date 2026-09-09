@@ -9,6 +9,7 @@ import (
 
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/version"
 )
 
 func TestAPITokenCRUD(t *testing.T) {
@@ -52,6 +53,29 @@ func TestAPITokenCRUD(t *testing.T) {
 	}
 	if me["auth_method"] != string(auth.AuthMethodAPIToken) {
 		t.Fatalf("auth_method=%v want api_token", me["auth_method"])
+	}
+	for _, key := range []string{"name", "role", "token_id", "server_version"} {
+		if _, ok := me[key]; !ok {
+			t.Fatalf("api token auth/me missing %q: %#v", key, me)
+		}
+	}
+	if me["name"] != "terraform" {
+		t.Fatalf("name=%v want terraform", me["name"])
+	}
+	if me["role"] != "operator" {
+		t.Fatalf("role=%v want operator", me["role"])
+	}
+	if me["token_id"] != tokenID {
+		t.Fatalf("token_id=%v want %s", me["token_id"], tokenID)
+	}
+	gotVersion, ok := me["server_version"].(string)
+	if !ok || gotVersion != version.Version {
+		t.Fatalf("server_version=%v want %q", me["server_version"], version.Version)
+	}
+	for _, key := range []string{"id", "email", "auth_provider", "has_password", "picture_url"} {
+		if _, ok := me[key]; ok {
+			t.Fatalf("api token auth/me must not include %q: %#v", key, me[key])
+		}
 	}
 
 	revokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/api-tokens/"+tokenID+"/revoke", nil, adminCookies)

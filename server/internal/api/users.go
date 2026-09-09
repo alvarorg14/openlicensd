@@ -48,6 +48,26 @@ type changePasswordRequest struct {
 	Password        string `json:"password"`
 }
 
+type sessionMeResponse struct {
+	ID             uuid.UUID       `json:"id"`
+	Email          string          `json:"email"`
+	Name           string          `json:"name"`
+	Role           store.Role      `json:"role"`
+	AuthProvider   string          `json:"auth_provider"`
+	AuthMethod     auth.AuthMethod `json:"auth_method"`
+	HasPassword    bool            `json:"has_password"`
+	PictureURL     *string         `json:"picture_url"`
+	ServerVersion  string          `json:"server_version"`
+}
+
+type apiTokenMeResponse struct {
+	AuthMethod    auth.AuthMethod `json:"auth_method"`
+	Name          string          `json:"name"`
+	Role          store.Role      `json:"role"`
+	TokenID       uuid.UUID       `json:"token_id"`
+	ServerVersion string          `json:"server_version"`
+}
+
 const minPasswordLength = 8
 
 func validatePassword(password string) string {
@@ -334,26 +354,26 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if principal.AuthMethod == auth.AuthMethodAPIToken {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"auth_method":    auth.AuthMethodAPIToken,
-			"name":           principal.Name,
-			"role":           principal.Role,
-			"token_id":       principal.TokenID,
-			"server_version": version.Version,
+		writeJSON(w, http.StatusOK, apiTokenMeResponse{
+			AuthMethod:    auth.AuthMethodAPIToken,
+			Name:          principal.Name,
+			Role:          principal.Role,
+			TokenID:       principal.TokenID,
+			ServerVersion: version.Version,
 		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"id":             principal.UserID,
-		"email":          principal.Email,
-		"name":           principal.Name,
-		"role":           principal.Role,
-		"auth_provider":  principal.AuthProvider,
-		"auth_method":    auth.AuthMethodSession,
-		"has_password":   principal.HasPassword,
-		"picture_url":    principal.PictureURL,
-		"server_version": version.Version,
+	writeJSON(w, http.StatusOK, sessionMeResponse{
+		ID:            principal.UserID,
+		Email:         principal.Email,
+		Name:          principal.Name,
+		Role:          principal.Role,
+		AuthProvider:  principal.AuthProvider,
+		AuthMethod:    auth.AuthMethodSession,
+		HasPassword:   principal.HasPassword,
+		PictureURL:    principal.PictureURL,
+		ServerVersion: version.Version,
 	})
 }
 

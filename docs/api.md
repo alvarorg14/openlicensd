@@ -89,16 +89,48 @@ Sessions expire after `OPENLICENSD_SESSION_TTL_HOURS` (default 24), with sliding
 ### 3. Current user and logout
 
 ```bash
-# Get the currently authenticated user (any role)
+# Get the currently authenticated user (session cookie or Bearer token)
 curl -s -b cookies.txt http://localhost:8080/api/v1/auth/me
+```
 
-# Log out (revokes session and clears cookies)
+Session authentication returns the user profile:
+
+```json
+{
+  "id": "…",
+  "email": "admin@example.com",
+  "name": "Administrator",
+  "role": "admin",
+  "auth_provider": "local",
+  "auth_method": "session",
+  "has_password": true,
+  "picture_url": null,
+  "server_version": "dev"
+}
+```
+
+Bearer API token authentication returns the token identity:
+
+```json
+{
+  "auth_method": "api_token",
+  "name": "terraform",
+  "role": "operator",
+  "token_id": "…",
+  "server_version": "dev"
+}
+```
+
+The login response `user` object uses the same fields as the session `/auth/me` response except it omits `auth_method`, `picture_url`, and `server_version`.
+
+```bash
+# Log out (revokes session and clears cookies; session only)
 CSRF=$(grep openlicensd_csrf cookies.txt | awk '{print $7}')
 curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/auth/logout \
   -H "X-CSRF-Token: $CSRF"
 ```
 
-`GET /api/v1/auth/me` returns the same `AuthUser` shape as the login response `user` object. `POST /api/v1/auth/logout` returns `204 No Content`.
+`POST /api/v1/auth/logout` returns `204 No Content`.
 
 ### 4. Change your password
 
@@ -247,9 +279,14 @@ These endpoints do not require authentication:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v1/auth/me` | Get current user profile |
 | `POST` | `/api/v1/auth/logout` | Revoke session and clear cookies |
 | `POST` | `/api/v1/auth/password` | Change own password (local accounts only) |
+
+## Authenticated endpoints (session or Bearer token)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/auth/me` | Get current user profile (session) or token identity (Bearer) |
 
 See the [endpoint access matrix](#endpoint-access-matrix) for role requirements on all other authenticated routes.
 
