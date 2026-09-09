@@ -854,6 +854,10 @@ paths:
       summary: Update a product
       description: |
         **Required role:** `operator` or `admin`.
+
+        Partial update: only keys present in the JSON body are changed. Omitted keys keep their
+        current values. Set a nullable field to JSON `null` to clear it. An empty object returns
+        `400` with `no fields to update`.
       operationId: updateProduct
       security:
         - sessionAuth: []
@@ -1022,6 +1026,10 @@ paths:
       summary: Update a policy
       description: |
         **Required role:** `operator` or `admin`.
+
+        Partial update: only keys present in the JSON body are changed. Omitted keys keep their
+        current values. Set a nullable field to JSON `null` to clear it. An empty object returns
+        `400` with `no fields to update`.
       operationId: updatePolicy
       security:
         - sessionAuth: []
@@ -1271,6 +1279,10 @@ paths:
       summary: Update a license
       description: |
         **Required role:** `operator` or `admin`.
+
+        Partial update: only keys present in the JSON body are changed. Omitted keys keep their
+        current values. Set a nullable field to JSON `null` to clear it. An empty object returns
+        `400` with `no fields to update`.
       operationId: updateLicense
       security:
         - sessionAuth: []
@@ -1289,7 +1301,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/License"
         "400":
-          description: Invalid license ID, request body, or missing label
+          description: Invalid license ID, request body, empty patch, or invalid field value
           content:
             application/json:
               schema:
@@ -2335,14 +2347,17 @@ components:
 
     UpdateProductRequest:
       type: object
-      required: [name, code]
+      minProperties: 1
       properties:
         name:
           type: string
+          description: Omitted keys are left unchanged. Empty string is rejected.
         code:
           type: string
+          description: Omitted keys are left unchanged. Empty string is rejected.
         description:
           type: ["string", "null"]
+          description: Omitted to keep the current value. Set to `null` to clear.
 
     CreatePolicyRequest:
       type: object
@@ -2372,21 +2387,27 @@ components:
 
     UpdatePolicyRequest:
       type: object
-      required: [name]
+      minProperties: 1
       properties:
         name:
           type: string
+          description: Omitted keys are left unchanged. Empty string is rejected.
         description:
           type: ["string", "null"]
+          description: Omitted to keep the current value. Set to `null` to clear.
         duration_days:
           type: ["integer", "null"]
+          description: Omitted to keep the current value. Set to `null` for a perpetual policy.
         expiration_basis:
           type: string
           enum: [on_creation, on_first_validation]
+          description: Omitted to keep the current value. Cannot be set to `null`.
         grace_period_days:
           type: integer
+          description: Omitted to keep the current value. Cannot be set to `null`.
         max_activations:
           type: ["integer", "null"]
+          description: Omitted to keep the current value. Set to `null` for unlimited activations.
 
     Product:
       type: object
@@ -2489,18 +2510,19 @@ components:
 
     UpdateLicenseRequest:
       type: object
-      required: [label]
+      minProperties: 1
       properties:
         label:
           type: string
           example: Updated label
+          description: Omitted keys are left unchanged. Empty string is rejected.
         expires_at:
           type: ["string", "null"]
           format: date-time
-          description: Set to null for a key that never expires.
+          description: Omitted to keep the current value. Set to `null` for a key that never expires.
         max_activations:
           type: ["integer", "null"]
-          description: Set to null for unlimited machine activations.
+          description: Omitted to keep the current value. Set to `null` for unlimited machine activations.
 
     License:
       type: object

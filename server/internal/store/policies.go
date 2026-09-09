@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -114,17 +115,43 @@ func (s *Store) GetPolicyForProduct(ctx context.Context, id, productID uuid.UUID
 	return p, nil
 }
 
-func (s *Store) UpdatePolicy(ctx context.Context, id uuid.UUID, name string, description *string, durationDays *int, expirationBasis ExpirationBasis, gracePeriodDays int, maxActivations *int) (*Policy, error) {
-	const q = `
+func (s *Store) UpdatePolicy(ctx context.Context, id uuid.UUID, patch PolicyPatch) (*Policy, error) {
+	b := newSetBuilder(2)
+	if patch.Name != nil {
+		b.add("name", *patch.Name)
+	}
+	if patch.DescriptionSet {
+		b.add("description", patch.Description)
+	}
+	if patch.DurationDaysSet {
+		b.add("duration_days", patch.DurationDays)
+	}
+	if patch.ExpirationBasisSet {
+		b.add("expiration_basis", patch.ExpirationBasis)
+	}
+	if patch.GracePeriodDaysSet {
+		b.add("grace_period_days", patch.GracePeriodDays)
+	}
+	if patch.MaxActivationsSet {
+		b.add("max_activations", patch.MaxActivations)
+	}
+	b.addExpr("updated_at = NOW()")
+
+	setClause, args, err := b.expr()
+	if err != nil {
+		return nil, err
+	}
+
+	q := fmt.Sprintf(`
 		UPDATE policies
-		SET name = $2, description = $3, duration_days = $4, expiration_basis = $5,
-		    grace_period_days = $6, max_activations = $7, updated_at = NOW()
+		SET %s
 		WHERE id = $1
 		RETURNING id
-	`
+	`, setClause)
 
 	var returnedID uuid.UUID
-	err := s.pool.QueryRow(ctx, q, id, name, description, durationDays, expirationBasis, gracePeriodDays, maxActivations).Scan(&returnedID)
+	allArgs := append([]any{id}, args...)
+	err = s.pool.QueryRow(ctx, q, allArgs...).Scan(&returnedID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil

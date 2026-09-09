@@ -239,6 +239,9 @@ func TestAPIIntegration(t *testing.T) {
 	if updated["label"] != "updated-label" {
 		t.Fatalf("expected updated label, got %+v", updated["label"])
 	}
+	if updated["max_activations"] != nil {
+		t.Fatalf("expected max_activations to remain unset after label-only patch, got %+v", updated["max_activations"])
+	}
 
 	revokeResp := doJSON(t, handler, http.MethodPatch, "/api/v1/licenses/"+licenseID+"/revoke", nil, cookies)
 	if revokeResp.Code != http.StatusOK {

@@ -11,6 +11,10 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- fix(server): support true partial PATCH updates for licenses, products, and policies (#218)
+
 ### Enhancements
 
 - enhancement(server): rate limit authenticated admin endpoints per user or API token (#176)
