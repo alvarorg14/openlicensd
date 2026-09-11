@@ -91,12 +91,25 @@ func TestSetUserPasswordValidation(t *testing.T) {
 		t.Fatalf("short password status=%d want 400 body=%s", shortResp.Code, shortResp.Body.String())
 	}
 
+	targetCookies := login(t, handler, email, "initial-pass")
+	otherCookies := login(t, handler, email, "initial-pass")
+
 	newPassword := "new-pass-8"
 	resetResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+userID+"/password", map[string]string{
 		"password": newPassword,
 	}, adminCookies)
 	if resetResp.Code != http.StatusNoContent {
 		t.Fatalf("reset password status=%d want 204 body=%s", resetResp.Code, resetResp.Body.String())
+	}
+
+	targetMeResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, targetCookies)
+	if targetMeResp.Code != http.StatusUnauthorized {
+		t.Fatalf("target session after admin reset status=%d want 401", targetMeResp.Code)
+	}
+
+	otherMeResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, otherCookies)
+	if otherMeResp.Code != http.StatusUnauthorized {
+		t.Fatalf("other session after admin reset status=%d want 401", otherMeResp.Code)
 	}
 
 	oldLoginResp := doJSON(t, handler, http.MethodPost, "/api/v1/auth/login", map[string]string{
@@ -111,6 +124,14 @@ func TestSetUserPasswordValidation(t *testing.T) {
 	meResp := doJSON(t, handler, http.MethodGet, "/api/v1/auth/me", nil, newCookies)
 	if meResp.Code != http.StatusOK {
 		t.Fatalf("new password login status=%d want 200", meResp.Code)
+	}
+
+	missingID := "00000000-0000-0000-0000-000000000000"
+	notFoundResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+missingID+"/password", map[string]string{
+		"password": "valid-pass",
+	}, adminCookies)
+	if notFoundResp.Code != http.StatusNotFound {
+		t.Fatalf("missing user password reset status=%d want 404", notFoundResp.Code)
 	}
 }
 

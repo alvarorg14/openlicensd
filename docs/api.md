@@ -329,7 +329,7 @@ curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID" \
   -H "X-CSRF-Token: $CSRF" \
   -d '{"email":"operator@example.com","name":"Updated Name","role":"viewer"}'
 
-# Set or reset a user's password (admin action; minimum 8 characters)
+# Set or reset a user's password (admin action; minimum 8 characters; revokes all of their sessions)
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/password" \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF" \
