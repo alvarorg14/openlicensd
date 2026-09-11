@@ -520,7 +520,8 @@ paths:
       summary: Set user password
       description: |
         Sets or resets the password for a user (admin action). Does not require the current
-        password. Minimum length is 8 characters. Store failures return `404`.
+        password. Minimum length is 8 characters. On success, all active sessions for the
+        user are revoked.
 
         **Required role:** `admin`.
       operationId: setUserPassword
@@ -550,6 +551,10 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /api/v1/users/{id}/disable:
     parameters:

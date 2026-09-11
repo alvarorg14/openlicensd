@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/alvarorg14/openlicensd/server/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type userResponse struct {
@@ -307,7 +309,16 @@ func (s *Server) handleSetUserPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.store.SetUserPassword(r.Context(), id, hash); err != nil {
-		writeError(w, http.StatusNotFound, "user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "user not found")
+			return
+		}
+		writeInternalError(w, r, err, "failed to set password")
+		return
+	}
+
+	if err := s.store.RevokeAllUserSessions(r.Context(), id); err != nil {
+		writeInternalError(w, r, err, "failed to revoke sessions")
 		return
 	}
 
