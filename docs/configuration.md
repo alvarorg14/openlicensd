@@ -15,6 +15,7 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | No | Session lifetime in hours |
 | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | No | Per-request context deadline in seconds; `0` disables |
+| `OPENLICENSD_REQUEST_BODY_MAX_BYTES` | `1048576` | No | Maximum HTTP request body size in bytes |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | No | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies; when `true`, also enables `Strict-Transport-Security` response headers |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
@@ -146,6 +147,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.addr` | `OPENLICENSD_ADDR` |
 | `config.sessionTTLHours` | `OPENLICENSD_SESSION_TTL_HOURS` |
 | `config.requestTimeoutSeconds` | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` |
+| `config.requestBodyMaxBytes` | `OPENLICENSD_REQUEST_BODY_MAX_BYTES` |
 | `config.sessionCleanupIntervalMinutes` | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |

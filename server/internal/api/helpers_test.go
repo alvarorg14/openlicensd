@@ -44,9 +44,11 @@ func setupTestEnv(t *testing.T) testEnv {
 	email := fmt.Sprintf("admin-%d@example.com", time.Now().UnixNano())
 
 	cfg := &config.Config{
-		Addr:              ":8080",
-		DatabaseURL:       databaseURL,
-		SessionTTLHours:   24,
+		Addr:                  ":8080",
+		DatabaseURL:           databaseURL,
+		RequestTimeoutSeconds: 30,
+		RequestBodyMaxBytes:   1048576,
+		SessionTTLHours:       24,
 		CookieSecure:      false,
 		LocalLoginEnabled: true,
 		BootstrapAdmin: config.BootstrapAdminConfig{

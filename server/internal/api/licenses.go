@@ -91,7 +91,7 @@ func resolveInitialExpiry(policy *store.Policy, override *time.Time, now time.Ti
 func (s *Server) handleCreateLicense(w http.ResponseWriter, r *http.Request) {
 	var req createLicenseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -273,7 +273,7 @@ func (s *Server) handleUpdateLicense(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "no fields to update")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 

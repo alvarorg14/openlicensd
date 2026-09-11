@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,6 +118,21 @@ func TestAuthProviders(t *testing.T) {
 	resp := doJSON(t, env.Handler, http.MethodGet, "/api/v1/auth/providers", nil, nil)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("providers status=%d", resp.Code)
+	}
+}
+
+func TestLoginRejectsOversizedBody(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+
+	largeBody := strings.Repeat("a", 2*1024*1024)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(largeBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversized login status=%d want 413 body=%s", rec.Code, rec.Body.String())
 	}
 }
 

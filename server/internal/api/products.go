@@ -45,7 +45,7 @@ func productToResponse(p *store.Product) productResponse {
 func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req createProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -136,7 +136,7 @@ func (s *Server) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "no fields to update")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 

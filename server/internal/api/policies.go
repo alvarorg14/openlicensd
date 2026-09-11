@@ -71,7 +71,7 @@ func parseExpirationBasis(value string) (store.ExpirationBasis, bool) {
 func (s *Server) handleCreatePolicy(w http.ResponseWriter, r *http.Request) {
 	var req createPolicyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -210,7 +210,7 @@ func (s *Server) handleUpdatePolicy(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "no fields to update")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 

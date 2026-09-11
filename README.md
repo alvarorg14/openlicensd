@@ -202,6 +202,7 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Bcrypt hash for bootstrap admin password |
 | `OPENLICENSD_SESSION_TTL_HOURS` | `24` | Session lifetime in hours |
 | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
+| `OPENLICENSD_REQUEST_BODY_MAX_BYTES` | `1048576` | Maximum HTTP request body size in bytes |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
 | `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
 | `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |

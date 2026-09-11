@@ -181,7 +181,7 @@ func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -233,7 +233,7 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	var req updateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -294,7 +294,7 @@ func (s *Server) handleSetUserPassword(w http.ResponseWriter, r *http.Request) {
 
 	var req setPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 	if msg := validatePassword(req.Password); msg != "" {
@@ -499,7 +499,7 @@ func (s *Server) handleChangeOwnPassword(w http.ResponseWriter, r *http.Request)
 
 	var req changePasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 	if req.CurrentPassword == "" {

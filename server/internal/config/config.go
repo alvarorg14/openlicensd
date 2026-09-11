@@ -74,6 +74,7 @@ type Config struct {
 	Database                      DatabaseConfig
 	BootstrapAdmin                BootstrapAdminConfig
 	RequestTimeoutSeconds         int
+	RequestBodyMaxBytes           int
 	SessionTTLHours               int
 	SessionCleanupIntervalMinutes int
 	CookieSecure                  bool
@@ -104,6 +105,7 @@ func Load() (*Config, error) {
 			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
 		},
 		RequestTimeoutSeconds:         getIntEnv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", 30),
+		RequestBodyMaxBytes:           getIntEnv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", 1048576),
 		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
 		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
@@ -158,6 +160,9 @@ func Load() (*Config, error) {
 	if cfg.RequestTimeoutSeconds < 0 {
 		return nil, fmt.Errorf("OPENLICENSD_REQUEST_TIMEOUT_SECONDS must be 0 or greater")
 	}
+	if cfg.RequestBodyMaxBytes < 1 {
+		return nil, fmt.Errorf("OPENLICENSD_REQUEST_BODY_MAX_BYTES must be at least 1")
+	}
 	if cfg.SessionTTLHours < 1 {
 		return nil, fmt.Errorf("OPENLICENSD_SESSION_TTL_HOURS must be at least 1")
 	}
@@ -199,6 +204,14 @@ func (c *Config) SessionCleanupInterval() time.Duration {
 
 func (c *Config) RequestTimeout() time.Duration {
 	return time.Duration(c.RequestTimeoutSeconds) * time.Second
+}
+
+func (c *Config) ReadTimeout() time.Duration {
+	const readHeaderTimeout = 10 * time.Second
+	if d := c.RequestTimeout(); d > 0 {
+		return d + readHeaderTimeout
+	}
+	return 60 * time.Second
 }
 
 func (o OIDCConfig) IsAdminEmail(email string) bool {
