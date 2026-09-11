@@ -297,6 +297,17 @@ See the [endpoint access matrix](#endpoint-access-matrix) for role requirements 
 
 `PATCH` endpoints accept partial JSON bodies. Only keys present in the request are updated; omitted keys keep their current database values. Set a nullable field to JSON `null` to clear it (for example, `expires_at: null` on a license). An empty object (`{}`) returns `400` with `no fields to update`. Non-nullable fields such as `label`, `name`, and `code` cannot be empty or `null` when included.
 
+#### Policy edits and existing licenses
+
+Not all policy fields behave the same when you `PATCH /api/v1/policies/{id}` after licenses have been issued:
+
+- **Live on validation** — `grace_period_days` is read from the current policy on every validation. Changing it retroactively affects whether existing licenses are `expired` or `in_grace_period`.
+- **Live while pending first validation** — `duration_days` and `expiration_basis` apply to licenses whose `expires_at` is still unset (`on_first_validation` not yet activated).
+- **Not backfilled** — `max_activations` is copied to each license at create time. Policy edits do not change activation limits on existing licenses; use `PATCH /api/v1/licenses/{id}` instead.
+- **Not recalculated** — `expires_at` on a license stays as written once set (at create, first validation, or license override).
+
+See [architecture — Expiry semantics](architecture.md#expiry-semantics) for the full field-by-field table.
+
 ## User management (admin only)
 
 ```bash
@@ -370,7 +381,7 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/licenses \
 
 The response includes the raw `key` field **once**. Store it securely — it cannot be retrieved later.
 
-You can optionally override the policy-derived expiration with `expires_at` and the activation limit with `max_activations` (null = unlimited).
+You can optionally override the policy-derived expiration with `expires_at` and the activation limit with `max_activations` (null = unlimited). Both values are **snapshotted** onto the license at create and are not updated when the policy changes later.
 
 ## Example: validate a license
 

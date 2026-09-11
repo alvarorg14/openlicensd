@@ -104,10 +104,10 @@ erDiagram
 | `product_id` | `UUID` | FK to `products` |
 | `name` | `TEXT` | Policy name (unique per product) |
 | `description` | `TEXT` | Optional description |
-| `duration_days` | `INTEGER` | Null = perpetual |
-| `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation` |
-| `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds |
-| `max_activations` | `INTEGER` | Null = unlimited concurrent machine activations |
+| `duration_days` | `INTEGER` | Null = perpetual; read **live** from the joined policy on validation (used to set `expires_at` on first validation when basis is `on_first_validation`) |
+| `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation`; read **live** while `expires_at` is still unset |
+| `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds; read **live** from the joined policy on every validation |
+| `max_activations` | `INTEGER` | Policy default for new licenses; null = unlimited. Copied to `licenses.max_activations` at create and not backfilled on policy edit |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `licenses` table
@@ -120,7 +120,7 @@ erDiagram
 | `key_prefix` | `TEXT` | First 5-character group (for display) |
 | `product_id` | `UUID` | FK to `products` (required) |
 | `policy_id` | `UUID` | FK to `policies` (required; composite FK ensures same product) |
-| `expires_at` | `TIMESTAMPTZ` | Optional expiration (derived from policy or overridden) |
+| `expires_at` | `TIMESTAMPTZ` | **Snapshotted** expiration (derived from policy at create or first validation, or overridden at create/PATCH); not recalculated when the policy changes |
 | `activated_at` | `TIMESTAMPTZ` | Set on first validation for `on_first_validation` policies |
 | `revoked` | `BOOLEAN` | Whether the license is revoked |
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
@@ -189,10 +189,20 @@ Append-only audit trail of successful admin mutations. Rows are never updated th
 
 ### Expiry semantics
 
-- Policy rules are **snapshotted** onto the license at issuance; editing a policy does not change existing licenses.
-- `on_creation`: `expires_at` is set when the license is created.
-- `on_first_validation`: `expires_at` and `activated_at` are set on the first validation.
-- `grace_period_days` allows validation to succeed briefly after `expires_at` (response includes `in_grace_period: true`).
+Policy fields are a mix of **snapshotted** license columns and **live** values read from the joined `policies` row on every license load (including validation). Editing a policy can therefore change validation outcomes for existing licenses.
+
+| Field | Behavior | Policy edit affects existing licenses? |
+|-------|----------|----------------------------------------|
+| `licenses.max_activations` | **Snapshotted** at create from the policy default (or create override) | No — only `PATCH /licenses/{id}` changes it |
+| `licenses.expires_at` | **Snapshotted** once written (at create for `on_creation`, or on first validation for `on_first_validation`) | No — already-set expiry is not recalculated |
+| `policies.grace_period_days` | **Live** — joined on every validation | Yes — grace window and `expired` vs `in_grace_period` change immediately |
+| `policies.duration_days` | **Live** only while `expires_at` is still unset (`on_first_validation` pending) | Only for licenses not yet activated |
+| `policies.expiration_basis` | **Live** only while `expires_at` is still unset | Only for licenses not yet activated |
+| `policies.name` | **Live** — joined for list/validate responses (`policy` / `policy_name`) | Yes — display name only |
+
+- `on_creation`: `expires_at` is set when the license is created from the policy's `duration_days`.
+- `on_first_validation`: `expires_at` and `activated_at` are set on the first validation using the **current** policy `duration_days`.
+- `grace_period_days` allows validation to succeed briefly after `expires_at` (response includes `in_grace_period: true`); the grace window comes from the **current** policy value.
 
 ## License key format
 
