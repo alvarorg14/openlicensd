@@ -1,11 +1,16 @@
 package api_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/google/uuid"
 )
 
 func TestCreateUserPasswordValidation(t *testing.T) {
@@ -203,4 +208,254 @@ func TestGetUser(t *testing.T) {
 	if operatorGetResp.Code != http.StatusForbidden {
 		t.Fatalf("operator get user status=%d want 403", operatorGetResp.Code)
 	}
+}
+
+func TestLastAdminGuardSession(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+	admin := testEnvAdmin(t, env)
+	isolateSoleEnabledAdmin(t, env.Store, admin.ID)
+
+	operatorDemote := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String(), map[string]any{
+		"email": admin.Email,
+		"name":  admin.Name,
+		"role":  "operator",
+	}, adminCookies)
+	if operatorDemote.Code != http.StatusBadRequest {
+		t.Fatalf("demote last admin to operator status=%d want 400 body=%s", operatorDemote.Code, operatorDemote.Body.String())
+	}
+	if got := errorMessage(t, operatorDemote); got != "cannot demote the last admin" {
+		t.Fatalf("demote last admin error=%q", got)
+	}
+
+	viewerDemote := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String(), map[string]any{
+		"email": admin.Email,
+		"name":  admin.Name,
+		"role":  "viewer",
+	}, adminCookies)
+	if viewerDemote.Code != http.StatusBadRequest {
+		t.Fatalf("demote last admin to viewer status=%d want 400 body=%s", viewerDemote.Code, viewerDemote.Body.String())
+	}
+	if got := errorMessage(t, viewerDemote); got != "cannot demote the last admin" {
+		t.Fatalf("demote last admin to viewer error=%q", got)
+	}
+
+	disableSelf := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String()+"/disable", nil, adminCookies)
+	if disableSelf.Code != http.StatusBadRequest {
+		t.Fatalf("disable last admin self status=%d want 400 body=%s", disableSelf.Code, disableSelf.Body.String())
+	}
+	if got := errorMessage(t, disableSelf); got != "cannot disable your own account" {
+		t.Fatalf("disable last admin self error=%q want cannot disable your own account", got)
+	}
+
+	updatedName := admin.Name + " Updated"
+	keepAdmin := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String(), map[string]any{
+		"email": admin.Email,
+		"name":  updatedName,
+		"role":  "admin",
+	}, adminCookies)
+	if keepAdmin.Code != http.StatusOK {
+		t.Fatalf("email/name update of last admin status=%d want 200 body=%s", keepAdmin.Code, keepAdmin.Body.String())
+	}
+	var updated map[string]any
+	if err := json.Unmarshal(keepAdmin.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("decode last admin update: %v", err)
+	}
+	if updated["name"] != updatedName {
+		t.Fatalf("name=%v want %s", updated["name"], updatedName)
+	}
+	if updated["role"] != "admin" {
+		t.Fatalf("role=%v want admin", updated["role"])
+	}
+}
+
+func TestLastAdminGuardAPIToken(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	admin := testEnvAdmin(t, env)
+	isolateSoleEnabledAdmin(t, env.Store, admin.ID)
+	token := createTestAPIToken(t, env.Store, "last-admin-"+fmt.Sprint(time.Now().UnixNano()), store.RoleAdmin)
+
+	disableResp := doJSONWithToken(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String()+"/disable", nil, token)
+	if disableResp.Code != http.StatusBadRequest {
+		t.Fatalf("token disable last admin status=%d want 400 body=%s", disableResp.Code, disableResp.Body.String())
+	}
+	if got := errorMessage(t, disableResp); got != "cannot disable the last admin" {
+		t.Fatalf("token disable last admin error=%q", got)
+	}
+
+	deleteResp := doJSONWithToken(t, handler, http.MethodDelete, "/api/v1/users/"+admin.ID.String(), nil, token)
+	if deleteResp.Code != http.StatusBadRequest {
+		t.Fatalf("token delete last admin status=%d want 400 body=%s", deleteResp.Code, deleteResp.Body.String())
+	}
+	if got := errorMessage(t, deleteResp); got != "cannot delete the last admin" {
+		t.Fatalf("token delete last admin error=%q", got)
+	}
+
+	demoteResp := doJSONWithToken(t, handler, http.MethodPatch, "/api/v1/users/"+admin.ID.String(), map[string]any{
+		"email": admin.Email,
+		"name":  admin.Name,
+		"role":  "operator",
+	}, token)
+	if demoteResp.Code != http.StatusBadRequest {
+		t.Fatalf("token demote last admin status=%d want 400 body=%s", demoteResp.Code, demoteResp.Body.String())
+	}
+	if got := errorMessage(t, demoteResp); got != "cannot demote the last admin" {
+		t.Fatalf("token demote last admin error=%q", got)
+	}
+}
+
+func TestLastAdminGuardAllowsExtraAdminMutations(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+	admin := testEnvAdmin(t, env)
+	isolateSoleEnabledAdmin(t, env.Store, admin.ID)
+
+	demoteUser := createAPIUser(t, handler, adminCookies, "extra-demote", "admin")
+	demoteResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+demoteUser["id"].(string), map[string]any{
+		"email": demoteUser["email"],
+		"name":  demoteUser["name"],
+		"role":  "operator",
+	}, adminCookies)
+	if demoteResp.Code != http.StatusOK {
+		t.Fatalf("demote extra admin status=%d want 200 body=%s", demoteResp.Code, demoteResp.Body.String())
+	}
+
+	disableUser := createAPIUser(t, handler, adminCookies, "extra-disable", "admin")
+	disableResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+disableUser["id"].(string)+"/disable", nil, adminCookies)
+	if disableResp.Code != http.StatusOK {
+		t.Fatalf("disable extra admin status=%d want 200 body=%s", disableResp.Code, disableResp.Body.String())
+	}
+
+	deleteUser := createAPIUser(t, handler, adminCookies, "extra-delete", "admin")
+	deleteResp := doJSON(t, handler, http.MethodDelete, "/api/v1/users/"+deleteUser["id"].(string), nil, adminCookies)
+	if deleteResp.Code != http.StatusNoContent {
+		t.Fatalf("delete extra admin status=%d want 204 body=%s", deleteResp.Code, deleteResp.Body.String())
+	}
+}
+
+func TestLastAdminGuardAllowsNonAdminMutations(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	adminCookies := login(t, handler, env.Email, env.Password)
+	admin := testEnvAdmin(t, env)
+	isolateSoleEnabledAdmin(t, env.Store, admin.ID)
+
+	viewer := createAPIUser(t, handler, adminCookies, "last-admin-viewer", "viewer")
+	viewerID := viewer["id"].(string)
+
+	updateResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+viewerID, map[string]any{
+		"email": viewer["email"],
+		"name":  "Viewer Updated",
+		"role":  "operator",
+	}, adminCookies)
+	if updateResp.Code != http.StatusOK {
+		t.Fatalf("update viewer status=%d want 200 body=%s", updateResp.Code, updateResp.Body.String())
+	}
+
+	disableResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+viewerID+"/disable", nil, adminCookies)
+	if disableResp.Code != http.StatusOK {
+		t.Fatalf("disable viewer status=%d want 200 body=%s", disableResp.Code, disableResp.Body.String())
+	}
+
+	enableResp := doJSON(t, handler, http.MethodPatch, "/api/v1/users/"+viewerID+"/enable", nil, adminCookies)
+	if enableResp.Code != http.StatusOK {
+		t.Fatalf("enable viewer status=%d want 200 body=%s", enableResp.Code, enableResp.Body.String())
+	}
+
+	deleteResp := doJSON(t, handler, http.MethodDelete, "/api/v1/users/"+viewerID, nil, adminCookies)
+	if deleteResp.Code != http.StatusNoContent {
+		t.Fatalf("delete viewer status=%d want 204 body=%s", deleteResp.Code, deleteResp.Body.String())
+	}
+}
+
+func testEnvAdmin(t *testing.T, env testEnv) *store.User {
+	t.Helper()
+	user, err := env.Store.GetUserByEmail(context.Background(), env.Email)
+	if err != nil {
+		t.Fatalf("GetUserByEmail: %v", err)
+	}
+	if user == nil {
+		t.Fatalf("test env admin %s not found", env.Email)
+	}
+	return user
+}
+
+func isolateSoleEnabledAdmin(t *testing.T, st *store.Store, keepID uuid.UUID) {
+	t.Helper()
+	ctx := context.Background()
+
+	type demotedAdmin struct {
+		id   uuid.UUID
+		role store.Role
+	}
+	var demoted []demotedAdmin
+
+	const pageSize = 100
+	offset := 0
+	for {
+		users, total, err := st.ListUsers(ctx, store.ListParams{
+			Sort:   "created_at",
+			Order:  "asc",
+			Limit:  pageSize,
+			Offset: offset,
+		})
+		if err != nil {
+			t.Fatalf("ListUsers: %v", err)
+		}
+		for _, u := range users {
+			if u.ID == keepID || u.Role != store.RoleAdmin || u.DisabledAt != nil {
+				continue
+			}
+			if _, err := st.UpdateUser(ctx, u.ID, u.Email, u.Name, store.RoleOperator); err != nil {
+				t.Fatalf("demote leftover admin %s: %v", u.ID, err)
+			}
+			demoted = append(demoted, demotedAdmin{id: u.ID, role: store.RoleAdmin})
+		}
+		offset += len(users)
+		if len(users) == 0 || offset >= int(total) {
+			break
+		}
+	}
+
+	t.Cleanup(func() {
+		for _, d := range demoted {
+			existing, err := st.GetUserByID(ctx, d.id)
+			if err != nil || existing == nil {
+				continue
+			}
+			_, _ = st.UpdateUser(ctx, existing.ID, existing.Email, existing.Name, d.role)
+		}
+	})
+}
+
+func createAPIUser(t *testing.T, handler http.Handler, cookies []*http.Cookie, prefix, role string) map[string]any {
+	t.Helper()
+	email := fmt.Sprintf("%s-%d@example.com", prefix, time.Now().UnixNano())
+	resp := doJSON(t, handler, http.MethodPost, "/api/v1/users", map[string]any{
+		"email":    email,
+		"name":     prefix,
+		"password": "valid-pass",
+		"role":     role,
+	}, cookies)
+	if resp.Code != http.StatusCreated {
+		t.Fatalf("create %s user status=%d body=%s", role, resp.Code, resp.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create %s user: %v", role, err)
+	}
+	return created
+}
+
+func errorMessage(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode error body: %v body=%s", err, rec.Body.String())
+	}
+	msg, _ := body["error"].(string)
+	return msg
 }

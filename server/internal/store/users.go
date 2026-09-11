@@ -52,6 +52,15 @@ func (s *Store) CountUsers(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
+func (s *Store) CountAdmins(ctx context.Context) (int64, error) {
+	const q = `SELECT COUNT(*) FROM users WHERE role = 'admin' AND disabled_at IS NULL`
+	var count int64
+	if err := s.pool.QueryRow(ctx, q).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (s *Store) CreateUser(ctx context.Context, email, name string, passwordHash *string, role Role, authProvider string, externalID *string) (*User, error) {
 	if authProvider == "" {
 		authProvider = AuthProviderLocal

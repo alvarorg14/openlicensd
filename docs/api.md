@@ -311,7 +311,7 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/users \
   -H "X-CSRF-Token: $CSRF" \
   -d '{"email":"operator@example.com","name":"Operator","password":"secure-pass","role":"operator"}'
 
-# Update a user
+# Update a user (cannot demote the last enabled admin)
 USER_ID="..."
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID" \
   -H "Content-Type: application/json" \
@@ -324,7 +324,7 @@ curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/pas
   -H "X-CSRF-Token: $CSRF" \
   -d '{"password":"new-password"}'
 
-# Disable a user (revokes all their sessions; cannot disable yourself)
+# Disable a user (revokes all their sessions; cannot disable yourself or the last enabled admin)
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/disable" \
   -H "X-CSRF-Token: $CSRF"
 
@@ -332,12 +332,14 @@ curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/dis
 curl -s -b cookies.txt -X PATCH "http://localhost:8080/api/v1/users/$USER_ID/enable" \
   -H "X-CSRF-Token: $CSRF"
 
-# Delete a user (cannot delete yourself)
+# Delete a user (cannot delete yourself or the last enabled admin)
 curl -s -b cookies.txt -X DELETE "http://localhost:8080/api/v1/users/$USER_ID" \
   -H "X-CSRF-Token: $CSRF"
 ```
 
 User objects include `id`, `email`, `name`, `role`, `auth_provider`, `created_at`, and `updated_at`. `disabled_at` and `last_login_at` are present only when applicable.
+
+The last enabled admin cannot be demoted, disabled, or deleted. Those mutations return `400` so the server cannot be left with zero admins. The same guard applies to admin API tokens (`Authorization: Bearer`), which do not have a user identity and therefore bypass the self-disable/self-delete checks.
 
 ## Example: create a product and policy
 

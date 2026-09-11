@@ -432,7 +432,10 @@ paths:
       tags: [Users]
       summary: Update a user
       description: |
-        Updates a user's email, name, and role.
+        Updates a user's email, name, and role. Demoting the last enabled admin
+        is rejected with `400` (`cannot demote the last admin`), including when
+        the caller authenticates with an admin API token. Email and name updates
+        that keep `role=admin` are allowed.
 
         **Required role:** `admin`.
       operationId: updateUser
@@ -453,7 +456,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         "400":
-          description: Invalid user ID or request body (missing email, name, or invalid role)
+          description: Invalid user ID, request body (missing email, name, or invalid role), or cannot demote the last admin
           content:
             application/json:
               schema:
@@ -477,7 +480,9 @@ paths:
       tags: [Users]
       summary: Delete a user
       description: |
-        Permanently deletes a user. Cannot delete your own account.
+        Permanently deletes a user. Cannot delete your own account. Deleting the
+        last enabled admin is rejected with `400` (`cannot delete the last admin`),
+        including when the caller authenticates with an admin API token.
 
         **Required role:** `admin`.
       operationId: deleteUser
@@ -488,7 +493,7 @@ paths:
         "204":
           description: User deleted
         "400":
-          description: Invalid user ID or cannot delete your own account
+          description: Invalid user ID, cannot delete your own account, or cannot delete the last admin
           content:
             application/json:
               schema:
@@ -554,7 +559,10 @@ paths:
       tags: [Users]
       summary: Disable a user
       description: |
-        Disables a user account and revokes all of their sessions. Cannot disable your own account.
+        Disables a user account and revokes all of their sessions. Cannot disable
+        your own account. Disabling the last enabled admin is rejected with `400`
+        (`cannot disable the last admin`), including when the caller authenticates
+        with an admin API token.
 
         **Required role:** `admin`.
       operationId: disableUser
@@ -569,7 +577,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         "400":
-          description: Invalid user ID or cannot disable your own account
+          description: Invalid user ID, cannot disable your own account, or cannot disable the last admin
           content:
             application/json:
               schema:
