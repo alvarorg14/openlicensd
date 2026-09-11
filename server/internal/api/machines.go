@@ -124,7 +124,7 @@ func (s *Server) handleUpdateLicenseMachine(w http.ResponseWriter, r *http.Reque
 
 	var req updateMachineRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 

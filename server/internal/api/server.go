@@ -102,6 +102,7 @@ func (s *Server) Router(staticHandler http.Handler) http.Handler {
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(logging.RequestLogger(s.logger))
 	r.Use(requestTimeout(s.cfg.RequestTimeout()))
+	r.Use(requestBodyLimit(int64(s.cfg.RequestBodyMaxBytes)))
 	if s.metrics != nil {
 		r.Use(appmetrics.Middleware(s.metrics))
 	}
@@ -226,7 +227,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -285,6 +286,15 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func writeRequestBodyError(w http.ResponseWriter, _ *http.Request, err error) {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		writeError(w, http.StatusRequestEntityTooLarge, "request body too large")
+		return
+	}
+	writeError(w, http.StatusBadRequest, "invalid request body")
 }
 
 func writeInternalError(w http.ResponseWriter, r *http.Request, err error, message string) {

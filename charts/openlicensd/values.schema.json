@@ -249,6 +249,10 @@
           "type": "integer",
           "minimum": 0
         },
+        "requestBodyMaxBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
         "sessionCleanupIntervalMinutes": {
           "type": "integer",
           "minimum": 0

@@ -196,6 +196,7 @@ The server logs a **warn** line with a `reason` code (the underlying error is **
 | `reason=state_missing` / `nonce_missing` | Cookies not stored | Use HTTPS, or set `OPENLICENSD_COOKIE_SECURE=false` for local HTTP only |
 | SSO button missing | OIDC disabled | Set `OPENLICENSD_OIDC_ENABLED=true` and restart |
 | `504 request timeout` during callback | Slow IdP or database | Increase `OPENLICENSD_REQUEST_TIMEOUT_SECONDS`; check DB latency |
+| `413 request body too large` | Payload exceeds body limit | Reduce request size or increase `OPENLICENSD_REQUEST_BODY_MAX_BYTES` |
 
 For provider setup, redirect URI registration, and role provisioning, see [oidc-sso.md](oidc-sso.md).
 

@@ -182,7 +182,7 @@ func (s *Server) logValidationOutcome(r *http.Request, lic *store.License, rawKe
 func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 	var req validateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (s *Server) handleValidate(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleRegistryCredentials(w http.ResponseWriter, r *http.Request) {
 	var req validateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeRequestBodyError(w, r, err)
 		return
 	}
 

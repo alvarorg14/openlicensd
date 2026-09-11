@@ -557,3 +557,65 @@ func TestLoadRequestTimeoutNegative(t *testing.T) {
 		t.Fatalf("expected error for negative request timeout")
 	}
 }
+
+func TestLoadRequestBodyMaxBytesDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RequestBodyMaxBytes != 1048576 {
+		t.Fatalf("request body max bytes=%d want 1048576", cfg.RequestBodyMaxBytes)
+	}
+}
+
+func TestLoadRequestBodyMaxBytesOverride(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "2048")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RequestBodyMaxBytes != 2048 {
+		t.Fatalf("request body max bytes=%d want 2048", cfg.RequestBodyMaxBytes)
+	}
+}
+
+func TestLoadRequestBodyMaxBytesInvalid(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "0")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for zero request body max bytes")
+	}
+}
+
+func TestReadTimeoutDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.ReadTimeout() != 40*time.Second {
+		t.Fatalf("read timeout=%s want 40s", cfg.ReadTimeout())
+	}
+}
+
+func TestReadTimeoutWhenRequestTimeoutDisabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "0")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.ReadTimeout() != 60*time.Second {
+		t.Fatalf("read timeout=%s want 60s", cfg.ReadTimeout())
+	}
+}

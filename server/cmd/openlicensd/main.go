@@ -78,13 +78,14 @@ func main() {
 		Addr:              cfg.Addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       cfg.ReadTimeout(),
 	}
 
 	var metricsServer *http.Server
 	if metricsHandler := srv.MetricsHandler(); metricsHandler != nil {
 		metricsServer = &http.Server{
-			Addr:              cfg.Metrics.Addr,
-			Handler:           http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Addr: cfg.Metrics.Addr,
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != "/metrics" {
 					http.NotFound(w, r)
 					return
@@ -92,6 +93,7 @@ func main() {
 				metricsHandler.ServeHTTP(w, r)
 			}),
 			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       cfg.ReadTimeout(),
 		}
 	}
 

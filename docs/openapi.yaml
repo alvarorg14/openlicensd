@@ -10,6 +10,7 @@ info:
     API token management (`/api/v1/api-tokens`) requires a session cookie (admin role).
     Public endpoints (`/validate`, `/registry-credentials`, `/auth/login`, OIDC login/callback) do not require authentication.
     Unauthenticated endpoints are rate limited per client IP; authenticated admin endpoints are rate limited per user session or API token. Configure `OPENLICENSD_TRUSTED_PROXIES` behind a reverse proxy.
+    Request bodies are capped by `OPENLICENSD_REQUEST_BODY_MAX_BYTES` (default `1048576`); oversized bodies return `413` with `{"error":"request body too large"}`.
     API requests are bounded by `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` (default `30`; `0` disables); exceeded deadlines return `504` with `{"error":"request timeout"}`.
 
     All responses include browser security headers: `Content-Security-Policy`, `X-Frame-Options`,
@@ -123,6 +124,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           description: Invalid credentials
           content:
@@ -287,6 +290,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -374,6 +379,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -461,6 +468,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -543,6 +552,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -711,6 +722,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -917,6 +930,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1003,6 +1018,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1126,6 +1143,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1212,6 +1231,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1380,6 +1401,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1465,6 +1488,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1679,6 +1704,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1812,6 +1839,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1855,6 +1884,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
         "403":
           description: |
             Invalid license. The `error` field carries a `ValidationReason` code (same codes
@@ -2163,6 +2194,14 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             error: resource is referenced by other records
+    RequestEntityTooLarge:
+      description: Request body exceeds configured size limit
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: request body too large
     InternalError:
       description: Internal server error
       content:

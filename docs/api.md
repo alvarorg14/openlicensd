@@ -456,6 +456,7 @@ Common status codes:
 | Code | Meaning |
 |------|---------|
 | `400` | Invalid request body or parameters |
+| `413` | Request body exceeds configured size limit (`OPENLICENSD_REQUEST_BODY_MAX_BYTES`) |
 | `401` | Missing or invalid session |
 | `403` | Forbidden (insufficient role, session-only endpoint called with a Bearer API token, or invalid license for registry-credentials) |
 | `404` | Resource not found |

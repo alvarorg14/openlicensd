@@ -380,7 +380,7 @@ func TestRateLimitAuthenticatedSessionReturns429(t *testing.T) {
 
 func TestRateLimitAuthenticatedBearerReturns429(t *testing.T) {
 	env := setupAuthenticatedRateLimitTestEnv(t, tightAuthenticatedRateLimitConfig())
-	token := createTestAPIToken(t, env.Store, "rate-limit-test", store.RoleAdmin)
+	token := createTestAPIToken(t, env.Store, fmt.Sprintf("rate-limit-test-%d", time.Now().UnixNano()), store.RoleAdmin)
 
 	for i := 0; i < 2; i++ {
 		resp := doJSONWithToken(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, token)
@@ -411,7 +411,7 @@ func TestRateLimitAuthenticatedPerPrincipalBuckets(t *testing.T) {
 		t.Fatalf("admin status=%d want 429 body=%s", resp.Code, resp.Body.String())
 	}
 
-	token := createTestAPIToken(t, env.Store, "other-principal", store.RoleAdmin)
+	token := createTestAPIToken(t, env.Store, fmt.Sprintf("other-principal-%d", time.Now().UnixNano()), store.RoleAdmin)
 	resp = doJSONWithToken(t, env.Handler, http.MethodGet, "/api/v1/licenses", nil, token)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("token status=%d want 200 body=%s", resp.Code, resp.Body.String())
@@ -460,7 +460,7 @@ func TestRateLimitAuthenticatedPostgresSharedBudgetAcrossReplicas(t *testing.T) 
 		t.Fatalf("api server B: %v", err)
 	}
 
-	token := createTestAPIToken(t, env.Store, "postgres-shared", store.RoleAdmin)
+	token := createTestAPIToken(t, env.Store, fmt.Sprintf("postgres-shared-%d", time.Now().UnixNano()), store.RoleAdmin)
 	handlerA := srvA.Router(nil)
 	handlerB := srvB.Router(nil)
 
