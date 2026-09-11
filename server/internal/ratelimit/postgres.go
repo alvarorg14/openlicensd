@@ -10,8 +10,9 @@ import (
 )
 
 type postgresLimiter struct {
-	enabled bool
-	scopes  map[Scope]memoryScopeConfig
+	enabled  bool
+	failOpen bool
+	scopes   map[Scope]memoryScopeConfig
 	idle    time.Duration
 	buckets BucketStore
 	logger  *slog.Logger
@@ -31,7 +32,8 @@ func NewPostgres(cfg config.RateLimitConfig, deps Deps) Limiter {
 	}
 
 	return &postgresLimiter{
-		enabled: true,
+		enabled:  true,
+		failOpen: cfg.FailOpen,
 		scopes: map[Scope]memoryScopeConfig{
 			ScopePublic: {
 				burst:           cfg.PublicBurst,
@@ -70,15 +72,25 @@ func (l *postgresLimiter) Allow(ctx context.Context, scope Scope, key string) (b
 			logger = l.logger
 		}
 		if logger != nil {
-			logger.Warn("rate limit check failed, allowing request",
-				slog.Any("err", err),
-				slog.String("scope", string(scope)),
-			)
+			if l.failOpen {
+				logger.Warn("rate limit check failed, allowing request",
+					slog.Any("err", err),
+					slog.String("scope", string(scope)),
+				)
+			} else {
+				logger.Warn("rate limit check failed, denying request",
+					slog.Any("err", err),
+					slog.String("scope", string(scope)),
+				)
+			}
 		}
 		if l.metrics != nil {
 			l.metrics.RecordRateLimitError(string(scope))
 		}
-		return true, 0
+		if l.failOpen {
+			return true, 0
+		}
+		return false, retryDelay(0, scopeCfg.refillPerSecond)
 	}
 
 	if available >= 1 {

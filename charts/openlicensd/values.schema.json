@@ -335,6 +335,9 @@
             "idleMinutes": {
               "type": "integer",
               "minimum": 1
+            },
+            "failOpen": {
+              "type": "boolean"
             }
           }
         },

@@ -40,6 +40,7 @@ func TestPostgresLimiterFailOpenOnError(t *testing.T) {
 	limiter := ratelimit.New(config.RateLimitConfig{
 		Enabled:         true,
 		Backend:         "postgres",
+		FailOpen:        true,
 		PublicPerMinute: 60,
 		PublicBurst:     2,
 		LoginPerMinute:  30,
@@ -53,6 +54,40 @@ func TestPostgresLimiterFailOpenOnError(t *testing.T) {
 	allowed, delay := limiter.Allow(context.Background(), ratelimit.ScopePublic, "1.2.3.4")
 	if !allowed || delay != 0 {
 		t.Fatalf("expected fail-open, allowed=%v delay=%s", allowed, delay)
+	}
+	if recorder.count != 1 || recorder.scope != "public" {
+		t.Fatalf("recorder=%+v", recorder)
+	}
+}
+
+func TestPostgresLimiterFailClosedOnError(t *testing.T) {
+	store := stubBucketStore{
+		takeFn: func(context.Context, string, string, float64, float64) (float64, error) {
+			return 0, errors.New("database unavailable")
+		},
+	}
+	recorder := &stubErrorRecorder{}
+
+	limiter := ratelimit.New(config.RateLimitConfig{
+		Enabled:         true,
+		Backend:         "postgres",
+		FailOpen:        false,
+		PublicPerMinute: 60,
+		PublicBurst:     2,
+		LoginPerMinute:  30,
+		LoginBurst:      1,
+		IdleMinutes:     1,
+	}, ratelimit.Deps{
+		Buckets: store,
+		Metrics: recorder,
+	})
+
+	allowed, delay := limiter.Allow(context.Background(), ratelimit.ScopePublic, "1.2.3.4")
+	if allowed {
+		t.Fatal("expected fail-closed request to be denied")
+	}
+	if delay != time.Second {
+		t.Fatalf("delay=%s want 1s", delay)
 	}
 	if recorder.count != 1 || recorder.scope != "public" {
 		t.Fatalf("recorder=%+v", recorder)

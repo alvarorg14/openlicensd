@@ -59,7 +59,7 @@ Unmatched routes (static SPA assets, 404s) are labeled `route="other"`.
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `openlicensd_rate_limit_errors_total` | Counter | `scope` | Postgres backend failures that caused fail-open behavior (`public`, `login`, or `authenticated`) |
+| `openlicensd_rate_limit_errors_total` | Counter | `scope` | Postgres backend failures during rate limit checks (`public`, `login`, or `authenticated`) |
 
 ### Database pool
 

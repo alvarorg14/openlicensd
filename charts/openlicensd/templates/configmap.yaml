@@ -30,6 +30,7 @@ data:
   OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE: {{ .Values.config.rateLimit.authenticatedPerMinute | quote }}
   OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST: {{ .Values.config.rateLimit.authenticatedBurst | quote }}
   OPENLICENSD_RATE_LIMIT_IDLE_MINUTES: {{ .Values.config.rateLimit.idleMinutes | quote }}
+  OPENLICENSD_RATE_LIMIT_FAIL_OPEN: {{ .Values.config.rateLimit.failOpen | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: {{ .Values.config.bootstrapAdmin.email | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_NAME: {{ .Values.config.bootstrapAdmin.name | quote }}
   OPENLICENSD_HARBOR_ENABLED: {{ .Values.config.harbor.enabled | quote }}

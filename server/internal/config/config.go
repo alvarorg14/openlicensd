@@ -42,6 +42,7 @@ type BootstrapAdminConfig struct {
 type RateLimitConfig struct {
 	Enabled                bool
 	Backend                string
+	FailOpen               bool
 	PublicPerMinute        int
 	PublicBurst            int
 	LoginPerMinute         int
@@ -122,6 +123,7 @@ func Load() (*Config, error) {
 		RateLimit: RateLimitConfig{
 			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
 			Backend:         getEnv("OPENLICENSD_RATE_LIMIT_BACKEND", "memory"),
+			FailOpen:        getBoolEnv("OPENLICENSD_RATE_LIMIT_FAIL_OPEN", true),
 			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
 			PublicBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", 60),
 			LoginPerMinute:         getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
