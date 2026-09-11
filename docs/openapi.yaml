@@ -2646,26 +2646,31 @@ components:
     UpdatePolicyRequest:
       type: object
       minProperties: 1
+      description: >
+        Updates the policy row only. `grace_period_days`, `duration_days`, and `expiration_basis`
+        are read live from the joined policy on validation and can affect existing licenses.
+        `max_activations` is not backfilled to existing licenses (only new licenses pick up the
+        updated default).
       properties:
         name:
           type: string
-          description: Omitted keys are left unchanged. Empty string is rejected.
+          description: Omitted keys are left unchanged. Empty string is rejected. Live in license list and validation responses.
         description:
           type: ["string", "null"]
           description: Omitted to keep the current value. Set to `null` to clear.
         duration_days:
           type: ["integer", "null"]
-          description: Omitted to keep the current value. Set to `null` for a perpetual policy.
+          description: Omitted to keep the current value. Set to `null` for a perpetual policy. Live for licenses whose `expires_at` is still unset (`on_first_validation` pending).
         expiration_basis:
           type: string
           enum: [on_creation, on_first_validation]
-          description: Omitted to keep the current value. Cannot be set to `null`.
+          description: Omitted to keep the current value. Cannot be set to `null`. Live for licenses whose `expires_at` is still unset.
         grace_period_days:
           type: integer
-          description: Omitted to keep the current value. Cannot be set to `null`.
+          description: Omitted to keep the current value. Cannot be set to `null`. Live on every validation; edits affect existing licenses immediately.
         max_activations:
           type: ["integer", "null"]
-          description: Omitted to keep the current value. Set to `null` for unlimited activations.
+          description: Omitted to keep the current value. Set to `null` for unlimited activations. Not backfilled to existing licenses; only affects new licenses created after the update.
 
     Product:
       type: object
@@ -2734,14 +2739,17 @@ components:
           type: ["string", "null"]
         duration_days:
           type: ["integer", "null"]
+          description: Null for perpetual policies. Live for licenses whose `expires_at` is still unset.
         expiration_basis:
           type: string
           enum: [on_creation, on_first_validation]
+          description: Live for licenses whose `expires_at` is still unset (`on_first_validation` pending).
         grace_period_days:
           type: integer
+          description: Read live from the joined policy on every validation.
         max_activations:
           type: ["integer", "null"]
-          description: Null means unlimited concurrent machine activations
+          description: Policy default for new licenses; null means unlimited. Copied to `licenses.max_activations` at create and not backfilled on policy edit.
         created_at:
           type: string
           format: date-time
@@ -2957,7 +2965,7 @@ components:
           description: Policy name for the matched license
         in_grace_period:
           type: boolean
-          description: True when the license is past expiry but still within the policy grace period
+          description: True when the license is past expiry but still within the current policy grace period
         activation_count:
           type: integer
           format: int64
