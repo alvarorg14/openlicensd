@@ -204,6 +204,8 @@ result, _ := client.Validate(ctx, licenseKey)
 | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
 | `OPENLICENSD_REQUEST_BODY_MAX_BYTES` | `1048576` | Maximum HTTP request body size in bytes |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
+| `OPENLICENSD_AUDIT_RETENTION_DAYS` | `0` | Delete audit events older than this many days (`0` disables; requires cleanup interval > 0) |
+| `OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES` | `1440` | Interval for audit retention pruning when retention days > 0 (`0` disables the background job) |
 | `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |
 | `OPENLICENSD_LOG_FORMAT` | `json` | Log output format: `json` or `text` |
 | `OPENLICENSD_METRICS_ENABLED` | `true` | Enable Prometheus `/metrics` on a dedicated listener |

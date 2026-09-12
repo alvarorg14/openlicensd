@@ -69,7 +69,7 @@ This document provides context and guidelines for AI coding assistants working o
 | `harbor` | `server/internal/harbor/` | Harbor v2 REST client for ephemeral robot accounts |
 | `oidc` | `server/internal/oidc/` | OIDC discovery, PKCE authorization code flow, ID token verification |
 | `license` | `server/internal/license/` | Key generation, SHA-256 hashing, validation logic |
-| `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
+| `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup, optional audit log retention pruning) |
 | `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
 | `metrics` | `server/internal/metrics/` | Prometheus registry, HTTP middleware, license validation counters, pgxpool collector |
 | `ratelimit` | `server/internal/ratelimit/` | Token bucket rate limiting for public, login, and authenticated endpoints; in-memory (default) or Postgres-backed shared buckets |
@@ -133,6 +133,8 @@ Do not commit version bumps to `main` after each publish.
 | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | Per-request context deadline in seconds (`0` disables) |
 | `OPENLICENSD_REQUEST_BODY_MAX_BYTES` | `1048576` | Maximum HTTP request body size in bytes |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for deleting expired/revoked sessions (`0` disables) |
+| `OPENLICENSD_AUDIT_RETENTION_DAYS` | `0` | Delete audit events older than this many days (`0` disables; requires cleanup interval > 0) |
+| `OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES` | `1440` | Interval for audit retention pruning when retention days > 0 (`0` disables the background job) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | Set `Secure` flag on session cookies |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | Allow email/password login |
 | `OPENLICENSD_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, or `error` |

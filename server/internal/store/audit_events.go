@@ -135,3 +135,26 @@ func (s *Store) ListAuditEvents(ctx context.Context, params AuditEventListParams
 
 	return events, totalCount, rows.Err()
 }
+
+func (s *Store) DeleteAuditEventsBefore(ctx context.Context, cutoff time.Time) (int64, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	if _, err := tx.Exec(ctx, `SET LOCAL openlicensd.audit_prune = 'on'`); err != nil {
+		return 0, err
+	}
+
+	tag, err := tx.Exec(ctx, `DELETE FROM audit_events WHERE occurred_at < $1`, cutoff)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return tag.RowsAffected(), nil
+}

@@ -130,6 +130,10 @@ config:
   requestBodyMaxBytes: 1048576
   # -- Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES)
   sessionCleanupIntervalMinutes: 60
+  # -- Delete audit events older than this many days; 0 disables (maps to OPENLICENSD_AUDIT_RETENTION_DAYS)
+  auditRetentionDays: 0
+  # -- Interval in minutes for audit retention pruning when retention days > 0 (maps to OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES)
+  auditCleanupIntervalMinutes: 1440
   # -- Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE)
   cookieSecure: true
   localLoginEnabled: true

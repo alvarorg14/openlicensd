@@ -17,6 +17,8 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` | `30` | No | Per-request context deadline in seconds; `0` disables |
 | `OPENLICENSD_REQUEST_BODY_MAX_BYTES` | `1048576` | No | Maximum HTTP request body size in bytes |
 | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` | `60` | No | Interval for deleting expired/revoked sessions (`0` disables) |
+| `OPENLICENSD_AUDIT_RETENTION_DAYS` | `0` | No | Delete audit events older than this many days (`0` disables; requires cleanup interval > 0) |
+| `OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES` | `1440` | No | Interval for audit retention pruning when retention days > 0 (`0` disables the background job) |
 | `OPENLICENSD_COOKIE_SECURE` | `true` | No | Set `Secure` flag on session cookies; when `true`, also enables `Strict-Transport-Security` response headers |
 | `OPENLICENSD_LOCAL_LOGIN_ENABLED` | `true` | No | Allow email/password login |
 
@@ -150,6 +152,8 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.requestTimeoutSeconds` | `OPENLICENSD_REQUEST_TIMEOUT_SECONDS` |
 | `config.requestBodyMaxBytes` | `OPENLICENSD_REQUEST_BODY_MAX_BYTES` |
 | `config.sessionCleanupIntervalMinutes` | `OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES` |
+| `config.auditRetentionDays` | `OPENLICENSD_AUDIT_RETENTION_DAYS` |
+| `config.auditCleanupIntervalMinutes` | `OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES` |
 | `config.cookieSecure` | `OPENLICENSD_COOKIE_SECURE` |
 | `config.localLoginEnabled` | `OPENLICENSD_LOCAL_LOGIN_ENABLED` |
 | `config.log.format` | `OPENLICENSD_LOG_FORMAT` |

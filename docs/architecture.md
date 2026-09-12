@@ -50,7 +50,7 @@ flowchart TB
 | `license` | `server/internal/license/` | Key generation (Crockford Base32), SHA-256 hashing, validation logic |
 | `logging` | `server/internal/logging/` | Structured `slog` output, request-scoped loggers, HTTP request logging middleware |
 | `ratelimit` | `server/internal/ratelimit/` | Token bucket rate limiting for public, login, and authenticated endpoints (`memory` or `postgres` backend) |
-| `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup) |
+| `maintenance` | `server/internal/maintenance/` | Background tasks (expired session cleanup, optional audit log retention pruning) |
 | `store` | `server/internal/store/` | PostgreSQL CRUD, validation recording, migrations |
 | `static` | `server/internal/static/` | Embedded Nuxt SPA file server with SPA fallback |
 
@@ -163,7 +163,7 @@ Only the SHA-256 hash of the API token is stored.
 
 ### `audit_events` table
 
-Append-only audit trail of successful admin mutations. Rows are never updated through the API; a database trigger rejects `UPDATE` statements.
+Append-only audit trail of successful admin mutations. Rows are never updated through the API; database triggers reject `UPDATE` and `DELETE` statements unless the server sets a session-local prune flag inside a retention transaction.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -186,6 +186,8 @@ Append-only audit trail of successful admin mutations. Rows are never updated th
 | `request_path` | `TEXT` | Request path |
 | `response_status` | `INTEGER` | HTTP status code |
 | `metadata` | `JSONB` | Optional structured details |
+
+Retention is operator-configured, not API-driven. When `OPENLICENSD_AUDIT_RETENTION_DAYS` is greater than zero, a background pruner deletes rows older than the retention window using a transaction-scoped session flag that satisfies the delete trigger. Without retention enabled, the table grows until an operator exports or archives data externally. A database superuser can still bypass triggers; restrict DBA access for compliance use cases.
 
 ### Expiry semantics
 
