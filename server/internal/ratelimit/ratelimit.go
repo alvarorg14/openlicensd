@@ -203,6 +203,11 @@ func LogStartup(logger *slog.Logger, cfg config.RateLimitConfig) {
 		slog.Int("authenticated_burst", cfg.AuthenticatedBurst),
 		slog.Int("idle_minutes", cfg.IdleMinutes),
 	)
+	if cfg.Backend == "postgres" {
+		logger.Info("postgres rate limit fail-open mode",
+			slog.Bool("fail_open", cfg.FailOpen),
+		)
+	}
 }
 
 func perMinuteToRefillPerSecond(perMinute int) float64 {

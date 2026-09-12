@@ -55,7 +55,7 @@ func New(version string, poolStat func() *PoolStat) *Metrics {
 		rateLimitErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "rate_limit_errors_total",
-			Help:      "Rate limit backend failures that caused fail-open behavior.",
+			Help:      "Postgres rate limit backend failures.",
 		}, []string{"scope"}),
 		buildInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,

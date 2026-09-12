@@ -149,6 +149,7 @@ Do not commit version bumps to `main` after each publish.
 | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE` | `300` | Sustained rate for authenticated admin endpoints (per user or API token) |
 | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST` | `60` | Burst capacity for authenticated admin endpoints |
 | `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | Minutes before unused rate limit buckets are evicted |
+| `OPENLICENSD_RATE_LIMIT_FAIL_OPEN` | `true` | When `OPENLICENSD_RATE_LIMIT_BACKEND=postgres`, allow requests if the bucket store errors (`true`, default) or deny with `429` (`false`) |
 | `OPENLICENSD_OIDC_ENABLED` | `false` | Enable OIDC SSO |
 | `OPENLICENSD_OIDC_ISSUER_URL` | — | OIDC issuer URL (required when enabled) |
 | `OPENLICENSD_OIDC_CLIENT_ID` | — | OAuth client ID (required when enabled) |

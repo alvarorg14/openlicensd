@@ -269,6 +269,22 @@ func TestLoadRateLimitDefaults(t *testing.T) {
 	if cfg.RateLimit.Backend != "memory" {
 		t.Fatalf("backend=%q want memory", cfg.RateLimit.Backend)
 	}
+	if !cfg.RateLimit.FailOpen {
+		t.Fatalf("expected rate limit fail-open by default")
+	}
+}
+
+func TestLoadRateLimitFailOpenOverride(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_RATE_LIMIT_FAIL_OPEN", "false")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.RateLimit.FailOpen {
+		t.Fatalf("expected rate limit fail-open disabled")
+	}
 }
 
 func TestLoadRateLimitBackendPostgres(t *testing.T) {

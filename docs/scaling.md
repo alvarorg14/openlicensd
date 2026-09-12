@@ -73,7 +73,7 @@ Denied requests return HTTP `429` with a `Retry-After` header.
 | Backend | Env / Helm | Behavior |
 |---------|------------|----------|
 | **`memory`** (default) | `OPENLICENSD_RATE_LIMIT_BACKEND=memory` | Buckets live in process memory. Each replica enforces its own budget. Unused buckets are evicted after `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` (default 10). |
-| **`postgres`** | `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` | Buckets stored in PostgreSQL `rate_limit_buckets`. All replicas share one global budget per `(scope, bucket_key)`. Adds a database write on each rate-limited request — including every authenticated admin call when the authenticated scope is active. On backend errors, requests are **allowed** (fail-open); monitor `openlicensd_rate_limit_errors_total` — see [metrics.md](metrics.md). |
+| **`postgres`** | `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` | Buckets stored in PostgreSQL `rate_limit_buckets`. All replicas share one global budget per `(scope, bucket_key)`. Adds a database write on each rate-limited request — including every authenticated admin call when the authenticated scope is active. On backend errors, behavior depends on `OPENLICENSD_RATE_LIMIT_FAIL_OPEN` (default `true`: allow the request, fail-open; `false`: deny with `429`, fail-closed). Monitor `openlicensd_rate_limit_errors_total` — see [metrics.md](metrics.md). |
 
 Example: with `OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE=600` and three replicas using the `memory` backend, a single client IP can sustain up to ~1800 requests/minute across the cluster. Switch to `postgres` to enforce 600/minute globally.
 

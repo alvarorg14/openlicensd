@@ -82,8 +82,9 @@ The connection URL is parsed first (`pool_*` query parameters are supported). No
 | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE` | `300` | No | Sustained request rate for authenticated admin endpoints (per user or API token) |
 | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST` | `60` | No | Burst capacity for authenticated admin endpoints |
 | `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` | `10` | No | Minutes before an unused bucket is evicted (`memory`: from process memory; `postgres`: from the database) |
+| `OPENLICENSD_RATE_LIMIT_FAIL_OPEN` | `true` | No | When backend is `postgres`, allow requests on bucket store errors (`true`, default) or deny with `429` (`false`) |
 
-With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global budget per scope and bucket key; this adds a database write on each rate-limited request (fail-open on backend errors; see `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md)). Public and login scopes key buckets by client IP; the authenticated scope keys buckets by user ID or API token ID after authentication. Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer. See [scaling.md](scaling.md) for HA guidance and recommended replica counts.
+With the default `memory` backend, limits are per process — effective throughput scales with replica count. Set `OPENLICENSD_RATE_LIMIT_BACKEND=postgres` when running multiple replicas so all pods share one global budget per scope and bucket key; this adds a database write on each rate-limited request. With the default `OPENLICENSD_RATE_LIMIT_FAIL_OPEN=true`, postgres backend errors allow the request (fail-open); set `false` to deny with `429` instead. Monitor `openlicensd_rate_limit_errors_total` in [metrics.md](metrics.md). Public and login scopes key buckets by client IP; the authenticated scope keys buckets by user ID or API token ID after authentication. Set `OPENLICENSD_TRUSTED_PROXIES` when running behind an ingress or load balancer. See [scaling.md](scaling.md) for HA guidance and recommended replica counts.
 
 ### OIDC SSO (optional)
 
@@ -171,6 +172,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.rateLimit.authenticatedPerMinute` | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE` |
 | `config.rateLimit.authenticatedBurst` | `OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST` |
 | `config.rateLimit.idleMinutes` | `OPENLICENSD_RATE_LIMIT_IDLE_MINUTES` |
+| `config.rateLimit.failOpen` | `OPENLICENSD_RATE_LIMIT_FAIL_OPEN` |
 | `config.oidc.enabled` | `OPENLICENSD_OIDC_ENABLED` |
 | `config.oidc.issuerUrl` | `OPENLICENSD_OIDC_ISSUER_URL` |
 | `config.oidc.clientId` | `OPENLICENSD_OIDC_CLIENT_ID` |

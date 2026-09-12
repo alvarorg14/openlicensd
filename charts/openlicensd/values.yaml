@@ -173,6 +173,8 @@ config:
     authenticatedBurst: 60
     # -- Minutes before unused per-IP buckets are evicted (maps to OPENLICENSD_RATE_LIMIT_IDLE_MINUTES)
     idleMinutes: 10
+    # -- When backend is postgres, allow requests on bucket store errors (maps to OPENLICENSD_RATE_LIMIT_FAIL_OPEN)
+    failOpen: true
   bootstrapAdmin:
     # -- Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL)
     email: ""
