@@ -27,7 +27,7 @@ OpenLicensd emits structured JSON logs by default (`OPENLICENSD_LOG_FORMAT=json`
 | `config load failed` | Invalid or missing environment variables |
 | `store init failed` | Database connect, ping, or migration failure |
 | `api server init failed` | OIDC discovery or Harbor URL parse failure |
-| `bootstrap admin failed` | Empty database without bootstrap admin env vars |
+| `bootstrap admin failed` | Empty database without bootstrap admin env vars, or an unexpected create-user failure |
 | `listening` | HTTP server bound; probes can reach the process |
 
 **Kubernetes:**
@@ -78,6 +78,9 @@ OpenLicensd exits with code `1` on any fatal startup error. The process never bi
 | `api server init failed` + `discover oidc provider` | Wrong or unreachable OIDC issuer | Fix `OPENLICENSD_OIDC_ISSUER_URL`; verify network and TLS from the pod |
 | `api server init failed` + `invalid harbor url` / `parse harbor url` | Malformed `OPENLICENSD_HARBOR_URL` | Use a full URL with scheme and host (e.g. `https://harbor.example.com`) |
 | `bootstrap admin failed` + `no users exist` | Fresh database without bootstrap admin | Set `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` and `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` |
+| `bootstrap admin failed` + `create bootstrap admin` + unique/conflict | Unexpected — concurrent replica bootstrap is idempotent | Check for duplicate bootstrap email from another source; verify all replicas use the same bootstrap env vars |
+
+Concurrent multi-replica startup on a fresh database is safe: bootstrap admin seeding is serialized with a PostgreSQL advisory lock and treats an existing bootstrap email as success.
 
 When OIDC or Harbor is **enabled**, missing required env vars fail at config load. When **disabled**, those routes are not registered and the server starts without them.
 
