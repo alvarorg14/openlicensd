@@ -37,6 +37,7 @@ The Helm chart Service and Ingress do not set `sessionAffinity`. Do not add stic
 | Harbor robot accounts | External (Harbor API) | Short-lived; re-created on demand |
 | Schema migrations | Serialized (PostgreSQL advisory lock) | Only one replica applies pending migrations at a time |
 | Bootstrap admin seeding | Serialized (PostgreSQL advisory lock) | Idempotent on concurrent startup; at most one admin is created on a fresh database |
+| Audit events | **Yes** (PostgreSQL) | Append-only; grows until optional retention pruner enabled (`OPENLICENSD_AUDIT_RETENTION_DAYS` > 0) |
 
 ## Recommended replica count
 

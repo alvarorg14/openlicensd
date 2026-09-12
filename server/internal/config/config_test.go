@@ -158,6 +158,74 @@ func TestLoadSessionCleanupInvalidInterval(t *testing.T) {
 	}
 }
 
+func TestLoadAuditRetentionDefaults(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.AuditRetentionDays != 0 {
+		t.Fatalf("audit retention days=%d want 0", cfg.AuditRetentionDays)
+	}
+	if cfg.AuditCleanupIntervalMinutes != 1440 {
+		t.Fatalf("audit cleanup interval=%d want 1440", cfg.AuditCleanupIntervalMinutes)
+	}
+	if cfg.AuditRetention() != 0 {
+		t.Fatalf("audit retention duration=%s want 0", cfg.AuditRetention())
+	}
+	if cfg.AuditCleanupInterval() != 24*time.Hour {
+		t.Fatalf("audit cleanup interval duration=%s want 24h0m0s", cfg.AuditCleanupInterval())
+	}
+	if cfg.AuditRetentionEnabled() {
+		t.Fatal("expected audit retention disabled by default")
+	}
+}
+
+func TestLoadAuditRetentionEnabled(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "90")
+	t.Setenv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", "60")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.AuditRetentionDays != 90 {
+		t.Fatalf("audit retention days=%d want 90", cfg.AuditRetentionDays)
+	}
+	if cfg.AuditCleanupIntervalMinutes != 60 {
+		t.Fatalf("audit cleanup interval=%d want 60", cfg.AuditCleanupIntervalMinutes)
+	}
+	if cfg.AuditRetention() != 90*24*time.Hour {
+		t.Fatalf("audit retention duration=%s want 2160h0m0s", cfg.AuditRetention())
+	}
+	if !cfg.AuditRetentionEnabled() {
+		t.Fatal("expected audit retention enabled")
+	}
+}
+
+func TestLoadAuditRetentionRequiresCleanupInterval(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "30")
+	t.Setenv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", "0")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error when audit retention set without cleanup interval")
+	}
+}
+
+func TestLoadAuditRetentionInvalidDays(t *testing.T) {
+	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "-1")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatalf("expected error for negative audit retention days")
+	}
+}
+
 func TestLoadOIDCDisabledByDefault(t *testing.T) {
 	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
 	t.Setenv("OPENLICENSD_OIDC_ENABLED", "")

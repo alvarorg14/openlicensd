@@ -78,6 +78,8 @@ type Config struct {
 	RequestBodyMaxBytes           int
 	SessionTTLHours               int
 	SessionCleanupIntervalMinutes int
+	AuditRetentionDays            int
+	AuditCleanupIntervalMinutes   int
 	CookieSecure                  bool
 	LocalLoginEnabled             bool
 	TrustedProxies                []string
@@ -109,6 +111,8 @@ func Load() (*Config, error) {
 		RequestBodyMaxBytes:           getIntEnv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", 1048576),
 		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
 		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
+		AuditRetentionDays:            getIntEnv("OPENLICENSD_AUDIT_RETENTION_DAYS", 0),
+		AuditCleanupIntervalMinutes:   getIntEnv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", 1440),
 		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
 		LocalLoginEnabled:             localLoginEnabled,
 		TrustedProxies:                parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
@@ -171,6 +175,15 @@ func Load() (*Config, error) {
 	if cfg.SessionCleanupIntervalMinutes < 0 {
 		return nil, fmt.Errorf("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES must be 0 or greater")
 	}
+	if cfg.AuditRetentionDays < 0 {
+		return nil, fmt.Errorf("OPENLICENSD_AUDIT_RETENTION_DAYS must be 0 or greater")
+	}
+	if cfg.AuditCleanupIntervalMinutes < 0 {
+		return nil, fmt.Errorf("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES must be 0 or greater")
+	}
+	if cfg.AuditRetentionDays > 0 && cfg.AuditCleanupIntervalMinutes == 0 {
+		return nil, fmt.Errorf("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES must be greater than 0 when OPENLICENSD_AUDIT_RETENTION_DAYS is set")
+	}
 	if err := validateTrustedProxies(cfg.TrustedProxies); err != nil {
 		return nil, err
 	}
@@ -202,6 +215,18 @@ func Load() (*Config, error) {
 
 func (c *Config) SessionCleanupInterval() time.Duration {
 	return time.Duration(c.SessionCleanupIntervalMinutes) * time.Minute
+}
+
+func (c *Config) AuditRetention() time.Duration {
+	return time.Duration(c.AuditRetentionDays) * 24 * time.Hour
+}
+
+func (c *Config) AuditCleanupInterval() time.Duration {
+	return time.Duration(c.AuditCleanupIntervalMinutes) * time.Minute
+}
+
+func (c *Config) AuditRetentionEnabled() bool {
+	return c.AuditRetentionDays > 0 && c.AuditCleanupIntervalMinutes > 0
 }
 
 func (c *Config) RequestTimeout() time.Duration {

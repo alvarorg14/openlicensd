@@ -64,6 +64,16 @@ func main() {
 		logger.Info("session cleanup disabled")
 	}
 
+	if cfg.AuditRetentionEnabled() {
+		go maintenance.NewAuditEventPruner(st, cfg.AuditRetentionDays, cfg.AuditCleanupInterval(), logger).Run(bgCtx)
+		logger.Info("audit event retention enabled",
+			slog.Int("retention_days", cfg.AuditRetentionDays),
+			slog.Duration("interval", cfg.AuditCleanupInterval()),
+		)
+	} else {
+		logger.Info("audit event retention disabled")
+	}
+
 	srv, err := api.New(ctx, cfg, st, logger)
 	if err != nil {
 		logger.Error("api server init failed", slog.Any("err", err))

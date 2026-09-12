@@ -200,7 +200,7 @@ Token management endpoints (`/api/v1/api-tokens`) require an admin session — a
 
 ### 7. Audit log
 
-Every successful admin mutation is recorded in an append-only `audit_events` table (actor, action, resource, IP, user agent, request ID). Admins can browse the log in the **Audit Log** UI page or export it via the API.
+Every successful admin mutation is recorded in an append-only `audit_events` table (actor, action, resource, IP, user agent, request ID). Admins can browse the log in the **Audit Log** UI page or export it via the API. Retention and pruning are configured with environment variables (`OPENLICENSD_AUDIT_RETENTION_DAYS`, `OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES`); there is no admin API to delete audit rows.
 
 ```bash
 # List recent audit events (admin session or Bearer token)

@@ -114,6 +114,8 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | config.requestTimeoutSeconds | int | `30` | Per-request context deadline in seconds; 0 disables (maps to OPENLICENSD_REQUEST_TIMEOUT_SECONDS) |
 | config.requestBodyMaxBytes | int | `1048576` | Maximum HTTP request body size in bytes (maps to OPENLICENSD_REQUEST_BODY_MAX_BYTES) |
 | config.sessionCleanupIntervalMinutes | int | `60` | Interval in minutes for deleting expired/revoked sessions; 0 disables (maps to OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES) |
+| config.auditRetentionDays | int | `0` | Delete audit events older than this many days; 0 disables (maps to OPENLICENSD_AUDIT_RETENTION_DAYS) |
+| config.auditCleanupIntervalMinutes | int | `1440` | Interval in minutes for audit retention pruning when retention days > 0 (maps to OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES) |
 | config.sessionTTLHours | int | `24` | Session TTL in hours (maps to OPENLICENSD_SESSION_TTL_HOURS) |
 | config.trustedProxies | string | `""` | Comma-separated trusted proxy IPs or CIDRs (maps to OPENLICENSD_TRUSTED_PROXIES) |
 | extraArgs | list | `[]` | Extra command-line arguments passed to OpenLicensd |
