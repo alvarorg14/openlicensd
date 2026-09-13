@@ -30,9 +30,9 @@ The Helm chart Service and Ingress do not set `sessionAffinity`. Do not add stic
 | Component | Shared across replicas? | Notes |
 |-----------|-------------------------|-------|
 | Products, policies, licenses, machines, users | **Yes** (PostgreSQL) | Source of truth for all replicas |
-| Sessions | **Yes** (PostgreSQL) | Expired sessions cleaned up by each replica (idempotent DELETE) |
+| Sessions | **Yes** (PostgreSQL) | Expired/revoked sessions cleaned up by each replica (idempotent DELETE); `idx_sessions_expires_at` backs the cleanup query |
 | Rate limits (`memory` backend) | **No** | Per-process token buckets; effective limit × replica count |
-| Rate limits (`postgres` backend) | **Yes** (PostgreSQL `rate_limit_buckets`) | One global per-IP budget; see below |
+| Rate limits (`postgres` backend) | **Yes** (PostgreSQL `rate_limit_buckets`) | One global per-IP budget; idle bucket pruning uses `idx_rate_limit_buckets_updated_at`; see below |
 | Prometheus metrics | **No** | Per-process counters and gauges; scrape every pod |
 | Harbor robot accounts | External (Harbor API) | Short-lived; re-created on demand |
 | Schema migrations | Serialized (PostgreSQL advisory lock) | Only one replica applies pending migrations at a time |
