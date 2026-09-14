@@ -76,10 +76,12 @@ OPENLICENSD_OIDC_ADMIN_EMAILS=admin@example.com
 
 ## User provisioning and roles
 
-On each successful SSO login, OpenLicensd resolves the user in this order:
+On each successful SSO login, OpenLicensd verifies the ID token `email_verified` claim is `true` before provisioning. Missing or false values fail the login — unverified IdP emails cannot create users, mint admins, or link to existing accounts.
+
+After verification, OpenLicensd resolves the user in this order:
 
 1. **Existing SSO user** — match by `(auth_provider=oidc, external_id=<sub claim>)`.
-2. **Link by email** — if a user with the same email already exists (e.g. a local bootstrap admin), link the account by setting `auth_provider` and `external_id`. The existing password hash is preserved so local login still works when enabled.
+2. **Link by email** — if a user with the same verified email already exists (e.g. a local bootstrap admin), link the account by setting `auth_provider` and `external_id`. The existing password hash is preserved so local login still works when enabled.
 3. **Create** — new user with `password_hash = NULL`, default role, and `auth_provider = oidc`.
 
 **Roles are managed locally.** New users get `OPENLICENSD_OIDC_DEFAULT_ROLE` unless their email is listed in `OPENLICENSD_OIDC_ADMIN_EMAILS` (admin at creation time only). Admins can change roles in the **Users** page; changes persist across logins.
@@ -182,12 +184,13 @@ For `secret.mode: existing` or `externalSecrets`, ensure the Secret contains `OP
 | User created but wrong role | Default role or admin email list | Adjust `OPENLICENSD_OIDC_DEFAULT_ROLE` or `OPENLICENSD_OIDC_ADMIN_EMAILS`; change role in Users UI |
 | Locked out with SSO-only | No admin provisioned | Add your email to `OPENLICENSD_OIDC_ADMIN_EMAILS` or temporarily re-enable local login |
 
-Callback failures log `oidc callback failed` with a `reason` attribute (`provider_error`, `state_missing`, `state_mismatch`, `nonce_missing`, `verifier_missing`, `code_missing`, `exchange_failed`, `user_resolution_failed`, `session_creation_failed`). The underlying error is not logged for `exchange_failed`, `user_resolution_failed`, or `session_creation_failed` — only the reason code.
+Callback failures log `oidc callback failed` with a `reason` attribute (`provider_error`, `state_missing`, `state_mismatch`, `nonce_missing`, `verifier_missing`, `code_missing`, `exchange_failed`, `email_unverified`, `user_resolution_failed`, `session_creation_failed`). The underlying error is not logged for `exchange_failed`, `email_unverified`, `user_resolution_failed`, or `session_creation_failed` — only the reason code.
 
 For a full symptom table and log message reference, see [troubleshooting.md](troubleshooting.md).
 
 ## Security notes
 
+- OpenLicensd requires `email_verified=true` in the ID token before linking or creating users. Configure your IdP to verify email addresses (for example, enable Keycloak's **Verify Email** required action). Microsoft Entra ID includes `email_verified: true` for verified tenant users by default.
 - Store `OPENLICENSD_OIDC_CLIENT_SECRET` in a secrets manager or Kubernetes Secret — never commit it to version control.
 - PKCE (`S256`) is used for the authorization code flow even with a confidential client.
 - OIDC flow cookies (`state`, `nonce`, PKCE verifier) are short-lived, `httpOnly`, and `SameSite=Lax` so they survive the cross-site redirect from the IdP.

@@ -189,6 +189,7 @@ The server logs a **warn** line with a `reason` code (the underlying error is **
 | `verifier_missing` | PKCE verifier cookie missing |
 | `code_missing` | No authorization `code` in callback |
 | `exchange_failed` | Token exchange or ID token verification failed |
+| `email_unverified` | ID token `email_verified` claim is missing or `false` |
 | `user_resolution_failed` | User create/link failed or user disabled |
 | `session_creation_failed` | Session could not be created |
 
@@ -196,6 +197,7 @@ The server logs a **warn** line with a `reason` code (the underlying error is **
 |---------|--------------|-----|
 | `redirect_uri_mismatch` from IdP | Redirect URI not registered | Align IdP with `OPENLICENSD_OIDC_REDIRECT_URL` exactly |
 | `reason=exchange_failed` | Wrong client secret, missing `email` claim, clock skew | Verify secret and scopes; ensure IdP returns `email`; sync NTP |
+| `reason=email_unverified` | IdP did not verify the email address | Enable email verification in the IdP; ensure the ID token includes `email_verified: true` |
 | `reason=state_missing` / `nonce_missing` | Cookies not stored | Use HTTPS, or set `OPENLICENSD_COOKIE_SECURE=false` for local HTTP only |
 | SSO button missing | OIDC disabled | Set `OPENLICENSD_OIDC_ENABLED=true` and restart |
 | `504 request timeout` during callback | Slow IdP or database | Increase `OPENLICENSD_REQUEST_TIMEOUT_SECONDS`; check DB latency |

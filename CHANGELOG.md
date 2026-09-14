@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Bug Fixes
 
+- fix(oidc): require verified email before SSO provisioning and account linking (#289)
 - fix(store): make last-admin demote/disable/delete atomic (#287)
 
 ## [0.9.0] - 2026-09-14
