@@ -108,6 +108,8 @@ const licenseColumnsJoinTail = `
 
 const licenseColumns = licenseColumnsBase + licenseActivationCountSubquery + `,` + licenseColumnsJoinTail
 
+const licenseColumnsValidation = licenseColumnsBase + `0::bigint AS activation_count,` + licenseColumnsJoinTail
+
 const licenseActivationCountJoinExpr = `COALESCE(ac.activation_count, 0) AS activation_count`
 
 const licenseColumnsList = licenseColumnsBase + licenseActivationCountJoinExpr + `,` + licenseColumnsJoinTail
@@ -237,6 +239,27 @@ func (s *Store) GetLicenseByKeyHash(ctx context.Context, keyHash string) (*Licen
 	return lic, nil
 }
 
+// GetLicenseByKeyHashForValidation loads a license for the public validation path without
+// the correlated activation-count subquery. Callers that need activation_count should
+// obtain it from RecordActivation or CountActiveMachines on the specific code paths that
+// require it.
+func (s *Store) GetLicenseByKeyHashForValidation(ctx context.Context, keyHash string) (*License, error) {
+	const q = `
+		SELECT ` + licenseColumnsValidation + licenseFromJoin + `
+		WHERE l.key_hash = $1
+	`
+
+	row := s.pool.QueryRow(ctx, q, keyHash)
+	lic, err := scanLicense(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return lic, nil
+}
+
 func (s *Store) SetLicenseRevoked(ctx context.Context, id uuid.UUID, revoked bool) (*License, error) {
 	const q = `
 		UPDATE licenses
@@ -290,22 +313,35 @@ func (s *Store) UpdateLicense(ctx context.Context, id uuid.UUID, patch LicensePa
 	return s.GetLicenseByID(ctx, id)
 }
 
-func (s *Store) ActivateLicense(ctx context.Context, id uuid.UUID, expiresAt time.Time) (*License, error) {
+func (s *Store) ActivateLicense(ctx context.Context, lic *License, expiresAt time.Time) error {
 	const q = `
 		UPDATE licenses
 		SET activated_at = NOW(), expires_at = $2
 		WHERE id = $1 AND activated_at IS NULL AND expires_at IS NULL
+		RETURNING activated_at, expires_at
 	`
 
-	tag, err := s.pool.Exec(ctx, q, id, expiresAt)
+	var activatedAt time.Time
+	var expiresAtOut time.Time
+	err := s.pool.QueryRow(ctx, q, lic.ID, expiresAt).Scan(&activatedAt, &expiresAtOut)
 	if err != nil {
-		return nil, err
-	}
-	if tag.RowsAffected() == 0 {
-		return s.GetLicenseByID(ctx, id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			refreshed, reloadErr := s.GetLicenseByKeyHashForValidation(ctx, lic.KeyHash)
+			if reloadErr != nil {
+				return reloadErr
+			}
+			if refreshed == nil {
+				return nil
+			}
+			*lic = *refreshed
+			return nil
+		}
+		return err
 	}
 
-	return s.GetLicenseByID(ctx, id)
+	lic.ActivatedAt = &activatedAt
+	lic.ExpiresAt = &expiresAtOut
+	return nil
 }
 
 func (s *Store) DeleteLicense(ctx context.Context, id uuid.UUID) (bool, error) {

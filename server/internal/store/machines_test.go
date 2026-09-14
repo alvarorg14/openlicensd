@@ -31,15 +31,25 @@ func TestRecordActivationEnforcesLimit(t *testing.T) {
 	}
 
 	for i, fp := range []string{"machine-a", "machine-b", "machine-c"} {
-		_, allowed, err := st.RecordActivation(ctx, lic.ID, fp, "host-"+fp, "127.0.0.1", &max)
+		_, allowed, activeCount, err := st.RecordActivation(ctx, lic.ID, fp, "host-"+fp, "127.0.0.1", &max)
 		if err != nil {
 			t.Fatalf("RecordActivation %d: %v", i, err)
 		}
-		if i < 2 && !allowed {
-			t.Fatalf("expected activation %d to succeed", i)
+		if i < 2 {
+			if !allowed {
+				t.Fatalf("expected activation %d to succeed", i)
+			}
+			if activeCount != int64(i+1) {
+				t.Fatalf("expected activeCount %d after activation %d, got %d", i+1, i, activeCount)
+			}
 		}
-		if i == 2 && allowed {
-			t.Fatal("expected third activation to be rejected")
+		if i == 2 {
+			if allowed {
+				t.Fatal("expected third activation to be rejected")
+			}
+			if activeCount != 2 {
+				t.Fatalf("expected activeCount 2 on limit rejection, got %d", activeCount)
+			}
 		}
 	}
 
@@ -74,12 +84,15 @@ func TestRecordActivationReusesKnownFingerprint(t *testing.T) {
 	}
 
 	for i := 0; i < 3; i++ {
-		_, allowed, err := st.RecordActivation(ctx, lic.ID, "same-machine", "host-a", "127.0.0.1", &max)
+		_, allowed, activeCount, err := st.RecordActivation(ctx, lic.ID, "same-machine", "host-a", "127.0.0.1", &max)
 		if err != nil {
 			t.Fatalf("RecordActivation %d: %v", i, err)
 		}
 		if !allowed {
 			t.Fatalf("expected known fingerprint to remain allowed on attempt %d", i)
+		}
+		if activeCount != 1 {
+			t.Fatalf("expected activeCount 1 on reuse attempt %d, got %d", i, activeCount)
 		}
 	}
 }

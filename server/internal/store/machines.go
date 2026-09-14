@@ -75,10 +75,12 @@ const machineColumns = `
 // RecordActivation registers or refreshes a machine for a license.
 // When max is non-nil, new or reactivated machines consume a seat.
 // Returns allowed=false when the activation limit is reached.
-func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, fingerprint, hostname, ip string, max *int) (*Machine, bool, error) {
+// activeCount is the number of active machines after a successful mutation, or the
+// current seat usage when allowed=false due to a limit.
+func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, fingerprint, hostname, ip string, max *int) (*Machine, bool, int64, error) {
 	fingerprint = SanitizeFingerprint(fingerprint)
 	if fingerprint == "" {
-		return nil, false, fmt.Errorf("fingerprint is required")
+		return nil, false, 0, fmt.Errorf("fingerprint is required")
 	}
 	hostname = SanitizeHostname(hostname)
 	if ip == "" {
@@ -87,20 +89,17 @@ func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, finge
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return nil, false, err
+		return nil, false, 0, err
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	var exists bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM licenses WHERE id = $1)`, licenseID).Scan(&exists); err != nil {
-		return nil, false, err
+	var lockedID uuid.UUID
+	err = tx.QueryRow(ctx, `SELECT id FROM licenses WHERE id = $1 FOR UPDATE`, licenseID).Scan(&lockedID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, 0, nil
 	}
-	if !exists {
-		return nil, false, nil
-	}
-
-	if _, err := tx.Exec(ctx, `SELECT id FROM licenses WHERE id = $1 FOR UPDATE`, licenseID); err != nil {
-		return nil, false, err
+	if err != nil {
+		return nil, false, 0, err
 	}
 
 	var machine Machine
@@ -119,36 +118,40 @@ func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, finge
 	machine.LastSeenIP = lastSeenIP
 
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, false, err
+		return nil, false, 0, err
 	}
 
 	needsSeat := errors.Is(err, pgx.ErrNoRows) || machine.DeactivatedAt != nil
 
-	if needsSeat && max != nil {
+	countActive := func() (int64, error) {
 		var activeCount int64
 		if err := tx.QueryRow(ctx, `
 			SELECT COUNT(*)::bigint
 			FROM license_machines
 			WHERE license_id = $1 AND deactivated_at IS NULL
 		`, licenseID).Scan(&activeCount); err != nil {
-			return nil, false, err
+			return 0, err
+		}
+		return activeCount, nil
+	}
+
+	if needsSeat && max != nil {
+		activeCount, err := countActive()
+		if err != nil {
+			return nil, false, 0, err
 		}
 		if int(activeCount) >= *max {
-			return nil, false, nil
+			return nil, false, activeCount, nil
 		}
 	}
 
 	if needsSeat && max == nil {
-		var activeCount int64
-		if err := tx.QueryRow(ctx, `
-			SELECT COUNT(*)::bigint
-			FROM license_machines
-			WHERE license_id = $1 AND deactivated_at IS NULL
-		`, licenseID).Scan(&activeCount); err != nil {
-			return nil, false, err
+		activeCount, err := countActive()
+		if err != nil {
+			return nil, false, 0, err
 		}
 		if activeCount >= maxMachinesPerLicense {
-			return nil, false, nil
+			return nil, false, activeCount, nil
 		}
 	}
 
@@ -175,7 +178,7 @@ func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, finge
 			&machine.DeactivatedAt, &machine.DeactivatedBy,
 		)
 		if err != nil {
-			return nil, false, err
+			return nil, false, 0, err
 		}
 		machine.Name = name
 		machine.Hostname = storedHostname
@@ -200,18 +203,23 @@ func (s *Store) RecordActivation(ctx context.Context, licenseID uuid.UUID, finge
 			&machine.DeactivatedAt, &machine.DeactivatedBy,
 		)
 		if err != nil {
-			return nil, false, err
+			return nil, false, 0, err
 		}
 		machine.Name = name
 		machine.Hostname = storedHostname
 		machine.LastSeenIP = lastSeenIP
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
+	activeCount, err := countActive()
+	if err != nil {
+		return nil, false, 0, err
 	}
 
-	return &machine, true, nil
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, 0, err
+	}
+
+	return &machine, true, activeCount, nil
 }
 
 func (s *Store) CountActiveMachines(ctx context.Context, licenseID uuid.UUID) (int64, error) {

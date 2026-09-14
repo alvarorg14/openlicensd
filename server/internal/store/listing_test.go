@@ -196,7 +196,7 @@ func TestListLicensesActivationCount(t *testing.T) {
 	}
 
 	for _, fp := range []string{"machine-a", "machine-b"} {
-		_, allowed, err := st.RecordActivation(ctx, licWithMachines.ID, fp, "host-"+fp, "127.0.0.1", nil)
+		_, allowed, _, err := st.RecordActivation(ctx, licWithMachines.ID, fp, "host-"+fp, "127.0.0.1", nil)
 		if err != nil {
 			t.Fatalf("RecordActivation %s: %v", fp, err)
 		}
