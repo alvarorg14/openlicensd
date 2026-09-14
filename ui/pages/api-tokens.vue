@@ -159,6 +159,7 @@ definePageMeta({
 })
 
 const { listApiTokens, revokeApiToken, deleteApiToken } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const {
   page,
@@ -284,9 +285,10 @@ const confirmRevoke = async () => {
   try {
     await revokeApiToken(revokeTarget.value.id)
     showRevokeConfirm.value = false
+    toastSuccess('API token revoked')
     await refresh()
-  } catch {
-    error.value = 'Failed to revoke API token'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to revoke API token')
   } finally {
     actionId.value = null
     revoking.value = false
@@ -303,9 +305,10 @@ const confirmDelete = async () => {
   try {
     await deleteApiToken(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    toastSuccess('API token deleted')
     await refresh()
-  } catch {
-    error.value = 'Failed to delete API token'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to delete API token')
   } finally {
     actionId.value = null
     deleting.value = false

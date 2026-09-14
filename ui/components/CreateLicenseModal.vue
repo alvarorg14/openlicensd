@@ -170,8 +170,8 @@ const onSubmit = async () => {
     const license = await createLicense(body)
     open.value = false
     emit('created', license)
-  } catch {
-    error.value = 'Failed to create license'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to create license')
   } finally {
     loading.value = false
   }

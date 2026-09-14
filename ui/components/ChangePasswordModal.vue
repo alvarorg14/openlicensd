@@ -67,6 +67,7 @@
 const open = defineModel<boolean>('open', { required: true })
 
 const { changeOwnPassword } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const form = reactive({
   currentPassword: '',
@@ -112,10 +113,10 @@ const onSubmit = async () => {
 
   try {
     await changeOwnPassword(form.currentPassword, form.password)
+    toastSuccess('Password updated', 'Other sessions have been signed out.')
     success.value = true
   } catch (err: unknown) {
-    const message = (err as { data?: { error?: string } })?.data?.error
-    error.value = message || 'Failed to change password'
+    error.value = getApiErrorMessage(err, 'Failed to change password')
   } finally {
     loading.value = false
   }

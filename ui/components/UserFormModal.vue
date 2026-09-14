@@ -59,6 +59,7 @@ const emit = defineEmits<{
 }>()
 
 const { createUser, updateUser } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const roleOptions = [
   { label: 'Admin', value: 'admin' as UserRole },
@@ -131,9 +132,10 @@ const onSubmit = async () => {
       })
     }
     open.value = false
+    toastSuccess(props.user ? 'User updated' : 'User created')
     emit('saved')
-  } catch {
-    error.value = props.user ? 'Failed to update user' : 'Failed to create user'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, props.user ? 'Failed to update user' : 'Failed to create user')
   } finally {
     loading.value = false
   }
