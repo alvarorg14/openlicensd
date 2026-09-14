@@ -21,6 +21,8 @@
           {{ description }}
         </p>
 
+        <UAlert v-if="error" color="error" variant="subtle" :title="error" class="animate-fade-in" />
+
         <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="outline" @click="close">
             Cancel
@@ -41,6 +43,7 @@ defineProps<{
   confirmLabel: string
   confirmColor: 'error' | 'primary'
   loading?: boolean
+  error?: string
 }>()
 
 const open = defineModel<boolean>('open', { required: true })

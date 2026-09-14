@@ -259,6 +259,7 @@
       confirm-label="Revoke"
       confirm-color="error"
       :loading="actionType === 'revoke'"
+      :error="confirmError"
       @confirm="confirmRevoke"
     />
 
@@ -269,6 +270,7 @@
       confirm-label="Delete"
       confirm-color="error"
       :loading="actionType === 'delete'"
+      :error="confirmError"
       @confirm="confirmDelete"
     />
 
@@ -279,6 +281,7 @@
       confirm-label="Unrevoke"
       confirm-color="primary"
       :loading="actionType === 'unrevoke'"
+      :error="confirmError"
       @confirm="confirmUnrevoke"
     />
   </UContainer>
@@ -345,6 +348,7 @@ const editingLicense = ref<License | null>(null)
 const detailsLicense = ref<License | null>(null)
 const machinesLicense = ref<License | null>(null)
 const confirmTarget = ref<License | null>(null)
+const confirmError = ref('')
 const actionId = ref<string | null>(null)
 const actionType = ref<'revoke' | 'unrevoke' | 'delete' | null>(null)
 
@@ -595,16 +599,19 @@ const openEdit = (license: License) => {
 
 const openRevokeConfirm = (license: License) => {
   confirmTarget.value = license
+  confirmError.value = ''
   showRevokeConfirm.value = true
 }
 
 const openDeleteConfirm = (license: License) => {
   confirmTarget.value = license
+  confirmError.value = ''
   showDeleteConfirm.value = true
 }
 
 const openUnrevokeConfirm = (license: License) => {
   confirmTarget.value = license
+  confirmError.value = ''
   showUnrevokeConfirm.value = true
 }
 
@@ -618,14 +625,15 @@ const confirmRevoke = async () => {
   try {
     await revokeLicense(confirmTarget.value.id)
     showRevokeConfirm.value = false
+    confirmTarget.value = null
+    confirmError.value = ''
     toastSuccess('License revoked')
     await reload()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to revoke license')
+    confirmError.value = getApiErrorMessage(err, 'Failed to revoke license')
   } finally {
     actionId.value = null
     actionType.value = null
-    confirmTarget.value = null
   }
 }
 
@@ -639,14 +647,15 @@ const confirmDelete = async () => {
   try {
     await deleteLicense(confirmTarget.value.id)
     showDeleteConfirm.value = false
+    confirmTarget.value = null
+    confirmError.value = ''
     toastSuccess('License deleted')
     await reload()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to delete license')
+    confirmError.value = getApiErrorMessage(err, 'Failed to delete license')
   } finally {
     actionId.value = null
     actionType.value = null
-    confirmTarget.value = null
   }
 }
 
@@ -660,14 +669,15 @@ const confirmUnrevoke = async () => {
   try {
     await unrevokeLicense(confirmTarget.value.id)
     showUnrevokeConfirm.value = false
+    confirmTarget.value = null
+    confirmError.value = ''
     toastSuccess('License unrevoked')
     await reload()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to unrevoke license')
+    confirmError.value = getApiErrorMessage(err, 'Failed to unrevoke license')
   } finally {
     actionId.value = null
     actionType.value = null
-    confirmTarget.value = null
   }
 }
 
