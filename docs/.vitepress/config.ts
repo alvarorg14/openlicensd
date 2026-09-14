@@ -89,6 +89,7 @@ export default withMermaid(defineConfig({
         text: 'Project',
         items: [
           { text: 'Changelog', link: '/changelog' },
+          { text: 'Compatibility', link: '/compatibility' },
           { text: 'Contributing', link: '/contributing' },
           { text: 'Support', link: '/support' },
         ],

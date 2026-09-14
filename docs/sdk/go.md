@@ -166,6 +166,8 @@ SDK releases are independent from server releases:
 
 Tag format: `sdk/go/vX.Y.Z` (note the `v` prefix required by Go modules). Releases are published from Release Drafter drafts on GitHub (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
+HTTP `/api/v1` stability rules (independent of SDK versioning) are defined in [COMPATIBILITY.md](../../COMPATIBILITY.md).
+
 ## See also
 
 - [sdk/go/README.md](../../sdk/go/README.md) — package README with full API reference

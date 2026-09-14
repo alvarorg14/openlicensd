@@ -24,6 +24,8 @@ Until then:
 
 For which versions receive security patches, see [SECURITY.md — Supported Versions](SECURITY.md#supported-versions).
 
+For API stability, SemVer scope, and the deprecation process from v1.0.0 onward, see [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ## Response expectations
 
 This is a volunteer-maintained project. There is **no SLA** for GitHub Issues or Discussions.

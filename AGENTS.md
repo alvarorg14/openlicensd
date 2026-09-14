@@ -36,7 +36,7 @@ This document provides context and guidelines for AI coding assistants working o
 - **Location**: `docs/` (content) and `docs/.vitepress/` (site config)
 - **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference and `vitepress-plugin-mermaid` for Mermaid diagrams
 - **Published at**: `https://alvarorg14.github.io/openlicensd/` (GitHub Pages via `.github/workflows/docs.yml`)
-- **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, and `SUPPORT.md` included via VitePress file includes (no duplication)
+- **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `COMPATIBILITY.md`, and `SUPPORT.md` included via VitePress file includes (no duplication)
 - **Build**: `make docs-build` (or `cd docs && npm run docs:build`); `make docs-dev` for local preview
 
 ### Go SDK
@@ -204,6 +204,7 @@ Do not commit version bumps to `main` after each publish.
 | `docs/.vitepress/config.ts` | VitePress site config (nav, sidebar, GitHub Pages base path) |
 | `.github/pull_request_template.md` | Default GitHub PR description template |
 | `CHANGELOG.md` | In-repo server version history (Keep a Changelog) |
+| `COMPATIBILITY.md` | API stability, SemVer scope, and deprecation policy for `/api/v1` (from v1.0.0) |
 | `.goreleaser.yaml` | Release and container image publishing |
 
 ## Development Workflow
@@ -460,5 +461,6 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`)
 - [QUICKSTART.md](QUICKSTART.md) — Get running in minutes
 - [docs/](docs/) — API spec, architecture, comparison with alternatives, configuration, deployment, upgrade, backup/restore, scaling, troubleshooting, OIDC SSO, Harbor
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributor workflow
+- [COMPATIBILITY.md](COMPATIBILITY.md) — API stability and deprecation policy
 - [SUPPORT.md](SUPPORT.md) — Support channels and version guidance
 - [SECURITY.md](SECURITY.md) — Security policy and vulnerability reporting

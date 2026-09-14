@@ -62,7 +62,7 @@ make docs-dev
 make docs-build
 ```
 
-When editing `docs/*.md`, changes appear in the dev server immediately. Root-level guides (`README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SUPPORT.md`) are included in the site via VitePress file includes — edit those source files, not the wrapper pages in `docs/`.
+When editing `docs/*.md`, changes appear in the dev server immediately. Root-level guides (`README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `COMPATIBILITY.md`, `SUPPORT.md`) are included in the site via VitePress file includes — edit those source files, not the wrapper pages in `docs/`.
 
 ## Releasing
 
@@ -131,6 +131,7 @@ GitHub pre-fills new pull requests from [`.github/pull_request_template.md`](.gi
 - Ensure CI passes before requesting review.
 - Go coverage is uploaded to [Codecov](https://codecov.io/gh/alvarorg14/openlicensd) from CI; status checks are informational and do not block merges.
 - Add exactly one policy label to your PR: `breaking-change`, `feature`, `enhancement`, `bug`, `dependencies`, `documentation`, `deprecations`, or `ci`.
+- From v1.0.0, use `deprecations` when marking covered behavior as deprecated but still functional through all of 1.x; use `breaking-change` only when removing or incompatibly changing a covered surface (requires the next major release). See [COMPATIBILITY.md](COMPATIBILITY.md).
 - New GitHub Actions workflows must declare a top-level `permissions:` block (typically `contents: read`) and grant write scopes only on the jobs that need them.
 - Pin every `uses:` reference to a full commit SHA with a `# vX.Y.Z` comment (see existing workflows for the pattern); do not use floating `@v` tags.
 

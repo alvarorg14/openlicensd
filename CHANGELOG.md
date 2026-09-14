@@ -11,6 +11,10 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Documentation
+
+- docs: add API stability and deprecation policy (COMPATIBILITY.md) (#125)
+
 ### Bug Fixes
 
 - fix(config): fail startup on invalid boolean and integer env values instead of silently using defaults (#290)
@@ -19,13 +23,15 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [0.9.0] - 2026-09-14
 
+### Breaking Changes
+
+- feat(server): replace database URL with discrete connection variables (#280) — removes `OPENLICENSD_DATABASE_URL` and Helm `secret.data.databaseUrl`; originally filed under Enhancements
+
 ### New Features
 
 - feat(api): add GET by id for products, policies, and users (#258)
 
 ### Enhancements
-
-- feat(server): replace database URL with discrete connection variables (#280)
 - enhancement(ui): add confirm dialogs for unrevoke and disable (#277)
 - feat(ui): standardize API errors and add success toasts (#276)
 - perf(server): trim /validate hot path database round-trips (#275)

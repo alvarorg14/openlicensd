@@ -3,8 +3,8 @@ import type MarkdownIt from 'markdown-it'
 
 const GITHUB_BLOB = 'https://github.com/alvarorg14/openlicensd/blob/main/'
 
-/** Wrapper pages include root-level markdown; all other pages live under docs/. */
-const ROOT_PAGES = new Set(['overview.md', 'quickstart.md', 'contributing.md', 'changelog.md', 'support.md'])
+/** Wrapper pages include root-level markdown (CONTRIBUTING, CHANGELOG, COMPATIBILITY, SUPPORT); all other pages live under docs/. */
+const ROOT_PAGES = new Set(['overview.md', 'quickstart.md', 'contributing.md', 'changelog.md', 'compatibility.md', 'support.md'])
 
 const SITE_PAGES: Record<string, string> = {
   'README.md': '/overview',
@@ -12,6 +12,7 @@ const SITE_PAGES: Record<string, string> = {
   'CONTRIBUTING.md': '/contributing',
   'CHANGELOG.md': '/changelog',
   'SUPPORT.md': '/support',
+  'COMPATIBILITY.md': '/compatibility',
   'docs/openapi.yaml': '/api-reference',
 }
 

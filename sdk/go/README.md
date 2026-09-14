@@ -196,7 +196,7 @@ if !guard.Valid() {
 |-------------|----------------|
 | v0.1.x | >= 0.2.0 |
 
-The SDK targets the public API contract (`/validate`, `/registry-credentials`, health probes). Server releases and SDK releases are versioned independently.
+The SDK targets the public API contract (`/validate`, `/registry-credentials`, health probes). Server releases and SDK releases are versioned independently. HTTP `/api/v1` stability rules are defined in [COMPATIBILITY.md](../../COMPATIBILITY.md).
 
 ## Admin automation
 
