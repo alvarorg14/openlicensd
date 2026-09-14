@@ -45,6 +45,88 @@ func TestGenerateKey(t *testing.T) {
 	}
 }
 
+func TestNormalizeKey(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "already normalized",
+			input: "01234-56789-ABCDE-FGHJK-MNPQR",
+			want:  "01234-56789-ABCDE-FGHJK-MNPQR",
+		},
+		{
+			name:  "lowercase",
+			input: "01234-56789-abcde-fghjk-mnpqr",
+			want:  "01234-56789-ABCDE-FGHJK-MNPQR",
+		},
+		{
+			name:  "no dashes",
+			input: "0123456789ABCDEFGHJKMNPQR",
+			want:  "01234-56789-ABCDE-FGHJK-MNPQR",
+		},
+		{
+			name:  "ambiguous chars",
+			input: "0123I-5678L-ABCDO-FGHJK-MNPQR",
+			want:  "01231-56781-ABCD0-FGHJK-MNPQR",
+		},
+		{
+			name:  "whitespace",
+			input: "  0123456789ABCDEFGHJKMNPQR  ",
+			want:  "01234-56789-ABCDE-FGHJK-MNPQR",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := NormalizeKey(tt.input); got != tt.want {
+				t.Fatalf("NormalizeKey() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHashKeyNormalizes(t *testing.T) {
+	t.Parallel()
+
+	canonical := "01234-56789-ABCDE-FGHJK-MNPQR"
+	canonicalHash := HashKey(canonical)
+
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: "canonical", input: canonical},
+		{name: "lowercase", input: strings.ToLower(canonical)},
+		{name: "no dashes", input: strings.ReplaceAll(canonical, "-", "")},
+		{name: "whitespace", input: "  " + strings.ReplaceAll(canonical, "-", "") + "  "},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := HashKey(tt.input); got != canonicalHash {
+				t.Fatalf("HashKey(%q) = %q, want %q", tt.input, got, canonicalHash)
+			}
+		})
+	}
+}
+
+func TestKeyPrefixNormalizes(t *testing.T) {
+	t.Parallel()
+
+	if got := KeyPrefix("0123456789ABCDEFGHJKMNPQR"); got != "01234" {
+		t.Fatalf("KeyPrefix() = %q, want %q", got, "01234")
+	}
+	if got := KeyPrefix("01234-56789-abcde-fghjk-mnpqr"); got != "01234" {
+		t.Fatalf("KeyPrefix() = %q, want %q", got, "01234")
+	}
+}
+
 func TestComputeExpiry(t *testing.T) {
 	from := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 

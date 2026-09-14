@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -976,5 +977,104 @@ func TestGetPolicy(t *testing.T) {
 	viewerGetResp := doJSON(t, handler, http.MethodGet, "/api/v1/policies/"+policyID, nil, viewerCookies)
 	if viewerGetResp.Code != http.StatusOK {
 		t.Fatalf("viewer get policy status=%d body=%s", viewerGetResp.Code, viewerGetResp.Body.String())
+	}
+}
+
+func TestValidateAcceptsNormalizedKeyVariants(t *testing.T) {
+	env := setupTestEnv(t)
+	handler := env.Handler
+	cookies := login(t, handler, env.Email, env.Password)
+
+	productCode := fmt.Sprintf("normalize-product-%d", time.Now().UnixNano())
+
+	productResp := doJSON(t, handler, http.MethodPost, "/api/v1/products", map[string]any{
+		"name": "Normalize Product",
+		"code": productCode,
+	}, cookies)
+	if productResp.Code != http.StatusCreated {
+		t.Fatalf("create product status=%d body=%s", productResp.Code, productResp.Body.String())
+	}
+
+	var product map[string]any
+	if err := json.Unmarshal(productResp.Body.Bytes(), &product); err != nil {
+		t.Fatalf("decode product response: %v", err)
+	}
+	productID := product["id"].(string)
+
+	policyResp := doJSON(t, handler, http.MethodPost, "/api/v1/policies", map[string]any{
+		"product_id":       productID,
+		"name":             "Perpetual",
+		"expiration_basis": "on_creation",
+	}, cookies)
+	if policyResp.Code != http.StatusCreated {
+		t.Fatalf("create policy status=%d body=%s", policyResp.Code, policyResp.Body.String())
+	}
+
+	var policy map[string]any
+	if err := json.Unmarshal(policyResp.Body.Bytes(), &policy); err != nil {
+		t.Fatalf("decode policy response: %v", err)
+	}
+	policyID := policy["id"].(string)
+
+	createResp := doJSON(t, handler, http.MethodPost, "/api/v1/licenses", map[string]any{
+		"label":      "normalize-test",
+		"product_id": productID,
+		"policy_id":  policyID,
+	}, cookies)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("create license status=%d body=%s", createResp.Code, createResp.Body.String())
+	}
+
+	var created map[string]any
+	if err := json.Unmarshal(createResp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	rawKey, ok := created["key"].(string)
+	if !ok || rawKey == "" {
+		t.Fatalf("expected raw key in create response")
+	}
+
+	tests := []struct {
+		name string
+		key  string
+	}{
+		{name: "canonical", key: rawKey},
+		{name: "lowercase", key: strings.ToLower(rawKey)},
+		{name: "no dashes", key: strings.ReplaceAll(rawKey, "-", "")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+				"key":     tt.key,
+				"product": productCode,
+			}, nil)
+			if resp.Code != http.StatusOK {
+				t.Fatalf("validate status=%d body=%s", resp.Code, resp.Body.String())
+			}
+
+			var validation license.ValidationResult
+			if err := json.Unmarshal(resp.Body.Bytes(), &validation); err != nil {
+				t.Fatalf("decode validate response: %v", err)
+			}
+			if !validation.Valid {
+				t.Fatalf("expected valid license for %q, got %+v", tt.name, validation)
+			}
+		})
+	}
+
+	notFoundResp := doJSON(t, handler, http.MethodPost, "/api/v1/validate", map[string]string{
+		"key": "01234-56789-ABCDE-FGHJK-MNPQR",
+	}, nil)
+	if notFoundResp.Code != http.StatusOK {
+		t.Fatalf("validate status=%d body=%s", notFoundResp.Code, notFoundResp.Body.String())
+	}
+	var notFound license.ValidationResult
+	if err := json.Unmarshal(notFoundResp.Body.Bytes(), &notFound); err != nil {
+		t.Fatalf("decode validate response: %v", err)
+	}
+	if notFound.Valid || notFound.Reason != "not_found" {
+		t.Fatalf("expected not_found, got %+v", notFound)
 	}
 }
