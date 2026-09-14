@@ -29,6 +29,7 @@ jobs:
           config-name: release-drafter-sdk.yml
           prerelease: false
           include-pre-releases: false
+          latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -45,5 +46,6 @@ jobs:
           prerelease: true
           prerelease-identifier: rc
           include-pre-releases: true
+          latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

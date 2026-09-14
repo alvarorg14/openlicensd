@@ -71,7 +71,7 @@ and a unified vendor platform for hybrid SaaS plus on-premise product portfolios
 - You need a **release or artifact distribution API** to ship software updates to licensed users.
 - You need **built-in payment or billing integrations** (Stripe, Paddle, etc.).
 - You need **client SDKs** beyond Go (Keygen, Cryptlex, and LicenseSpring cover many languages).
-- You need a **stable v1 API** today — OpenLicensd is pre-1.0; see [ROADMAP.md](../ROADMAP.md) for the path to v1.0.0.
+- You need a **stable v1 API** today — see [COMPATIBILITY.md](../COMPATIBILITY.md) for the `/api/v1` SemVer contract from v1.0.0 onward.
 
 ## What OpenLicensd does not do today
 

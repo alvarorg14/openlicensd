@@ -5,7 +5,7 @@ The official Go client for integrating OpenLicensd license validation into CLIs,
 ## Install
 
 ```bash
-go get github.com/alvarorg14/openlicensd/sdk/go@v0.1.0
+go get github.com/alvarorg14/openlicensd/sdk/go@v1.0.0
 ```
 
 Package documentation: [pkg.go.dev/github.com/alvarorg14/openlicensd/sdk/go](https://pkg.go.dev/github.com/alvarorg14/openlicensd/sdk/go)
@@ -162,7 +162,7 @@ SDK releases are independent from server releases:
 
 | SDK | Server |
 |-----|--------|
-| v0.1.x | >= 0.2.0 |
+| v1.0.x | >= 1.0.0 |
 
 Tag format: `sdk/go/vX.Y.Z` (note the `v` prefix required by Go modules). Releases are published from Release Drafter drafts on GitHub (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
