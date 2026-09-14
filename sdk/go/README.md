@@ -126,6 +126,8 @@ if !result.Valid {
 
 `RegistryCredentials` returns `*LicenseError` with a typed `Reason` on 403.
 
+`ErrInvalidKey` is a sentinel for client-side `ValidateKeyFormat` checks. `Validate` and `ValidateProduct` do not return it; malformed keys are rejected by the server as `Valid=false` (typically `ReasonInvalid`).
+
 ## Key helpers
 
 ```go
@@ -147,8 +149,10 @@ result, err := validator.Validate(ctx, key)
 | API | Description |
 |-----|-------------|
 | `NewCachedValidator(client, ttl)` | Wrap a client with a TTL cache (defaults to 5m when `ttl <= 0`) |
-| `Validate(ctx, key)` | Return a cached result when available and not expired |
-| `Invalidate(key)` | Remove one key from the cache |
+| `Validate(ctx, key)` | Return a cached result for the client's configured product |
+| `ValidateProduct(ctx, key, product)` | Return a cached result for an explicit product code |
+| `Invalidate(key)` | Remove one key from the cache for the client's product |
+| `InvalidateProduct(key, product)` | Remove one key from the cache for an explicit product |
 | `Clear()` | Remove all cached entries |
 
 **Caveats:** Any `ValidationResult` returned without error is cached, including `Valid: false`. Transport errors are not cached. The cache map has no size limit; expired entries are skipped on read but not pruned automatically. Call `Invalidate` or `Clear` when validating many distinct keys.
@@ -176,12 +180,13 @@ if !guard.Valid() {
 |-----------------|-------------|
 | `WithInterval(d)` | How often to revalidate (default 1h) |
 | `WithOfflineGrace(d)` | How long the guard stays valid after the last successful validation when the server is unreachable (default 24h) |
+| `WithProduct(product)` | Product code for revalidation (defaults to the client's configured product) |
 | `Valid()` | Whether the license is currently considered valid |
 | `Last()` | Most recent validation result |
 | `LastError()` | Most recent validation error, if any |
-| `Stop()` | End background revalidation and wait for the goroutine to exit |
+| `Stop()` | End background revalidation and wait for the goroutine to exit; safe to call more than once |
 
-**Caveats:** `NewGuard` runs the first `Validate` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start. An invalid license (`Valid: false` with a nil error) still constructs the guard.
+**Caveats:** `NewGuard` runs the first `ValidateProduct` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start. An invalid license (`Valid: false` with a nil error) still constructs the guard.
 
 ## Compatibility
 

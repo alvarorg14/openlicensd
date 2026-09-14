@@ -93,6 +93,8 @@ client, err := openlicensd.New(baseURL, product, openlicensd.WithFingerprint(fp)
 
 `/registry-credentials` returns HTTP 403 for invalid licenses (same reason codes, plus `invalid` as a fallback). The SDK maps this to `*LicenseError`.
 
+`ErrInvalidKey` is a sentinel for client-side `ValidateKeyFormat` checks. `Validate` and `ValidateProduct` do not return it; malformed keys are rejected by the server as `Valid=false` (typically `ReasonInvalid`).
+
 ## Advanced patterns
 
 ### Cached validation
@@ -101,9 +103,12 @@ Reduce server round-trips with a TTL cache:
 
 ```go
 validator := openlicensd.NewCachedValidator(client, 5*time.Minute)
+result, err := validator.Validate(ctx, key)
 ```
 
-Any `ValidationResult` returned without error is cached, including `Valid: false`. Transport errors are not cached. The cache map has no size limit; expired entries are skipped on read but not pruned automatically. Call `Invalidate` or `Clear` when validating many distinct keys.
+Any `ValidationResult` returned without error is cached, including `Valid: false`. Transport errors are not cached. The cache map has no size limit; expired entries are skipped on read but not pruned automatically. Call `Invalidate`, `InvalidateProduct`, or `Clear` when validating many distinct keys.
+
+Use `ValidateProduct(ctx, key, product)` and `InvalidateProduct(key, product)` when validating against a product other than the client's configured product.
 
 ### Background guard
 
@@ -117,7 +122,7 @@ guard, err := openlicensd.NewGuard(ctx, client, key,
 defer guard.Stop()
 ```
 
-`NewGuard` runs the first `Validate` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start.
+`NewGuard` runs the first `ValidateProduct` synchronously. If it returns a non-nil error (for example when the server is unreachable), construction fails and the background loop never starts. Offline grace applies only to later transport failures after a successful start. Pass `WithProduct(product)` when revalidating against a product other than the client's configured product. `Stop()` is safe to call more than once.
 
 ### Key format validation
 
@@ -129,6 +134,8 @@ if !openlicensd.ValidateKeyFormat(key) {
 }
 key = openlicensd.NormalizeKey(key)
 ```
+
+You may return `openlicensd.ErrInvalidKey` instead of a custom error when using `errors.Is`.
 
 ## Retries
 

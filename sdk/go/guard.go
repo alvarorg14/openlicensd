@@ -24,12 +24,21 @@ func WithOfflineGrace(d time.Duration) GuardOption {
 	}
 }
 
+// WithProduct sets the product code used for revalidation. When empty, the
+// guard uses the client's configured product.
+func WithProduct(product string) GuardOption {
+	return func(g *Guard) {
+		g.product = product
+	}
+}
+
 // Guard periodically revalidates a license key and exposes the latest result.
 // After a successful start, it tolerates transient network failures within an
 // offline grace window configured by WithOfflineGrace.
 type Guard struct {
-	client *Client
-	key    string
+	client  *Client
+	key     string
+	product string
 
 	interval     time.Duration
 	offlineGrace time.Duration
@@ -40,13 +49,21 @@ type Guard struct {
 	valid           bool
 	lastErr         error
 
-	stop chan struct{}
-	done chan struct{}
+	stop     chan struct{}
+	done     chan struct{}
+	stopOnce sync.Once
+}
+
+func (g *Guard) validationProduct() string {
+	if g.product != "" {
+		return g.product
+	}
+	return g.client.product
 }
 
 // NewGuard starts background revalidation for key. Call Stop to release resources.
 //
-// The first Validate call runs synchronously. If it returns a non-nil error
+// The first ValidateProduct call runs synchronously. If it returns a non-nil error
 // (for example when the server is unreachable), NewGuard returns that error
 // and does not start the background loop. Offline grace applies only to later
 // transport failures after a successful start. An invalid license (Valid=false
@@ -65,7 +82,7 @@ func NewGuard(ctx context.Context, client *Client, key string, opts ...GuardOpti
 		opt(g)
 	}
 
-	result, err := client.Validate(ctx, key)
+	result, err := client.ValidateProduct(ctx, key, g.validationProduct())
 	g.mu.Lock()
 	g.last = result
 	g.lastValidatedAt = time.Now()
@@ -100,7 +117,7 @@ func (g *Guard) run(ctx context.Context) {
 }
 
 func (g *Guard) revalidate(ctx context.Context) {
-	result, err := g.client.Validate(ctx, g.key)
+	result, err := g.client.ValidateProduct(ctx, g.key, g.validationProduct())
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -142,7 +159,10 @@ func (g *Guard) LastError() error {
 }
 
 // Stop ends background revalidation and waits for the goroutine to exit.
+// It is safe to call Stop more than once.
 func (g *Guard) Stop() {
-	close(g.stop)
-	<-g.done
+	g.stopOnce.Do(func() {
+		close(g.stop)
+		<-g.done
+	})
 }
