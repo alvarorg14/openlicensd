@@ -109,6 +109,7 @@
     confirm-label="Release"
     confirm-color="error"
     :loading="actionType === 'release'"
+    :error="releaseError"
     @confirm="confirmRelease"
   />
 </template>
@@ -142,6 +143,7 @@ const renaming = ref(false)
 
 const showReleaseConfirm = ref(false)
 const releaseTarget = ref<LicenseMachine | null>(null)
+const releaseError = ref('')
 const actionId = ref<string | null>(null)
 const actionType = ref<'release' | null>(null)
 
@@ -243,6 +245,7 @@ const confirmRename = async () => {
 
 const openReleaseConfirm = (machine: LicenseMachine) => {
   releaseTarget.value = machine
+  releaseError.value = ''
   showReleaseConfirm.value = true
 }
 
@@ -255,14 +258,15 @@ const confirmRelease = async () => {
   try {
     await releaseLicenseMachine(props.license.id, releaseTarget.value.id)
     showReleaseConfirm.value = false
+    releaseTarget.value = null
+    releaseError.value = ''
     toastSuccess('Machine released')
     await fetchMachines()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to release machine')
+    releaseError.value = getApiErrorMessage(err, 'Failed to release machine')
   } finally {
     actionId.value = null
     actionType.value = null
-    releaseTarget.value = null
   }
 }
 </script>

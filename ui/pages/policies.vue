@@ -148,6 +148,7 @@
       confirm-label="Delete"
       confirm-color="error"
       :loading="deleting"
+      :error="deleteConfirmError"
       @confirm="confirmDelete"
     />
   </UContainer>
@@ -193,6 +194,7 @@ const editingPolicy = ref<Policy | null>(null)
 const detailsPolicy = ref<Policy | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<Policy | null>(null)
+const deleteConfirmError = ref('')
 const actionId = ref<string | null>(null)
 const deleting = ref(false)
 
@@ -274,6 +276,7 @@ const openDetails = (policy: Policy) => {
 
 const openDelete = (policy: Policy) => {
   deleteTarget.value = policy
+  deleteConfirmError.value = ''
   showDeleteConfirm.value = true
 }
 
@@ -300,14 +303,15 @@ const confirmDelete = async () => {
   try {
     await deletePolicy(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    deleteTarget.value = null
+    deleteConfirmError.value = ''
     toastSuccess('Policy deleted')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to delete policy. It may still be assigned to licenses.')
+    deleteConfirmError.value = getApiErrorMessage(err, 'Failed to delete policy. It may still be assigned to licenses.')
   } finally {
     actionId.value = null
     deleting.value = false
-    deleteTarget.value = null
   }
 }
 </script>

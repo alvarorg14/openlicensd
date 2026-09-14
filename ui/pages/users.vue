@@ -133,6 +133,7 @@
       confirm-label="Delete"
       confirm-color="error"
       :loading="deleting"
+      :error="deleteConfirmError"
       @confirm="confirmDelete"
     />
 
@@ -143,6 +144,7 @@
       confirm-label="Disable"
       confirm-color="error"
       :loading="disabling"
+      :error="disableConfirmError"
       @confirm="confirmDisable"
     />
   </UContainer>
@@ -187,6 +189,8 @@ const showDeleteConfirm = ref(false)
 const showDisableConfirm = ref(false)
 const deleteTarget = ref<User | null>(null)
 const disableTarget = ref<User | null>(null)
+const deleteConfirmError = ref('')
+const disableConfirmError = ref('')
 const actionId = ref<string | null>(null)
 const deleting = ref(false)
 const disabling = ref(false)
@@ -246,11 +250,13 @@ const openDetails = (user: User) => {
 
 const openDelete = (user: User) => {
   deleteTarget.value = user
+  deleteConfirmError.value = ''
   showDeleteConfirm.value = true
 }
 
 const openDisable = (user: User) => {
   disableTarget.value = user
+  disableConfirmError.value = ''
   showDisableConfirm.value = true
 }
 
@@ -321,14 +327,15 @@ const confirmDisable = async () => {
   try {
     await disableUser(disableTarget.value.id)
     showDisableConfirm.value = false
+    disableTarget.value = null
+    disableConfirmError.value = ''
     toastSuccess('User disabled')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to disable user')
+    disableConfirmError.value = getApiErrorMessage(err, 'Failed to disable user')
   } finally {
     actionId.value = null
     disabling.value = false
-    disableTarget.value = null
   }
 }
 
@@ -341,14 +348,15 @@ const confirmDelete = async () => {
   try {
     await deleteUser(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    deleteTarget.value = null
+    deleteConfirmError.value = ''
     toastSuccess('User deleted')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to delete user')
+    deleteConfirmError.value = getApiErrorMessage(err, 'Failed to delete user')
   } finally {
     actionId.value = null
     deleting.value = false
-    deleteTarget.value = null
   }
 }
 </script>

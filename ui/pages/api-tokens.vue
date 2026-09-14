@@ -135,6 +135,7 @@
       confirm-label="Revoke"
       confirm-color="warning"
       :loading="revoking"
+      :error="revokeConfirmError"
       @confirm="confirmRevoke"
     />
 
@@ -145,6 +146,7 @@
       confirm-label="Delete"
       confirm-color="error"
       :loading="deleting"
+      :error="deleteConfirmError"
       @confirm="confirmDelete"
     />
   </UContainer>
@@ -188,6 +190,8 @@ const createdName = ref('')
 const detailsToken = ref<ApiToken | null>(null)
 const revokeTarget = ref<ApiToken | null>(null)
 const deleteTarget = ref<ApiToken | null>(null)
+const revokeConfirmError = ref('')
+const deleteConfirmError = ref('')
 const actionId = ref<string | null>(null)
 const revoking = ref(false)
 const deleting = ref(false)
@@ -244,11 +248,13 @@ const openDetails = (token: ApiToken) => {
 
 const openRevoke = (token: ApiToken) => {
   revokeTarget.value = token
+  revokeConfirmError.value = ''
   showRevokeConfirm.value = true
 }
 
 const openDelete = (token: ApiToken) => {
   deleteTarget.value = token
+  deleteConfirmError.value = ''
   showDeleteConfirm.value = true
 }
 
@@ -285,14 +291,15 @@ const confirmRevoke = async () => {
   try {
     await revokeApiToken(revokeTarget.value.id)
     showRevokeConfirm.value = false
+    revokeTarget.value = null
+    revokeConfirmError.value = ''
     toastSuccess('API token revoked')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to revoke API token')
+    revokeConfirmError.value = getApiErrorMessage(err, 'Failed to revoke API token')
   } finally {
     actionId.value = null
     revoking.value = false
-    revokeTarget.value = null
   }
 }
 
@@ -305,14 +312,15 @@ const confirmDelete = async () => {
   try {
     await deleteApiToken(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    deleteTarget.value = null
+    deleteConfirmError.value = ''
     toastSuccess('API token deleted')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to delete API token')
+    deleteConfirmError.value = getApiErrorMessage(err, 'Failed to delete API token')
   } finally {
     actionId.value = null
     deleting.value = false
-    deleteTarget.value = null
   }
 }
 </script>
