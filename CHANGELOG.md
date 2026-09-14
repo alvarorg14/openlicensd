@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Documentation
 
+- docs: pin deployment examples to semver tags (#247)
 - docs: fix stale SDK admin-auth documentation (#246)
 - docs: add security hardening guide and production checklist (#245)
 
