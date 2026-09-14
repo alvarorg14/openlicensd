@@ -366,7 +366,7 @@ On push to `main`, maintains draft releases for the server and Go SDK independen
 | Draft | Workflow | Config | Tag format |
 |-------|----------|--------|------------|
 | Server (stable + prerelease) | `.github/workflows/release-drafter.yml` | `release-drafter-template.yml` | `vX.Y.Z`, `vX.Y.Z-rc.N` |
-| Go SDK (stable + prerelease) | `.github/workflows/sdk-release-drafter.yml` | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
+| Go SDK (stable + prerelease) | `.github/workflows/sdk-release-drafter.yml` (`latest: false`) | `release-drafter-sdk.yml` | `sdk/go/vX.Y.Z`, `sdk/go/vX.Y.Z-rc.N` |
 
 SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files). Pure SDK-only PRs are excluded from server drafts via `pre-exclude` in `release-drafter-template.yml`. Before publishing a server release, copy the draft body into [`CHANGELOG.md`](CHANGELOG.md) (see [CONTRIBUTING.md](CONTRIBUTING.md#server)). GoReleaser generates a commit-based changelog as a fallback for empty GitHub release bodies; `release.mode: keep-existing` in `.goreleaser.yaml` preserves Release Drafter notes on publish.
 
@@ -378,7 +378,7 @@ On GitHub release publish (server tags only — SDK releases are excluded):
 - Release job stamps `docs/openapi.yaml` `info.version` from the tag and attaches it to the GitHub release
 - Syft generates SPDX JSON SBOMs for release archives (via GoReleaser) and GHCR image platforms (uploaded after publish)
 - Cosign signs the published GHCR image digest; `actions/attest` publishes SLSA build provenance to GHCR
-- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts` (separate job; `--version/--app-version` from tag)
+- Helm chart packaged and pushed to `oci://ghcr.io/alvarorg14/charts` (separate job with `needs: release`; `--version/--app-version` from tag)
 
 ### SDK Release (`.github/workflows/sdk-release.yml`)
 
@@ -387,7 +387,7 @@ On GitHub release publish (SDK tags only — server releases are excluded):
 - Runs `make lint-sdk` and `make test-sdk`
 - Warms the Go module proxy for pkg.go.dev
 
-SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`); SDK tags use the Go module format (`sdk/go/v0.1.0`).
+SDK and server versions are independent. Server tags use a `v` prefix (`v1.0.0`); SDK tags use the Go module format (`sdk/go/v1.0.0`). SDK releases must not be marked GitHub Latest — the drafter sets `latest: false`; uncheck **Set as the latest release** when publishing an SDK draft.
 
 ## Quality Assurance Requirements
 

@@ -11,6 +11,12 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-14
+
+### CI
+
+- ci: gate Helm chart publish on successful image job; SDK drafts do not steal GitHub Latest (#128)
+
 ### Documentation
 
 - docs: document Linux amd64/arm64 platform scope for published server artifacts (#127)

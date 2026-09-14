@@ -10,7 +10,7 @@ Official Go client for the OpenLicensd public validation API.
 ## Install
 
 ```bash
-go get github.com/alvarorg14/openlicensd/sdk/go@v0.1.0
+go get github.com/alvarorg14/openlicensd/sdk/go@v1.0.0
 ```
 
 ## Quick start
@@ -194,7 +194,7 @@ if !guard.Valid() {
 
 | SDK version | Server version |
 |-------------|----------------|
-| v0.1.x | >= 0.2.0 |
+| v1.0.x | >= 1.0.0 |
 
 The SDK targets the public API contract (`/validate`, `/registry-credentials`, health probes). Server releases and SDK releases are versioned independently. HTTP `/api/v1` stability rules are defined in [COMPATIBILITY.md](../../COMPATIBILITY.md).
 

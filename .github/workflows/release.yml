@@ -194,6 +194,7 @@ jobs:
 
   chart:
     name: Publish Helm chart
+    needs: release
     if: ${{ !startsWith(github.event.release.tag_name, 'sdk/go/') }}
     runs-on: ubuntu-latest
     permissions:

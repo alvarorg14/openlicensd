@@ -79,9 +79,9 @@ The Go SDK uses `sdk/go/vX.Y.Z` or `sdk/go/vX.Y.Z-rc.N`, independent of the serv
 ### Server
 
 1. Open the repository's **Releases** page on GitHub.
-2. Review the stable or prerelease draft (tag format: `vX.Y.Z` or `vX.Y.Z-rc.N`).
+2. Review the stable or prerelease draft (tag format: `vX.Y.Z` or `vX.Y.Z-rc.N`). Release Drafter resolves the next version from the last published server tag — edit the draft tag/title if you need a different major (for example retarget `v0.9.1` to `v1.0.0` before publishing v1.0). Do not publish intermediate drafts you do not intend to ship (for example `v0.9.1` when releasing `v1.0.0`).
 3. Before publishing, update [`CHANGELOG.md`](CHANGELOG.md): copy the draft release body into a new `## [X.Y.Z] - YYYY-MM-DD` section (use the publish date), then clear `## [Unreleased]` or replace it with the next draft contents. Commit the changelog update to `main` before or as part of the release publish.
-4. Publish the draft when ready.
+4. Publish the draft when ready (leave **Set as the latest release** checked for server releases).
 
 Publishing triggers `.github/workflows/release.yml`, which builds Linux amd64/arm64 binaries and container images via GoReleaser and publishes the Helm chart in a separate workflow job. See [docs/deployment.md](docs/deployment.md#platforms) for the full platform matrix. The release job stamps `docs/openapi.yaml` `info.version` from the git tag (strip leading `v`) and attaches the stamped copy to the GitHub release. The stamp is publish-time only — git keeps the `0.0.0-dev` placeholder, and the workflow marks the file skip-worktree so GoReleaser still sees a clean worktree. GoReleaser also generates a changelog from git commits as a fallback for empty GitHub release bodies; with `release.mode: keep-existing`, Release Drafter notes on the published release are left unchanged.
 
@@ -93,18 +93,20 @@ Published GHCR images are signed with keyless Cosign and include a GitHub Artifa
 
 ### Go SDK
 
-The Go SDK is versioned independently from the server. Release Drafter maintains separate drafts scoped to SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files; tag format: `sdk/go/vX.Y.Z`).
+The Go SDK is versioned independently from the server. Release Drafter maintains separate drafts scoped to SDK-owned paths (`sdk/**`, `docs/sdk/**`, and SDK workflow/config files; tag format: `sdk/go/vX.Y.Z`). The SDK drafter sets `latest: false` so SDK releases do not replace the server release as GitHub Latest.
 
 1. Open the repository's **Releases** page on GitHub.
 2. Review the **Go SDK** stable or prerelease draft.
-3. Publish the draft when ready.
+3. Confirm the tag is `sdk/go/vX.Y.Z` (or `sdk/go/vX.Y.Z-rc.N` for prereleases). Release Drafter resolves the next version from the last published SDK tag — edit the draft tag/title if you need a different major (for example retarget `sdk/go/v0.4.0` to `sdk/go/v1.0.0` before publishing v1.0).
+4. Uncheck **Set as the latest release** when publishing (the server release should remain Latest).
+5. Publish the draft when ready.
 
 Publishing triggers `.github/workflows/sdk-release.yml`, which lints, tests, and warms the Go module proxy for pkg.go.dev.
 
 Consumers install with:
 
 ```bash
-go get github.com/alvarorg14/openlicensd/sdk/go@v0.1.0
+go get github.com/alvarorg14/openlicensd/sdk/go@v1.0.0
 ```
 
 See [docs/sdk/go.md](docs/sdk/go.md) for integration documentation.
