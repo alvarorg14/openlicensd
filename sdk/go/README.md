@@ -196,6 +196,12 @@ if !guard.Valid() {
 
 The SDK targets the public API contract (`/validate`, `/registry-credentials`, health probes). Server releases and SDK releases are versioned independently.
 
+## Admin automation
+
+The SDK does not wrap admin endpoints. Use the HTTP API with scoped Bearer tokens for CI, Terraform, and other automation — no CSRF header required on Bearer requests. Token management still requires an admin browser session.
+
+See [docs/api.md](../../docs/api.md) for authentication, roles, and curl examples.
+
 ## Development
 
 ```bash
