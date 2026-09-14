@@ -12,6 +12,7 @@ import (
 const (
 	keyGroups    = 5
 	keyGroupLen  = 5
+	keyLength    = keyGroups * keyGroupLen
 	keyPrefixLen = keyGroupLen
 )
 
@@ -38,17 +39,51 @@ func GenerateKey() (raw string, hash string, prefix string, err error) {
 	return raw, hash, prefix, nil
 }
 
+// NormalizeKey uppercases, trims whitespace, maps ambiguous Crockford characters
+// (I/L -> 1, O -> 0), strips dashes, and re-inserts them in 5x5 groups.
+func NormalizeKey(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.ToUpper(raw)
+	raw = strings.ReplaceAll(raw, "-", "")
+
+	var b strings.Builder
+	b.Grow(len(raw))
+	for i := 0; i < len(raw); i++ {
+		ch := raw[i]
+		switch ch {
+		case 'I', 'L':
+			ch = '1'
+		case 'O':
+			ch = '0'
+		}
+		b.WriteByte(ch)
+	}
+
+	normalized := b.String()
+	if len(normalized) != keyLength {
+		return normalized
+	}
+
+	groups := make([]string, keyGroups)
+	for i := 0; i < keyGroups; i++ {
+		start := i * keyGroupLen
+		groups[i] = normalized[start : start+keyGroupLen]
+	}
+	return strings.Join(groups, "-")
+}
+
 func HashKey(raw string) string {
-	sum := sha256.Sum256([]byte(raw))
+	sum := sha256.Sum256([]byte(NormalizeKey(raw)))
 	return hex.EncodeToString(sum[:])
 }
 
 // KeyPrefix returns the first Crockford Base32 group from a license key.
 func KeyPrefix(raw string) string {
-	if raw == "" {
+	normalized := NormalizeKey(raw)
+	if normalized == "" {
 		return ""
 	}
-	parts := strings.SplitN(raw, "-", 2)
+	parts := strings.SplitN(normalized, "-", 2)
 	return parts[0]
 }
 

@@ -387,6 +387,8 @@ You can optionally override the policy-derived expiration with `expires_at` and 
 
 ## Example: validate a license
 
+The server accepts case- and dash-insensitive Crockford key variants (for example lowercase or undashed input) and normalizes them before hash lookup.
+
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/validate \
   -H "Content-Type: application/json" \

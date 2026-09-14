@@ -144,6 +144,8 @@ if !openlicensd.ValidateKeyFormat(key) {
 key = openlicensd.NormalizeKey(key)
 ```
 
+The server also normalizes keys before hash lookup on `/validate` and `/registry-credentials`, so client-side normalization is optional for matching but still recommended for local format checks and UX.
+
 You may return `openlicensd.ErrInvalidKey` instead of a custom error when using `errors.Is`.
 
 ## Retries

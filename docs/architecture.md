@@ -221,6 +221,7 @@ Example: `X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD`
 - Charset: `0-9`, `A-Z` excluding ambiguous characters (`I`, `L`, `O`, `U`)
 - ~125 bits of entropy
 - Only the first group is stored as `key_prefix` for display
+- Validation normalizes input before hashing: uppercase, optional dashes, and Crockford `I`/`L`→`1`, `O`→`0` mapping
 
 ## Request flows
 
@@ -235,7 +236,7 @@ sequenceDiagram
   participant PG as PostgreSQL
 
   Client->>API: POST /api/v1/validate {key, product?, fingerprint?, hostname?}
-  API->>License: HashKey(key)
+  API->>License: NormalizeKey(key) then HashKey
   API->>Store: GetLicenseByKeyHash(hash)
   Store->>PG: SELECT with product/policy join
   PG-->>Store: license row

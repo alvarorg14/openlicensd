@@ -2966,7 +2966,10 @@ components:
       properties:
         key:
           type: string
-          description: Full license key
+          description: >-
+            Full license key. The server normalizes before hashing: trims whitespace,
+            uppercases, strips optional dashes, and maps ambiguous Crockford characters
+            (I/L to 1, O to 0) before re-inserting 5x5 groups.
           example: X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD
         product:
           type: string
