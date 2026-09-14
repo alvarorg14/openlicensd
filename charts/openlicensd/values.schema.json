@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "replicaCount": {
       "type": "integer",
@@ -8,6 +9,7 @@
     },
     "image": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "repository": {
           "type": "string"
@@ -26,6 +28,7 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string"
@@ -42,6 +45,7 @@
     },
     "serviceAccount": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "create": {
           "type": "boolean"
@@ -101,6 +105,7 @@
     },
     "autoscaling": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -138,6 +143,7 @@
     },
     "pdb": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -164,6 +170,7 @@
     },
     "serviceMonitor": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -205,6 +212,7 @@
     },
     "networkPolicy": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -237,6 +245,7 @@
     },
     "config": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "addr": {
           "type": "string"
@@ -257,17 +266,40 @@
           "type": "integer",
           "minimum": 0
         },
+        "auditRetentionDays": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "auditCleanupIntervalMinutes": {
+          "type": "integer",
+          "minimum": 0
+        },
         "cookieSecure": {
           "type": "boolean"
         },
         "localLoginEnabled": {
           "type": "boolean"
         },
+        "log": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["debug", "info", "warn", "error"]
+            },
+            "format": {
+              "type": "string",
+              "enum": ["json", "text"]
+            }
+          }
+        },
         "trustedProxies": {
           "type": "string"
         },
         "metrics": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -279,6 +311,7 @@
         },
         "database": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "host": {
               "type": "string"
@@ -320,6 +353,7 @@
         },
         "rateLimit": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -363,6 +397,7 @@
         },
         "bootstrapAdmin": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "email": {
               "type": "string"
@@ -374,6 +409,7 @@
         },
         "harbor": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -398,11 +434,42 @@
               "type": "boolean"
             }
           }
+        },
+        "oidc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "issuerUrl": {
+              "type": "string"
+            },
+            "clientId": {
+              "type": "string"
+            },
+            "redirectUrl": {
+              "type": "string"
+            },
+            "scopes": {
+              "type": "string"
+            },
+            "defaultRole": {
+              "type": "string"
+            },
+            "providerName": {
+              "type": "string"
+            },
+            "adminEmails": {
+              "type": "string"
+            }
+          }
         }
       }
     },
     "secret": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "mode": {
           "type": "string",
@@ -416,11 +483,15 @@
         },
         "data": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "databasePassword": {
               "type": "string"
             },
             "bootstrapAdminPasswordHash": {
+              "type": "string"
+            },
+            "oidcClientSecret": {
               "type": "string"
             },
             "harborAdminUsername": {
@@ -433,12 +504,14 @@
         },
         "externalSecrets": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "refreshInterval": {
               "type": "string"
             },
             "secretStoreRef": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "name": {
                   "type": "string"
@@ -461,6 +534,7 @@
     },
     "service": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "type": {
           "type": "string",
@@ -481,6 +555,7 @@
     },
     "ingress": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "type": "boolean"
