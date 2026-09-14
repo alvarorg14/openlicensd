@@ -320,6 +320,8 @@ If you discover a security vulnerability, please report it via a private GitHub 
 
 See [SECURITY.md](SECURITY.md) for the full security policy.
 
+For production deployment hardening and go-live checklists, see [docs/security-hardening.md](docs/security-hardening.md) and [docs/production-checklist.md](docs/production-checklist.md).
+
 **Dependency maintenance:** Renovate opens pull requests for Go modules, npm packages, Docker base images, and GitHub Actions updates. Install the [Renovate GitHub App](https://github.com/apps/renovate) on this repository to enable it.
 
 **Vulnerability scanning:** A separate Vulnerability Scan workflow runs govulncheck weekly, on demand, and on pull requests (non-blocking) to detect known vulnerabilities in Go dependencies.

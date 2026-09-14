@@ -219,6 +219,7 @@ When a release lists breaking changes, read each item and verify:
 
 ## Related
 
+- [production-checklist.md](production-checklist.md) — upgrade and go-live checklists
 - [scaling.md](scaling.md) — HA, scaling, and multi-replica caveats
 - [backup-restore.md](backup-restore.md) — `pg_dump`/`pg_restore` and RPO/RTO guidance
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and health probes

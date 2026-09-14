@@ -202,6 +202,7 @@ Sign in to the admin UI and confirm products, policies, and licenses are present
 
 ## Related
 
+- [production-checklist.md](production-checklist.md) — backup schedule and restore drill checklist
 - [upgrade.md](upgrade.md) — upgrade procedure and when to take a dump before upgrading
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and PostgreSQL requirements
 - [configuration.md](configuration.md) — discrete database connection variables and pool settings
