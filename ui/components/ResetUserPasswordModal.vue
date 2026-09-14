@@ -68,6 +68,7 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { required: true })
 
 const { setUserPassword } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const form = reactive({
   password: '',
@@ -117,10 +118,10 @@ const onSubmit = async () => {
 
   try {
     await setUserPassword(props.user.id, form.password)
+    toastSuccess('Password updated')
     success.value = true
   } catch (err: unknown) {
-    const message = (err as { data?: { error?: string } })?.data?.error
-    error.value = message || 'Failed to reset password'
+    error.value = getApiErrorMessage(err, 'Failed to reset password')
   } finally {
     loading.value = false
   }

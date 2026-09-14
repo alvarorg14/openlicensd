@@ -50,6 +50,7 @@ const emit = defineEmits<{
 }>()
 
 const { createProduct, updateProduct } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const form = reactive({
   name: '',
@@ -102,9 +103,10 @@ const onSubmit = async () => {
       await createProduct(payload)
     }
     open.value = false
+    toastSuccess(props.product ? 'Product updated' : 'Product created')
     emit('saved')
-  } catch {
-    error.value = props.product ? 'Failed to update product' : 'Failed to create product'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, props.product ? 'Failed to update product' : 'Failed to create product')
   } finally {
     loading.value = false
   }

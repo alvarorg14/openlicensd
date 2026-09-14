@@ -1,4 +1,5 @@
 import type { Paginated } from '~/types'
+import { getApiErrorMessage } from '~/utils/apiError'
 
 type SortOrder = 'asc' | 'desc'
 
@@ -56,11 +57,11 @@ export const usePaginatedList = <T, P extends Record<string, unknown> = Record<s
       if (pageSize.value !== result.page_size) {
         pageSize.value = result.page_size
       }
-    } catch {
+    } catch (err) {
       if (currentRequest !== requestId) {
         return
       }
-      error.value = 'Failed to load data'
+      error.value = getApiErrorMessage(err, 'Failed to load data')
       items.value = []
       total.value = 0
       totalPages.value = 0

@@ -124,6 +124,7 @@ const open = defineModel<boolean>('open', { required: true })
 
 const { listLicenseMachines, updateLicenseMachine, releaseLicenseMachine } = useApi()
 const { canWrite } = useAuth()
+const { success: toastSuccess } = useAppToast()
 
 const page = ref(1)
 const pageSize = 25
@@ -192,8 +193,8 @@ const fetchMachines = async () => {
     }))
     total.value = response.total
     totalPages.value = response.total_pages
-  } catch {
-    error.value = 'Failed to load machines'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to load machines')
   } finally {
     loading.value = false
   }
@@ -231,9 +232,10 @@ const confirmRename = async () => {
       renameValue.value.trim() || null
     )
     showRename.value = false
+    toastSuccess('Machine renamed')
     await fetchMachines()
-  } catch {
-    renameError.value = 'Failed to rename machine'
+  } catch (err) {
+    renameError.value = getApiErrorMessage(err, 'Failed to rename machine')
   } finally {
     renaming.value = false
   }
@@ -253,9 +255,10 @@ const confirmRelease = async () => {
   try {
     await releaseLicenseMachine(props.license.id, releaseTarget.value.id)
     showReleaseConfirm.value = false
+    toastSuccess('Machine released')
     await fetchMachines()
-  } catch {
-    error.value = 'Failed to release machine'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to release machine')
   } finally {
     actionId.value = null
     actionType.value = null

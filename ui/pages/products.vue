@@ -141,6 +141,7 @@ definePageMeta({
 
 const { listProducts, deleteProduct } = useApi()
 const { canWrite } = useAuth()
+const { success: toastSuccess } = useAppToast()
 
 const {
   page,
@@ -240,9 +241,10 @@ const confirmDelete = async () => {
   try {
     await deleteProduct(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    toastSuccess('Product deleted')
     await refresh()
-  } catch {
-    error.value = 'Failed to delete product. It may still have policies or licenses.'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to delete product. It may still have policies or licenses.')
   } finally {
     actionId.value = null
     deleting.value = false

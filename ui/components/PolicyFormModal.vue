@@ -87,6 +87,7 @@ const emit = defineEmits<{
 }>()
 
 const { createPolicy, updatePolicy } = useApi()
+const { success: toastSuccess } = useAppToast()
 const { createProductSelect } = useServerSelect()
 const productSelect = createProductSelect()
 
@@ -186,9 +187,10 @@ const onSubmit = async () => {
       })
     }
     open.value = false
+    toastSuccess(props.policy ? 'Policy updated' : 'Policy created')
     emit('saved')
-  } catch {
-    error.value = props.policy ? 'Failed to update policy' : 'Failed to create policy'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, props.policy ? 'Failed to update policy' : 'Failed to create policy')
   } finally {
     loading.value = false
   }

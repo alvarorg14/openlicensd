@@ -110,8 +110,8 @@ const onSubmit = async () => {
     const token = await createApiToken(body)
     open.value = false
     emit('created', token)
-  } catch {
-    error.value = 'Failed to create API token'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to create API token')
   } finally {
     loading.value = false
   }

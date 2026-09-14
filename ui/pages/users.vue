@@ -148,6 +148,7 @@ definePageMeta({
 
 const { listUsers, deleteUser, disableUser, enableUser } = useApi()
 const { user: currentUser } = useAuth()
+const { success: toastSuccess } = useAppToast()
 
 const {
   page,
@@ -282,9 +283,10 @@ const toggleDisabled = async (user: User, disable: boolean) => {
     } else {
       await enableUser(user.id)
     }
+    toastSuccess(disable ? 'User disabled' : 'User enabled')
     await refresh()
-  } catch {
-    error.value = disable ? 'Failed to disable user' : 'Failed to enable user'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, disable ? 'Failed to disable user' : 'Failed to enable user')
   } finally {
     actionId.value = null
   }
@@ -299,9 +301,10 @@ const confirmDelete = async () => {
   try {
     await deleteUser(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    toastSuccess('User deleted')
     await refresh()
-  } catch {
-    error.value = 'Failed to delete user'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to delete user')
   } finally {
     actionId.value = null
     deleting.value = false

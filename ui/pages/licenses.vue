@@ -290,6 +290,7 @@ const {
   deleteLicense
 } = useApi()
 const { canWrite } = useAuth()
+const { success: toastSuccess } = useAppToast()
 
 const statusFilter = ref<'all' | LicenseStatus>('all')
 const productFilter = ref<string | null>(null)
@@ -596,9 +597,10 @@ const confirmRevoke = async () => {
   try {
     await revokeLicense(confirmTarget.value.id)
     showRevokeConfirm.value = false
+    toastSuccess('License revoked')
     await reload()
-  } catch {
-    error.value = 'Failed to revoke license'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to revoke license')
   } finally {
     actionId.value = null
     actionType.value = null
@@ -616,9 +618,10 @@ const confirmDelete = async () => {
   try {
     await deleteLicense(confirmTarget.value.id)
     showDeleteConfirm.value = false
+    toastSuccess('License deleted')
     await reload()
-  } catch {
-    error.value = 'Failed to delete license'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to delete license')
   } finally {
     actionId.value = null
     actionType.value = null
@@ -631,9 +634,10 @@ const unrevoke = async (id: string) => {
   actionType.value = 'unrevoke'
   try {
     await unrevokeLicense(id)
+    toastSuccess('License unrevoked')
     await reload()
-  } catch {
-    error.value = 'Failed to unrevoke license'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to unrevoke license')
   } finally {
     actionId.value = null
     actionType.value = null

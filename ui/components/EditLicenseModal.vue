@@ -67,6 +67,7 @@ const emit = defineEmits<{
 }>()
 
 const { updateLicense } = useApi()
+const { success: toastSuccess } = useAppToast()
 
 const form = reactive({
   label: '',
@@ -133,9 +134,10 @@ const onSubmit = async () => {
       max_activations: maxActivations
     })
     open.value = false
+    toastSuccess('License updated')
     emit('updated', license)
-  } catch {
-    error.value = 'Failed to update license'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to update license')
   } finally {
     loading.value = false
   }

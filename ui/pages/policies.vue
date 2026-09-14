@@ -163,6 +163,7 @@ definePageMeta({
 
 const { listPolicies, deletePolicy } = useApi()
 const { canWrite } = useAuth()
+const { success: toastSuccess } = useAppToast()
 const { createProductSelect } = useServerSelect()
 const productSelect = createProductSelect()
 
@@ -299,9 +300,10 @@ const confirmDelete = async () => {
   try {
     await deletePolicy(deleteTarget.value.id)
     showDeleteConfirm.value = false
+    toastSuccess('Policy deleted')
     await refresh()
-  } catch {
-    error.value = 'Failed to delete policy. It may still be assigned to licenses.'
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to delete policy. It may still be assigned to licenses.')
   } finally {
     actionId.value = null
     deleting.value = false
