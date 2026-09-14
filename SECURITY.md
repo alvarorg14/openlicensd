@@ -48,16 +48,18 @@ We take the security of OpenLicensd seriously. If you believe you have found a s
 
 ### Security Best Practices
 
-When deploying OpenLicensd:
+When deploying OpenLicensd, follow the operator runbooks:
 
-1. **Secrets**: Store `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` and Harbor admin credentials in a secrets manager. Never commit secrets to version control.
-2. **TLS**: Terminate TLS at your Ingress or reverse proxy. Do not expose the server over plain HTTP in production.
-3. **Network policies**: Restrict network access to the admin UI and API where possible.
-4. **Updates**: Keep OpenLicensd updated to the latest release.
-5. **Password hashing**: Use `make hash-password` to generate bcrypt hashes. Do not store plaintext admin passwords.
-6. **Harbor credentials**: Harbor admin credentials are the highest-value secret in a Harbor-enabled deployment. Use Kubernetes Secrets or External Secrets Operator.
-7. **Browser security headers**: The server sets `Content-Security-Policy`, `X-Frame-Options`, and `X-Content-Type-Options` on all HTTP responses. When `OPENLICENSD_COOKIE_SECURE=true`, it also sets `Strict-Transport-Security`. Keep `OPENLICENSD_COOKIE_SECURE=false` for local HTTP development so browsers do not pin HSTS.
-8. **Verify container images**: When deploying from GHCR, verify Cosign signatures and GitHub Artifact Attestations for release images. See [docs/deployment.md](docs/deployment.md#releases) for commands.
+- **[docs/security-hardening.md](docs/security-hardening.md)** — TLS, cookies, trusted proxies, bootstrap admin, OIDC, API tokens, network policies, metrics exposure, database connection security, and multi-replica rate limiting
+- **[docs/production-checklist.md](docs/production-checklist.md)** — pre-production, go-live, and ongoing operational checklists (including backup verification and upgrade path)
+
+Quick reference:
+
+1. **Secrets**: Store `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH`, database passwords, OIDC client secrets, and Harbor admin credentials in a secrets manager. Never commit secrets to version control.
+2. **TLS**: Terminate TLS at your Ingress or reverse proxy. Set `OPENLICENSD_COOKIE_SECURE=true` in production.
+3. **Updates**: Keep OpenLicensd updated to the latest release. See [docs/upgrade.md](docs/upgrade.md).
+4. **Password hashing**: Use `make hash-password` to generate bcrypt hashes. Do not store plaintext admin passwords.
+5. **Verify container images**: When deploying from GHCR, verify Cosign signatures and GitHub Artifact Attestations. See [docs/deployment.md](docs/deployment.md#releases).
 
 ### Known Security Considerations
 

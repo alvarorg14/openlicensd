@@ -11,6 +11,10 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Documentation
+
+- docs: add security hardening guide and production checklist (#245)
+
 ### Enhancements
 
 - enhancement(server): replace `OPENLICENSD_DATABASE_URL` with discrete PostgreSQL connection variables (#241, #243, #244)

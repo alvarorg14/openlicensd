@@ -2,6 +2,8 @@
 
 OpenLicensd can be deployed as a Helm chart on Kubernetes, as a Docker container, or as a standalone binary.
 
+For production security guidance, see [security-hardening.md](security-hardening.md) and the [production-checklist.md](production-checklist.md).
+
 ## Helm (recommended)
 
 Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (image tags: `X.Y.Z`, `X.Y`, `latest`; git tags: `vX.Y.Z`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
@@ -379,6 +381,8 @@ Replace `0.5.0` with the image tag (semver without the `v` prefix). Images publi
 
 ## Related
 
+- [security-hardening.md](security-hardening.md) — operator security runbook
+- [production-checklist.md](production-checklist.md) — pre-production, go-live, and ongoing checklists
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
 - [configuration.md](configuration.md) — all environment variables
 - [upgrade.md](upgrade.md) — upgrade procedure and migration notes

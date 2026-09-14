@@ -77,6 +77,8 @@ export default withMermaid(defineConfig({
         text: 'Operations',
         items: [
           { text: 'Deployment', link: '/deployment' },
+          { text: 'Security Hardening', link: '/security-hardening' },
+          { text: 'Production Checklist', link: '/production-checklist' },
           { text: 'Upgrade', link: '/upgrade' },
           { text: 'Backup & Restore', link: '/backup-restore' },
           { text: 'Scaling', link: '/scaling' },
