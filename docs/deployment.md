@@ -26,6 +26,8 @@ Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (i
 
 The chart requires an external **PostgreSQL 16+** database. It does not bundle Postgres.
 
+When used as a Helm dependency (umbrella chart or Argo CD proxy chart), parent charts may pass a `global` values map; the schema accepts it even though templates do not read it.
+
 ### Install
 
 Replace `X.Y.Z` with the [latest release](https://github.com/alvarorg14/openlicensd/releases) version:

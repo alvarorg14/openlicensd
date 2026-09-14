@@ -82,7 +82,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `charts/openlicensd/`
 - Deploys Deployment, Service, ServiceAccount, ConfigMap, Secret/ExternalSecret, optional Ingress, HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicy, and ServiceMonitor
-- `values.schema.json` rejects unknown Helm values keys (`additionalProperties: false` on defined objects), so removed keys such as `secret.data.databaseUrl` fail at install time instead of being silently ignored
+- `values.schema.json` rejects unknown Helm values keys (`additionalProperties: false` on defined objects), so removed keys such as `secret.data.databaseUrl` fail at install time instead of being silently ignored; `global` is the umbrella-chart exception (accepted but unused by templates)
 - Default security: non-root (UID 65532), read-only root filesystem, distroless image
 - Source `Chart.yaml` `version` / `appVersion` are `0.0.0-dev` placeholders; `.github/workflows/release.yml` stamps the packaged OCI chart from the git tag (`helm package --version/--app-version`)
 

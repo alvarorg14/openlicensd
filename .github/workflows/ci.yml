@@ -297,6 +297,9 @@ jobs:
       - name: Template chart with topologySpreadConstraints
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set-json 'topologySpreadConstraints=[{"maxSkew":1,"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway","labelSelector":{"matchLabels":{"app.kubernetes.io/name":"openlicensd"}}}]' > /dev/null
 
+      - name: Template chart with umbrella global values
+        run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml -f charts/openlicensd/ci/global-values.yaml > /dev/null
+
       - name: Reject removed secret.data.databaseUrl
         run: |
           if helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml \

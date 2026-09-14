@@ -1,0 +1,5 @@
+# Simulates umbrella-chart coalesced values: Helm injects global into every subchart.
+global:
+  imageRegistry: registry.example.com
+  labels:
+    environment: homelab

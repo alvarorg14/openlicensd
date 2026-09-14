@@ -50,7 +50,7 @@ These are part of the v1 stability promise. The HTTP contract is defined in [doc
 ### Configuration and deployment
 
 - Documented `OPENLICENSD_*` environment variable **names**, types, and documented default **meanings** (see [docs/configuration.md](docs/configuration.md))
-- Documented Helm values keys in [charts/openlicensd](charts/openlicensd) (`values.schema.json` rejects unknown keys)
+- Documented Helm values keys in [charts/openlicensd](charts/openlicensd) (`values.schema.json` rejects unknown keys; `global` is accepted for umbrella-chart use but unused by templates)
 
 ### Metrics
 

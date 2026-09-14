@@ -68,6 +68,10 @@ The Deployment configures Kubernetes probes against the HTTP port:
 
 Liveness must not ping the database: a transient Postgres outage would restart pods instead of removing them from the load balancer. Readiness and startup use `/readyz`, which runs a lightweight `Store.Ping` with a 2-second timeout.
 
+## Umbrella charts
+
+This chart may be installed as a Helm dependency. Parent charts often set shared keys under `global`; `values.schema.json` accepts `global` for that case. Templates do not read `.Values.global`.
+
 ## Values
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
