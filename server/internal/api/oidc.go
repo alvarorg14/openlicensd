@@ -107,6 +107,10 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusGatewayTimeout, "request timeout")
 			return
 		}
+		if errors.Is(err, appoidc.ErrEmailUnverified) {
+			redirectSSOError(w, r, "email_unverified")
+			return
+		}
 		redirectSSOError(w, r, "exchange_failed")
 		return
 	}

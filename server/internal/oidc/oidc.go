@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -9,6 +10,9 @@ import (
 	gooidc "github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )
+
+// ErrEmailUnverified is returned when the ID token email_verified claim is missing or false.
+var ErrEmailUnverified = errors.New("email_verified claim must be true")
 
 type Config struct {
 	IssuerURL    string
@@ -33,6 +37,7 @@ type Claims struct {
 
 type idTokenClaims struct {
 	Email             string `json:"email"`
+	EmailVerified     bool   `json:"email_verified"`
 	Name              string `json:"name"`
 	PreferredUsername string `json:"preferred_username"`
 	Picture           string `json:"picture"`
@@ -100,6 +105,9 @@ func (c *Client) Exchange(ctx context.Context, code, verifier, nonce string) (*C
 	email := strings.ToLower(strings.TrimSpace(claims.Email))
 	if email == "" {
 		return nil, fmt.Errorf("email claim is required")
+	}
+	if !claims.EmailVerified {
+		return nil, ErrEmailUnverified
 	}
 
 	name := strings.TrimSpace(claims.Name)

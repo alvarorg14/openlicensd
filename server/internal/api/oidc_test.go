@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -32,11 +33,13 @@ type mockOIDCProvider struct {
 }
 
 type mockOIDCPending struct {
-	nonce   string
-	sub     string
-	email   string
-	name    string
-	picture string
+	nonce             string
+	sub               string
+	email             string
+	name              string
+	picture           string
+	emailVerified     *bool
+	omitEmailVerified bool
 }
 
 func newMockOIDCProvider(t *testing.T, clientID string) *mockOIDCProvider {
@@ -111,7 +114,7 @@ func newMockOIDCProvider(t *testing.T, clientID string) *mockOIDCProvider {
 			name = "OIDC User"
 		}
 
-		idToken, err := m.signIDToken(sub, email, name, pending.picture, pending.nonce)
+		idToken, err := m.signIDToken(sub, email, name, pending.picture, pending.nonce, pending.emailVerified, pending.omitEmailVerified)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -140,7 +143,7 @@ func (m *mockOIDCProvider) setPending(code, nonce, sub, email, name, picture str
 	}
 }
 
-func (m *mockOIDCProvider) signIDToken(sub, email, name, picture, nonce string) (string, error) {
+func (m *mockOIDCProvider) signIDToken(sub, email, name, picture, nonce string, emailVerified *bool, omitEmailVerified bool) (string, error) {
 	signer, err := jose.NewSigner(
 		jose.SigningKey{Algorithm: jose.RS256, Key: m.key},
 		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", m.kid),
@@ -159,6 +162,13 @@ func (m *mockOIDCProvider) signIDToken(sub, email, name, picture, nonce string) 
 		"nonce": nonce,
 		"iat":   now.Unix(),
 		"exp":   now.Add(time.Hour).Unix(),
+	}
+	if !omitEmailVerified {
+		verified := true
+		if emailVerified != nil {
+			verified = *emailVerified
+		}
+		claims["email_verified"] = verified
 	}
 	if picture != "" {
 		claims["picture"] = picture
@@ -483,4 +493,259 @@ func cookieValue(rec *httptest.ResponseRecorder, name string) string {
 		}
 	}
 	return ""
+}
+
+func startOIDCLogin(t *testing.T, handler http.Handler) (state, nonce, verifier string, loginCookies []*http.Cookie) {
+	t.Helper()
+
+	loginReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/oidc/login", nil)
+	loginRec := httptest.NewRecorder()
+	handler.ServeHTTP(loginRec, loginReq)
+	if loginRec.Code != http.StatusFound {
+		t.Fatalf("login status=%d", loginRec.Code)
+	}
+
+	state = cookieValue(loginRec, "openlicensd_oidc_state")
+	nonce = cookieValue(loginRec, "openlicensd_oidc_nonce")
+	verifier = cookieValue(loginRec, "openlicensd_oidc_verifier")
+	if state == "" || nonce == "" || verifier == "" {
+		t.Fatalf("missing oidc flow cookies")
+	}
+	return state, nonce, verifier, loginRec.Result().Cookies()
+}
+
+func completeOIDCCallback(t *testing.T, handler http.Handler, loginCookies []*http.Cookie, state string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	callbackURL := "/api/v1/auth/oidc/callback?code=test-code&state=" + url.QueryEscape(state)
+	callbackReq := httptest.NewRequest(http.MethodGet, callbackURL, nil)
+	for _, c := range loginCookies {
+		callbackReq.AddCookie(c)
+	}
+
+	callbackRec := httptest.NewRecorder()
+	handler.ServeHTTP(callbackRec, callbackReq)
+	return callbackRec
+}
+
+func TestOIDCExchangeRejectsMissingEmailVerified(t *testing.T) {
+	idp := newMockOIDCProvider(t, "exchange-unverified-client")
+	ctx := context.Background()
+
+	client, err := appoidc.New(ctx, appoidc.Config{
+		IssuerURL:    idp.issuer,
+		ClientID:     idp.clientID,
+		ClientSecret: "client-secret",
+		RedirectURL:  "http://example.com/api/v1/auth/oidc/callback",
+		Scopes:       []string{"openid", "profile", "email"},
+	})
+	if err != nil {
+		t.Fatalf("oidc client: %v", err)
+	}
+
+	idp.pending["test-code"] = mockOIDCPending{
+		nonce:             "test-nonce",
+		sub:               "sub-1",
+		email:             "unverified@example.com",
+		name:              "Unverified User",
+		omitEmailVerified: true,
+	}
+
+	_, err = client.Exchange(ctx, "test-code", "test-verifier", "test-nonce")
+	if err == nil {
+		t.Fatal("expected exchange to fail for missing email_verified")
+	}
+	if !errors.Is(err, appoidc.ErrEmailUnverified) {
+		t.Fatalf("err=%v want ErrEmailUnverified", err)
+	}
+}
+
+func TestOIDCExchangeRejectsFalseEmailVerified(t *testing.T) {
+	idp := newMockOIDCProvider(t, "exchange-false-verified-client")
+	ctx := context.Background()
+
+	client, err := appoidc.New(ctx, appoidc.Config{
+		IssuerURL:    idp.issuer,
+		ClientID:     idp.clientID,
+		ClientSecret: "client-secret",
+		RedirectURL:  "http://example.com/api/v1/auth/oidc/callback",
+		Scopes:       []string{"openid", "profile", "email"},
+	})
+	if err != nil {
+		t.Fatalf("oidc client: %v", err)
+	}
+
+	falseVerified := false
+	idp.pending["test-code"] = mockOIDCPending{
+		nonce:         "test-nonce",
+		sub:           "sub-1",
+		email:         "unverified@example.com",
+		name:          "Unverified User",
+		emailVerified: &falseVerified,
+	}
+
+	_, err = client.Exchange(ctx, "test-code", "test-verifier", "test-nonce")
+	if err == nil {
+		t.Fatal("expected exchange to fail for email_verified=false")
+	}
+	if !errors.Is(err, appoidc.ErrEmailUnverified) {
+		t.Fatalf("err=%v want ErrEmailUnverified", err)
+	}
+}
+
+func TestOIDCCallbackRejectsUnverifiedEmail(t *testing.T) {
+	idp := newMockOIDCProvider(t, "callback-unverified-client")
+	redirectURL := "http://example.com/api/v1/auth/oidc/callback"
+	handler, st := setupOIDCTestEnv(t, idp, redirectURL)
+
+	email := fmt.Sprintf("oidc-unverified-%s@example.com", uuid.NewString())
+	sub := "sub-" + uuid.NewString()
+
+	state, nonce, _, loginCookies := startOIDCLogin(t, handler)
+
+	falseVerified := false
+	idp.pending["test-code"] = mockOIDCPending{
+		nonce:         nonce,
+		sub:           sub,
+		email:         email,
+		name:          "Unverified User",
+		emailVerified: &falseVerified,
+	}
+
+	callbackRec := completeOIDCCallback(t, handler, loginCookies, state)
+	if callbackRec.Code != http.StatusFound {
+		t.Fatalf("callback status=%d body=%s", callbackRec.Code, callbackRec.Body.String())
+	}
+	if loc := callbackRec.Header().Get("Location"); loc != "/login?error=sso_failed" {
+		t.Fatalf("unexpected redirect %q", loc)
+	}
+
+	user, err := st.GetUserByEmail(context.Background(), email)
+	if err != nil {
+		t.Fatalf("get user: %v", err)
+	}
+	if user != nil {
+		t.Fatalf("expected no user created for unverified email")
+	}
+}
+
+func TestOIDCCallbackRejectsUnverifiedAdminEmail(t *testing.T) {
+	databaseURL := config.TestDatabaseURL(t)
+	idp := newMockOIDCProvider(t, "callback-admin-unverified-client")
+	redirectURL := "http://example.com/api/v1/auth/oidc/callback"
+
+	adminEmail := fmt.Sprintf("oidc-admin-unverified-%s@example.com", uuid.NewString())
+
+	cfg := &config.Config{
+		Addr:              ":8080",
+		DatabaseURL:       databaseURL,
+		SessionTTLHours:   24,
+		CookieSecure:      false,
+		LocalLoginEnabled: true,
+		OIDC: config.OIDCConfig{
+			Enabled:      true,
+			IssuerURL:    idp.issuer,
+			ClientID:     idp.clientID,
+			ClientSecret: "client-secret",
+			RedirectURL:  redirectURL,
+			Scopes:       []string{"openid", "profile", "email"},
+			DefaultRole:  "viewer",
+			ProviderName: "Test SSO",
+			AdminEmails:  []string{adminEmail},
+		},
+	}
+
+	ctx := context.Background()
+	st, err := store.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(st.Close)
+
+	srv, err := api.New(ctx, cfg, st, testLogger())
+	if err != nil {
+		t.Fatalf("api server: %v", err)
+	}
+	handler := srv.Router(nil)
+
+	sub := "sub-" + uuid.NewString()
+	state, nonce, _, loginCookies := startOIDCLogin(t, handler)
+
+	falseVerified := false
+	idp.pending["test-code"] = mockOIDCPending{
+		nonce:         nonce,
+		sub:           sub,
+		email:         adminEmail,
+		name:          "Would-Be Admin",
+		emailVerified: &falseVerified,
+	}
+
+	callbackRec := completeOIDCCallback(t, handler, loginCookies, state)
+	if callbackRec.Code != http.StatusFound {
+		t.Fatalf("callback status=%d body=%s", callbackRec.Code, callbackRec.Body.String())
+	}
+	if loc := callbackRec.Header().Get("Location"); loc != "/login?error=sso_failed" {
+		t.Fatalf("unexpected redirect %q", loc)
+	}
+
+	user, err := st.GetUserByEmail(ctx, adminEmail)
+	if err != nil {
+		t.Fatalf("get user: %v", err)
+	}
+	if user != nil {
+		t.Fatalf("expected no admin user minted for unverified email")
+	}
+}
+
+func TestOIDCCallbackLinksVerifiedLocalUser(t *testing.T) {
+	idp := newMockOIDCProvider(t, "callback-link-client")
+	redirectURL := "http://example.com/api/v1/auth/oidc/callback"
+	handler, st := setupOIDCTestEnv(t, idp, redirectURL)
+	ctx := context.Background()
+
+	email := fmt.Sprintf("oidc-link-%s@example.com", uuid.NewString())
+	sub := "sub-" + uuid.NewString()
+
+	hash, err := auth.HashPassword("local-password")
+	if err != nil {
+		t.Fatalf("hash password: %v", err)
+	}
+
+	localUser, err := st.CreateUser(ctx, email, "Local User", &hash, store.RoleOperator, store.AuthProviderLocal, nil)
+	if err != nil {
+		t.Fatalf("create local user: %v", err)
+	}
+
+	state, nonce, _, loginCookies := startOIDCLogin(t, handler)
+	idp.setPending("test-code", nonce, sub, email, "OIDC Linked User", "")
+
+	callbackRec := completeOIDCCallback(t, handler, loginCookies, state)
+	if callbackRec.Code != http.StatusFound {
+		t.Fatalf("callback status=%d body=%s", callbackRec.Code, callbackRec.Body.String())
+	}
+	if loc := callbackRec.Header().Get("Location"); loc != "/licenses" {
+		t.Fatalf("unexpected redirect %q", loc)
+	}
+
+	linked, err := st.GetUserByExternalID(ctx, store.AuthProviderOIDC, sub)
+	if err != nil {
+		t.Fatalf("get by external id: %v", err)
+	}
+	if linked == nil || linked.ID != localUser.ID {
+		t.Fatalf("expected existing local user linked by verified email")
+	}
+	if linked.AuthProvider != store.AuthProviderOIDC {
+		t.Fatalf("auth_provider=%q want oidc", linked.AuthProvider)
+	}
+	if linked.PasswordHash == nil || *linked.PasswordHash == "" {
+		t.Fatalf("expected password hash preserved after link")
+	}
+	if linked.Role != store.RoleOperator {
+		t.Fatalf("role=%q want operator preserved", linked.Role)
+	}
+
+	sessionCookie := findCookie(callbackRec.Result().Cookies(), auth.SessionCookieName)
+	if sessionCookie == nil {
+		t.Fatalf("expected session cookie")
+	}
 }
