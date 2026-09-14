@@ -270,7 +270,7 @@ See [docs/harbor-registry-credentials.md](docs/harbor-registry-credentials.md) f
 
 ## 🔐 OIDC SSO
 
-When `OPENLICENSD_OIDC_ENABLED=true`, admins can sign in through any standards-compliant OIDC identity provider (Google, Entra ID, Keycloak, Okta, GitLab, and others). Users are provisioned on first login; roles are managed locally in the admin UI.
+When `OPENLICENSD_OIDC_ENABLED=true`, admins can sign in through any standards-compliant OIDC identity provider (Google, Entra ID, Keycloak, Okta, GitLab, and others). Users are provisioned on first login when the IdP issues `email_verified: true`; roles are managed locally in the admin UI.
 
 Register this redirect URI with your IdP:
 

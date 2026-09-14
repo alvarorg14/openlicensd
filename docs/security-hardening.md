@@ -75,6 +75,7 @@ See [configuration.md](configuration.md) and [troubleshooting.md](troubleshootin
 | Hardening step | Setting |
 |----------------|---------|
 | Exact redirect URI | `https://<host>/api/v1/auth/oidc/callback` must match `OPENLICENSD_OIDC_REDIRECT_URL` byte for byte |
+| Verified email | IdP must issue `email_verified: true` in the ID token before OpenLicensd links or creates users |
 | SSO-only | `OPENLICENSD_LOCAL_LOGIN_ENABLED=false` |
 | Initial admins via SSO | `OPENLICENSD_OIDC_ADMIN_EMAILS=admin@example.com` |
 | Client secret | Helm `secret.data.oidcClientSecret` or env var — not in ConfigMap |

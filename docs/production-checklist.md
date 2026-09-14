@@ -50,6 +50,7 @@ Copy sections into your own runbook or tick items inline.
 
 - [ ] Register exact redirect URI: `https://<host>/api/v1/auth/oidc/callback`
 - [ ] Set `OPENLICENSD_OIDC_REDIRECT_URL` to match byte for byte
+- [ ] Configure the IdP to verify email addresses and include `email_verified: true` in ID tokens
 - [ ] List initial admin emails in `OPENLICENSD_OIDC_ADMIN_EMAILS` or plan local bootstrap admin
 - [ ] Consider `OPENLICENSD_LOCAL_LOGIN_ENABLED=false` for SSO-only production
 

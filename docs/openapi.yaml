@@ -186,7 +186,7 @@ paths:
     get:
       tags: [Auth]
       summary: OIDC callback
-      description: Handles the authorization code callback from the identity provider. Sets session cookies and redirects into the app.
+      description: Handles the authorization code callback from the identity provider. Requires `email_verified=true` in the ID token before provisioning. Sets session cookies and redirects into the app.
       operationId: oidcCallback
       responses:
         "302":

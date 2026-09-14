@@ -293,6 +293,7 @@ sequenceDiagram
   IdP-->>Browser: 302 back with code
   Browser->>API: GET /api/v1/auth/oidc/callback
   API->>IdP: exchange code, verify ID token
+  API->>API: require email_verified=true
   API->>API: find by external_id, else link by email, else create
   API-->>Browser: session + CSRF cookies, 302 to app
 ```
