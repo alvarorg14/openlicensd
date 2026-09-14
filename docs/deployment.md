@@ -8,6 +8,8 @@ For production security guidance, see [security-hardening.md](security-hardening
 
 Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (image tags: `X.Y.Z`, `X.Y`, `latest`; git tags: `vX.Y.Z`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
 
+The chart requires an external **PostgreSQL 16+** database. It does not bundle Postgres.
+
 ### Install
 
 Replace `X.Y.Z` with the [latest release](https://github.com/alvarorg14/openlicensd/releases) version:
@@ -18,16 +20,22 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
   --set config.bootstrapAdmin.email=admin@example.com \
-  --set secret.data.databaseUrl="postgres://user:pass@host:5432/openlicensd?sslmode=require" \
+  --set config.database.host=postgres.example.com \
+  --set config.database.port=5432 \
+  --set config.database.name=openlicensd \
+  --set config.database.user=openlicensd \
+  --set config.database.sslmode=require \
+  --set secret.data.databasePassword='change-me' \
   --set secret.data.bootstrapAdminPasswordHash="$(make hash-password PASSWORD=yourpassword)"
 ```
 
-Or install from the chart source:
+Or install from the chart source. Set `image.tag` explicitly — `charts/openlicensd/Chart.yaml` in git is a `0.0.0-dev` placeholder, so an empty tag resolves to an unpublished image:
 
 ```bash
 helm install openlicensd ./charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
+  --set image.tag=X.Y.Z \
   -f my-values.yaml
 ```
 

@@ -297,6 +297,15 @@ jobs:
       - name: Template chart with topologySpreadConstraints
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set-json 'topologySpreadConstraints=[{"maxSkew":1,"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway","labelSelector":{"matchLabels":{"app.kubernetes.io/name":"openlicensd"}}}]' > /dev/null
 
+      - name: Reject removed secret.data.databaseUrl
+        run: |
+          if helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml \
+            --set secret.data.databaseUrl='postgres://user:pass@host:5432/openlicensd?sslmode=require' \
+            > /dev/null 2>&1; then
+            echo "expected schema validation to reject secret.data.databaseUrl"
+            exit 1
+          fi
+
       - name: Package chart
         run: helm package charts/openlicensd
 

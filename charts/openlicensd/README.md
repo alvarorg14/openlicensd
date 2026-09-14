@@ -6,7 +6,7 @@ Open source license server for creating and validating license keys
 
 ## Installing
 
-Requires an external PostgreSQL database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md), [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md), [scaling](https://github.com/alvarorg14/openlicensd/blob/main/docs/scaling.md), and [troubleshooting](https://github.com/alvarorg14/openlicensd/blob/main/docs/troubleshooting.md) for operator-owned upgrade, backup, HA, and diagnostic procedures.
+Requires an external **PostgreSQL 16+** database. The chart does not bundle a database. See [upgrade](https://github.com/alvarorg14/openlicensd/blob/main/docs/upgrade.md), [backup and restore](https://github.com/alvarorg14/openlicensd/blob/main/docs/backup-restore.md), [scaling](https://github.com/alvarorg14/openlicensd/blob/main/docs/scaling.md), and [troubleshooting](https://github.com/alvarorg14/openlicensd/blob/main/docs/troubleshooting.md) for operator-owned upgrade, backup, HA, and diagnostic procedures.
 
 Published GHCR application images (`ghcr.io/alvarorg14/openlicensd`) are signed with keyless Cosign and include SLSA build provenance attestations. See [deployment releases](https://github.com/alvarorg14/openlicensd/blob/main/docs/deployment.md#releases) for verification commands.
 
@@ -46,12 +46,13 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_PASSWORD","remoteRef":{"key":"openlicensd/database","property":"password"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
 ```
 
-For local development, install from the chart source:
+For local development, install from the chart source. Set `image.tag` — git `Chart.yaml` uses a `0.0.0-dev` placeholder:
 
 ```bash
 helm install openlicensd ./charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
+  --set image.tag=X.Y.Z \
   -f charts/openlicensd/ci/test-values.yaml
 ```
 
