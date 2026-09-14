@@ -71,7 +71,7 @@ OpenLicensd exits with code `1` on any fatal startup error. The process never bi
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `config load failed` + `OPENLICENSD_DATABASE_URL is required` | Missing database URL | Set `OPENLICENSD_DATABASE_URL` (or Helm `secret.data.databaseUrl`) |
+| `config load failed` + `OPENLICENSD_DATABASE_HOST is required` | Missing database host | Set `OPENLICENSD_DATABASE_HOST` (and `USER`, `NAME`; or Helm `config.database.*`) |
 | `config load failed` + validation error on pool settings | Invalid `OPENLICENSD_DATABASE_MIN_CONNS` / `MAX_CONNS` | Fix pool env vars; see [configuration.md](configuration.md) |
 | `config load failed` + `at least one login method must be enabled` | Both local login and OIDC disabled | Set `OPENLICENSD_LOCAL_LOGIN_ENABLED=true` or `OPENLICENSD_OIDC_ENABLED=true` |
 | `store init failed` | Database unreachable, auth failure, or migration error | See [Database connectivity](#database-connectivity) and [Migration failures and locks](#migration-failures-and-locks) |
@@ -101,7 +101,7 @@ Error messages are wrapped with these prefixes:
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | `connection refused` in ping error | PostgreSQL down or wrong host/port | Verify Postgres is running; check URL host and port |
-| `password authentication failed` | Wrong credentials | Update `OPENLICENSD_DATABASE_URL` user/password |
+| `password authentication failed` | Wrong credentials | Update `OPENLICENSD_DATABASE_USER` / `OPENLICENSD_DATABASE_PASSWORD` |
 | `database "…" does not exist` | Database not created | Create the database or fix the URL path |
 | TLS / SSL errors | `sslmode` mismatch | Adjust `sslmode` in the URL (`require`, `verify-full`, etc.) |
 | `store init failed` after long hang | Network policy or firewall | Confirm the pod can reach Postgres on the configured port |

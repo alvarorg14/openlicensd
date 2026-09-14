@@ -1,9 +1,15 @@
 secret:
   mode: create
   data:
-    databaseUrl: postgres://openlicensd:openlicensd@postgres:5432/openlicensd?sslmode=disable
+    databasePassword: openlicensd
     bootstrapAdminPasswordHash: $2a$10$w6lsMGg4BZVLWv0dqUXT2eUWcWhbh99FIECbPlBNeE.pu089T5E/2
 
 config:
+  database:
+    host: postgres
+    port: 5432
+    name: openlicensd
+    user: openlicensd
+    sslmode: disable
   bootstrapAdmin:
     email: admin@example.com

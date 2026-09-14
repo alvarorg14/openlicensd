@@ -13,7 +13,12 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
   --set config.bootstrapAdmin.email=admin@example.com \
-  --set secret.data.databaseUrl='postgres://user:pass@host:5432/openlicensd?sslmode=disable' \
+  --set config.database.host=postgres.example.com \
+  --set config.database.port=5432 \
+  --set config.database.name=openlicensd \
+  --set config.database.user=openlicensd \
+  --set config.database.sslmode=require \
+  --set secret.data.databasePassword='change-me' \
   --set secret.data.bootstrapAdminPasswordHash='$2a$10$...'
 ```
 
@@ -35,7 +40,7 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --create-namespace \
   --set secret.mode=externalSecrets \
   --set secret.externalSecrets.secretStoreRef.name=my-secret-store \
-  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_URL","remoteRef":{"key":"openlicensd/database","property":"url"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
+  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_PASSWORD","remoteRef":{"key":"openlicensd/database","property":"password"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
 ```
 
 For local development, install from the chart source:

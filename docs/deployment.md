@@ -249,7 +249,7 @@ make stack-up
 
 Open http://localhost:8080 and sign in with `admin@example.com` / `admin`. This uses the default bootstrap credentials and is intended for evaluation only — change the password hash before any real use.
 
-[`docker-compose.stack.yml`](../docker-compose.stack.yml) exposes the full `.env.example` variable set with stack-safe defaults. To override settings, use a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`; do not copy `.env` or `.env.example` verbatim — keep `OPENLICENSD_DATABASE_URL` pointed at the `postgres` Compose service (the compose file sets this for you).
+[`docker-compose.stack.yml`](../docker-compose.stack.yml) exposes the full `.env.example` variable set with stack-safe defaults. To override settings, use a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`; do not copy `.env` or `.env.example` verbatim — keep `OPENLICENSD_DATABASE_HOST=postgres` (the compose file sets discrete database variables for you).
 
 Stop with `make stack-down` (add `ARGS=-v` to drop the stack's database volume). The stack runs under a separate Compose project (`openlicensd-stack`) from the dev database (`docker-compose.yml`), so `make dev-db-reset` does not affect it.
 
@@ -267,7 +267,12 @@ Run with required environment variables:
 docker run -d \
   --name openlicensd \
   -p 8080:8080 \
-  -e OPENLICENSD_DATABASE_URL="postgres://user:pass@host:5432/openlicensd?sslmode=disable" \
+  -e OPENLICENSD_DATABASE_HOST=host \
+  -e OPENLICENSD_DATABASE_PORT=5432 \
+  -e OPENLICENSD_DATABASE_USER=user \
+  -e OPENLICENSD_DATABASE_PASSWORD=pass \
+  -e OPENLICENSD_DATABASE_NAME=openlicensd \
+  -e OPENLICENSD_DATABASE_SSLMODE=disable \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH='$2a$10$...' \
   -e OPENLICENSD_COOKIE_SECURE=true \
@@ -287,7 +292,12 @@ make build
 Run:
 
 ```bash
-export OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/openlicensd?sslmode=disable
+export OPENLICENSD_DATABASE_HOST=localhost
+export OPENLICENSD_DATABASE_PORT=5432
+export OPENLICENSD_DATABASE_USER=user
+export OPENLICENSD_DATABASE_PASSWORD=pass
+export OPENLICENSD_DATABASE_NAME=openlicensd
+export OPENLICENSD_DATABASE_SSLMODE=disable
 export OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 export OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH=$(make hash-password PASSWORD=your-secure-password)
 export OPENLICENSD_COOKIE_SECURE=false

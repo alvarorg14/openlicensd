@@ -16,7 +16,12 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
   --set config.bootstrapAdmin.email=admin@example.com \
-  --set secret.data.databaseUrl='postgres://user:pass@host:5432/openlicensd?sslmode=disable' \
+  --set config.database.host=postgres.example.com \
+  --set config.database.port=5432 \
+  --set config.database.name=openlicensd \
+  --set config.database.user=openlicensd \
+  --set config.database.sslmode=require \
+  --set secret.data.databasePassword='change-me' \
   --set secret.data.bootstrapAdminPasswordHash='$2a$10$...'
 ```
 
@@ -38,7 +43,7 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --create-namespace \
   --set secret.mode=externalSecrets \
   --set secret.externalSecrets.secretStoreRef.name=my-secret-store \
-  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_URL","remoteRef":{"key":"openlicensd/database","property":"url"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
+  --set-json 'secret.externalSecrets.remoteRefs=[{"secretKey":"OPENLICENSD_DATABASE_PASSWORD","remoteRef":{"key":"openlicensd/database","property":"password"}},{"secretKey":"OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH","remoteRef":{"key":"openlicensd/admin","property":"passwordHash"}}]'
 ```
 
 For local development, install from the chart source:
@@ -77,6 +82,12 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | config.bootstrapAdmin.email | string | `""` | Email for the first admin user seeded on empty database (maps to OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL) |
 | config.bootstrapAdmin.name | string | `"Administrator"` | Display name for the bootstrap admin (maps to OPENLICENSD_BOOTSTRAP_ADMIN_NAME) |
 | config.cookieSecure | bool | `true` | Set Secure flag on session cookies (maps to OPENLICENSD_COOKIE_SECURE) |
+| config.database.host | string | `""` | PostgreSQL host (maps to OPENLICENSD_DATABASE_HOST) |
+| config.database.port | int | `5432` | PostgreSQL port (maps to OPENLICENSD_DATABASE_PORT) |
+| config.database.name | string | `""` | PostgreSQL database name (maps to OPENLICENSD_DATABASE_NAME) |
+| config.database.user | string | `""` | PostgreSQL user (maps to OPENLICENSD_DATABASE_USER) |
+| config.database.sslmode | string | `"require"` | PostgreSQL sslmode (maps to OPENLICENSD_DATABASE_SSLMODE) |
+| config.database.options | string | `""` | Optional libpq keyword/value pairs (maps to OPENLICENSD_DATABASE_OPTIONS) |
 | config.database.maxConnIdleMinutes | int | `0` | Close idle connections after this many minutes; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES) |
 | config.database.maxConns | int | `0` | Maximum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONNS) |
 | config.database.minConns | int | `0` | Minimum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MIN_CONNS) |
@@ -147,15 +158,15 @@ Liveness must not ping the database: a transient Postgres outage would restart p
 | podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532}` | Pod-level security context |
 | replicaCount | int | `1` | Number of OpenLicensd replicas |
 | resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"256Mi"}}` | CPU and memory resource requests and limits for the OpenLicensd container |
-| secret.data | object | `{"bootstrapAdminPasswordHash":"","databaseUrl":"","harborAdminPassword":"","harborAdminUsername":"","oidcClientSecret":""}` | Secret data when mode is `create` |
+| secret.data | object | `{"bootstrapAdminPasswordHash":"","databasePassword":"","harborAdminPassword":"","harborAdminUsername":"","oidcClientSecret":""}` | Secret data when mode is `create` |
 | secret.data.bootstrapAdminPasswordHash | string | `""` | Bcrypt hash for bootstrap admin password (maps to OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH) |
-| secret.data.databaseUrl | string | `""` | PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL) |
+| secret.data.databasePassword | string | `""` | PostgreSQL password (maps to OPENLICENSD_DATABASE_PASSWORD) |
 | secret.data.harborAdminPassword | string | `""` | Harbor admin password (maps to OPENLICENSD_HARBOR_ADMIN_PASSWORD) |
 | secret.data.harborAdminUsername | string | `""` | Harbor admin username (maps to OPENLICENSD_HARBOR_ADMIN_USERNAME) |
 | secret.data.oidcClientSecret | string | `""` | OIDC client secret (maps to OPENLICENSD_OIDC_CLIENT_SECRET) |
 | secret.existingSecret | string | `""` | Name of an existing Secret when mode is `existing` |
 | secret.externalSecrets.refreshInterval | string | `"1h"` | How often the ExternalSecret refreshes the target Secret |
-| secret.externalSecrets.remoteRefs | list | `[]` | Remote secret references. Each entry maps a Kubernetes Secret key to a remote property. Example: remoteRefs:   - secretKey: OPENLICENSD_DATABASE_URL     remoteRef:       key: openlicensd/database       property: url |
+| secret.externalSecrets.remoteRefs | list | `[]` | Remote secret references. Each entry maps a Kubernetes Secret key to a remote property. Example: remoteRefs:   - secretKey: OPENLICENSD_DATABASE_PASSWORD     remoteRef:       key: openlicensd/database       property: password |
 | secret.externalSecrets.secretStoreRef | object | `{"kind":"SecretStore","name":""}` | Reference to a SecretStore or ClusterSecretStore |
 | secret.mode | string | `"create"` | Secret provisioning mode: `create`, `existing`, or `externalSecrets` |
 | secret.name | string | `""` | Secret name when mode is `create` or `externalSecrets`. Defaults to `<release>-openlicensd-secret` |

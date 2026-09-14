@@ -148,6 +148,18 @@ config:
     # -- Metrics listen address (maps to OPENLICENSD_METRICS_ADDR)
     addr: ":9090"
   database:
+    # -- PostgreSQL host (maps to OPENLICENSD_DATABASE_HOST)
+    host: ""
+    # -- PostgreSQL port (maps to OPENLICENSD_DATABASE_PORT)
+    port: 5432
+    # -- PostgreSQL database name (maps to OPENLICENSD_DATABASE_NAME)
+    name: ""
+    # -- PostgreSQL user (maps to OPENLICENSD_DATABASE_USER)
+    user: ""
+    # -- PostgreSQL sslmode (maps to OPENLICENSD_DATABASE_SSLMODE)
+    sslmode: require
+    # -- Optional libpq keyword/value pairs (maps to OPENLICENSD_DATABASE_OPTIONS)
+    options: ""
     # -- Maximum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MAX_CONNS)
     maxConns: 0
     # -- Minimum pool connections; 0 uses pgx default (maps to OPENLICENSD_DATABASE_MIN_CONNS)
@@ -226,8 +238,8 @@ secret:
   existingSecret: ""
   # -- Secret data when mode is `create`
   data:
-    # -- PostgreSQL connection URL (maps to OPENLICENSD_DATABASE_URL)
-    databaseUrl: ""
+    # -- PostgreSQL password (maps to OPENLICENSD_DATABASE_PASSWORD)
+    databasePassword: ""
     # -- Bcrypt hash for bootstrap admin password (maps to OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH)
     bootstrapAdminPasswordHash: ""
     # -- OIDC client secret (maps to OPENLICENSD_OIDC_CLIENT_SECRET)
@@ -246,10 +258,10 @@ secret:
     # -- Remote secret references. Each entry maps a Kubernetes Secret key to a remote property.
     # Example:
     # remoteRefs:
-    #   - secretKey: OPENLICENSD_DATABASE_URL
+    #   - secretKey: OPENLICENSD_DATABASE_PASSWORD
     #     remoteRef:
     #       key: openlicensd/database
-    #       property: url
+    #       property: password
     remoteRefs: []
 
 service:

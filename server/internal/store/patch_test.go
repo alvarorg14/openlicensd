@@ -2,18 +2,15 @@ package store_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/google/uuid"
 )
 
 func TestUpdateProductPartialPatch(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)
@@ -47,10 +44,7 @@ func TestUpdateProductPartialPatch(t *testing.T) {
 }
 
 func TestUpdatePolicyPartialPatch(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)
@@ -110,10 +104,7 @@ func TestUpdatePolicyPartialPatch(t *testing.T) {
 }
 
 func TestUpdateLicensePartialPatch(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)

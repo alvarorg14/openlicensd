@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoadHarborDisabledByDefault(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "")
 
 	cfg, err := config.Load()
@@ -21,7 +21,7 @@ func TestLoadHarborDisabledByDefault(t *testing.T) {
 }
 
 func TestLoadHarborEnabledRequiresConfig(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "")
@@ -35,7 +35,7 @@ func TestLoadHarborEnabledRequiresConfig(t *testing.T) {
 }
 
 func TestLoadHarborEnabledParsesProjects(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -61,7 +61,7 @@ func TestLoadHarborEnabledParsesProjects(t *testing.T) {
 }
 
 func TestLoadHarborEnabledInvalidDuration(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 	t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 	t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -77,7 +77,7 @@ func TestLoadHarborEnabledInvalidDuration(t *testing.T) {
 
 func TestLoadHarborBoolParsing(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+		setRequiredDatabaseEnv(t)
 		t.Setenv("OPENLICENSD_HARBOR_ENABLED", "true")
 		t.Setenv("OPENLICENSD_HARBOR_URL", "https://harbor.example.com")
 		t.Setenv("OPENLICENSD_HARBOR_ADMIN_USERNAME", "admin")
@@ -94,7 +94,7 @@ func TestLoadHarborBoolParsing(t *testing.T) {
 	})
 
 	t.Run("false", func(t *testing.T) {
-		t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+		setRequiredDatabaseEnv(t)
 		t.Setenv("OPENLICENSD_HARBOR_ENABLED", "false")
 
 		cfg, err := config.Load()
@@ -108,7 +108,7 @@ func TestLoadHarborBoolParsing(t *testing.T) {
 }
 
 func TestLoadSessionDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_COOKIE_SECURE", "")
 
 	cfg, err := config.Load()
@@ -133,7 +133,7 @@ func TestLoadSessionDefaults(t *testing.T) {
 }
 
 func TestLoadSessionCleanupDisabled(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", "0")
 
 	cfg, err := config.Load()
@@ -149,7 +149,7 @@ func TestLoadSessionCleanupDisabled(t *testing.T) {
 }
 
 func TestLoadSessionCleanupInvalidInterval(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", "-1")
 
 	_, err := config.Load()
@@ -159,7 +159,7 @@ func TestLoadSessionCleanupInvalidInterval(t *testing.T) {
 }
 
 func TestLoadAuditRetentionDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -183,7 +183,7 @@ func TestLoadAuditRetentionDefaults(t *testing.T) {
 }
 
 func TestLoadAuditRetentionEnabled(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "90")
 	t.Setenv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", "60")
 
@@ -206,7 +206,7 @@ func TestLoadAuditRetentionEnabled(t *testing.T) {
 }
 
 func TestLoadAuditRetentionRequiresCleanupInterval(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "30")
 	t.Setenv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", "0")
 
@@ -217,7 +217,7 @@ func TestLoadAuditRetentionRequiresCleanupInterval(t *testing.T) {
 }
 
 func TestLoadAuditRetentionInvalidDays(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_AUDIT_RETENTION_DAYS", "-1")
 
 	_, err := config.Load()
@@ -227,7 +227,7 @@ func TestLoadAuditRetentionInvalidDays(t *testing.T) {
 }
 
 func TestLoadOIDCDisabledByDefault(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_OIDC_ENABLED", "")
 
 	cfg, err := config.Load()
@@ -243,7 +243,7 @@ func TestLoadOIDCDisabledByDefault(t *testing.T) {
 }
 
 func TestLoadOIDCEnabledRequiresConfig(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_OIDC_ENABLED", "true")
 	t.Setenv("OPENLICENSD_OIDC_ISSUER_URL", "")
 	t.Setenv("OPENLICENSD_OIDC_CLIENT_ID", "")
@@ -257,7 +257,7 @@ func TestLoadOIDCEnabledRequiresConfig(t *testing.T) {
 }
 
 func TestLoadOIDCDefaultScopes(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_OIDC_ENABLED", "true")
 	t.Setenv("OPENLICENSD_OIDC_ISSUER_URL", "https://issuer.example.com")
 	t.Setenv("OPENLICENSD_OIDC_CLIENT_ID", "client-id")
@@ -275,7 +275,7 @@ func TestLoadOIDCDefaultScopes(t *testing.T) {
 }
 
 func TestLoadLocalLoginDisabledWithoutOIDCFails(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_LOCAL_LOGIN_ENABLED", "false")
 	t.Setenv("OPENLICENSD_OIDC_ENABLED", "false")
 
@@ -286,7 +286,7 @@ func TestLoadLocalLoginDisabledWithoutOIDCFails(t *testing.T) {
 }
 
 func TestOIDCIsAdminEmail(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_OIDC_ADMIN_EMAILS", "Admin@Example.com")
 
 	cfg, err := config.Load()
@@ -302,7 +302,7 @@ func TestOIDCIsAdminEmail(t *testing.T) {
 }
 
 func TestLoadRateLimitDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "")
 	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "")
 
@@ -343,7 +343,7 @@ func TestLoadRateLimitDefaults(t *testing.T) {
 }
 
 func TestLoadRateLimitFailOpenOverride(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_FAIL_OPEN", "false")
 
 	cfg, err := config.Load()
@@ -356,7 +356,7 @@ func TestLoadRateLimitFailOpenOverride(t *testing.T) {
 }
 
 func TestLoadRateLimitBackendPostgres(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "postgres")
 
 	cfg, err := config.Load()
@@ -369,7 +369,7 @@ func TestLoadRateLimitBackendPostgres(t *testing.T) {
 }
 
 func TestLoadRateLimitInvalidBackend(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_BACKEND", "redis")
 
 	_, err := config.Load()
@@ -379,7 +379,7 @@ func TestLoadRateLimitInvalidBackend(t *testing.T) {
 }
 
 func TestLoadRateLimitInvalidAuthenticatedBurst(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "true")
 	t.Setenv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST", "0")
 
@@ -390,7 +390,7 @@ func TestLoadRateLimitInvalidAuthenticatedBurst(t *testing.T) {
 }
 
 func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_RATE_LIMIT_ENABLED", "true")
 	t.Setenv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", "0")
 
@@ -401,7 +401,7 @@ func TestLoadRateLimitInvalidPublicBurst(t *testing.T) {
 }
 
 func TestLoadTrustedProxiesInvalidEntry(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "not-an-ip")
 
 	_, err := config.Load()
@@ -411,7 +411,7 @@ func TestLoadTrustedProxiesInvalidEntry(t *testing.T) {
 }
 
 func TestLoadTrustedProxiesParsesCSV(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_TRUSTED_PROXIES", "10.0.0.0/8, 10.1.2.3")
 
 	cfg, err := config.Load()
@@ -427,7 +427,7 @@ func TestLoadTrustedProxiesParsesCSV(t *testing.T) {
 }
 
 func TestLoadLogDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_LOG_LEVEL", "")
 	t.Setenv("OPENLICENSD_LOG_FORMAT", "")
 
@@ -444,7 +444,7 @@ func TestLoadLogDefaults(t *testing.T) {
 }
 
 func TestLoadLogInvalidLevel(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_LOG_LEVEL", "trace")
 
 	_, err := config.Load()
@@ -454,7 +454,7 @@ func TestLoadLogInvalidLevel(t *testing.T) {
 }
 
 func TestLoadLogInvalidFormat(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_LOG_FORMAT", "xml")
 
 	_, err := config.Load()
@@ -464,7 +464,7 @@ func TestLoadLogInvalidFormat(t *testing.T) {
 }
 
 func TestLoadMetricsDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_METRICS_ENABLED", "")
 	t.Setenv("OPENLICENSD_METRICS_ADDR", "")
 
@@ -481,7 +481,7 @@ func TestLoadMetricsDefaults(t *testing.T) {
 }
 
 func TestLoadMetricsDisabled(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_METRICS_ENABLED", "false")
 
 	cfg, err := config.Load()
@@ -494,7 +494,7 @@ func TestLoadMetricsDisabled(t *testing.T) {
 }
 
 func TestLoadMetricsEmptyAddr(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
 	t.Setenv("OPENLICENSD_METRICS_ADDR", "   ")
 
@@ -505,7 +505,7 @@ func TestLoadMetricsEmptyAddr(t *testing.T) {
 }
 
 func TestLoadMetricsAddrEqualsAPIAddr(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_ADDR", ":8080")
 	t.Setenv("OPENLICENSD_METRICS_ENABLED", "true")
 	t.Setenv("OPENLICENSD_METRICS_ADDR", ":8080")
@@ -517,7 +517,7 @@ func TestLoadMetricsAddrEqualsAPIAddr(t *testing.T) {
 }
 
 func TestLoadDatabaseDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "")
 	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "")
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", "")
@@ -542,7 +542,7 @@ func TestLoadDatabaseDefaults(t *testing.T) {
 }
 
 func TestLoadDatabaseOverrides(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "20")
 	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "2")
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", "15")
@@ -567,7 +567,7 @@ func TestLoadDatabaseOverrides(t *testing.T) {
 }
 
 func TestLoadDatabaseNegativeMaxConns(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "-1")
 
 	_, err := config.Load()
@@ -577,7 +577,7 @@ func TestLoadDatabaseNegativeMaxConns(t *testing.T) {
 }
 
 func TestLoadDatabaseMinExceedsMax(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_DATABASE_MAX_CONNS", "5")
 	t.Setenv("OPENLICENSD_DATABASE_MIN_CONNS", "10")
 
@@ -588,7 +588,7 @@ func TestLoadDatabaseMinExceedsMax(t *testing.T) {
 }
 
 func TestLoadRequestTimeoutDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "")
 
 	cfg, err := config.Load()
@@ -604,7 +604,7 @@ func TestLoadRequestTimeoutDefaults(t *testing.T) {
 }
 
 func TestLoadRequestTimeoutOverride(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "45")
 
 	cfg, err := config.Load()
@@ -617,7 +617,7 @@ func TestLoadRequestTimeoutOverride(t *testing.T) {
 }
 
 func TestLoadRequestTimeoutDisabled(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "0")
 
 	cfg, err := config.Load()
@@ -633,7 +633,7 @@ func TestLoadRequestTimeoutDisabled(t *testing.T) {
 }
 
 func TestLoadRequestTimeoutNegative(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "-1")
 
 	_, err := config.Load()
@@ -643,7 +643,7 @@ func TestLoadRequestTimeoutNegative(t *testing.T) {
 }
 
 func TestLoadRequestBodyMaxBytesDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "")
 
 	cfg, err := config.Load()
@@ -656,7 +656,7 @@ func TestLoadRequestBodyMaxBytesDefaults(t *testing.T) {
 }
 
 func TestLoadRequestBodyMaxBytesOverride(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "2048")
 
 	cfg, err := config.Load()
@@ -669,7 +669,7 @@ func TestLoadRequestBodyMaxBytesOverride(t *testing.T) {
 }
 
 func TestLoadRequestBodyMaxBytesInvalid(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", "0")
 
 	_, err := config.Load()
@@ -679,7 +679,7 @@ func TestLoadRequestBodyMaxBytesInvalid(t *testing.T) {
 }
 
 func TestReadTimeoutDefaults(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "")
 
 	cfg, err := config.Load()
@@ -692,7 +692,7 @@ func TestReadTimeoutDefaults(t *testing.T) {
 }
 
 func TestReadTimeoutWhenRequestTimeoutDisabled(t *testing.T) {
-	t.Setenv("OPENLICENSD_DATABASE_URL", "postgres://example")
+	setRequiredDatabaseEnv(t)
 	t.Setenv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", "0")
 
 	cfg, err := config.Load()

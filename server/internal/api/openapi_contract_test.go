@@ -360,10 +360,7 @@ func TestOpenAPIContract(t *testing.T) {
 }
 
 func exerciseRegistryCredentialsContract(t *testing.T, suite *openAPIContractSuite) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	harborServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {

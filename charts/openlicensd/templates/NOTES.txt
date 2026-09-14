@@ -32,7 +32,7 @@ Health endpoints:
   startup:   /readyz
 
 {{- if eq .Values.secret.mode "create" }}
-Remember to set secret values before deploying to production. This chart expects an external PostgreSQL database via OPENLICENSD_DATABASE_URL.
+Remember to set secret values before deploying to production. Configure PostgreSQL connection settings via config.database.* and secret.data.databasePassword.
 {{- else if eq .Values.secret.mode "existing" }}
 Using existing Secret: {{ .Values.secret.existingSecret }}
 {{- else if eq .Values.secret.mode "externalSecrets" }}

@@ -13,7 +13,7 @@ This runbook covers logical backup and restore with `pg_dump` and `pg_restore`. 
 | **Helm / Kubernetes** | You. The chart requires an external PostgreSQL database and does not bundle one. |
 | **Docker Compose stack** (`make stack-up`) | You. Postgres runs in Compose for evaluation only. |
 | **Local dev** (`make dev-db`) | You, if you care about keeping local data. |
-| **Binary / single container** | You. Point `OPENLICENSD_DATABASE_URL` at a database you manage. |
+| **Binary / single container** | You. Point the discrete `OPENLICENSD_DATABASE_*` variables at a database you manage. |
 
 OpenLicensd has no built-in backup API, scheduled dump job, or WAL-archiving integration. Use your PostgreSQL tooling or cloud provider's managed backup features.
 
@@ -51,7 +51,7 @@ OpenLicensd has no built-in backup API, scheduled dump job, or WAL-archiving int
 - **PostgreSQL 16+** on the restore target. OpenLicensd requires 16+; local Compose images use PostgreSQL 18.
 - **`pgcrypto` extension** — created by migration `001_licenses.sql`. The restore target must allow `CREATE EXTENSION` (or have `pgcrypto` pre-installed).
 - **`pg_dump` / `pg_restore`** client tools. Match the client major version to the server where possible.
-- **Connection URL** — the same database referenced by `OPENLICENSD_DATABASE_URL` (see [configuration.md](configuration.md)).
+- **Connection URL** — assemble a PostgreSQL URL for `pg_dump`/`pg_restore` from your `OPENLICENSD_DATABASE_*` settings (see [configuration.md](configuration.md)).
 
 ## RPO and RTO guidance
 
@@ -66,7 +66,7 @@ OpenLicensd has no built-in backup API, scheduled dump job, or WAL-archiving int
 
 **Recovery Time Objective (RTO)** — how long until the service is back:
 
-RTO is dominated by provisioning or restoring PostgreSQL, updating `OPENLICENSD_DATABASE_URL` if the host changed, and waiting for OpenLicensd pods to pass `/readyz`. The schema is small (UUID primary keys, no large objects), so restore time is usually minutes, not hours, once Postgres is available.
+RTO is dominated by provisioning or restoring PostgreSQL, updating `OPENLICENSD_DATABASE_HOST` (and related vars) if the host changed, and waiting for OpenLicensd pods to pass `/readyz`. The schema is small (UUID primary keys, no large objects), so restore time is usually minutes, not hours, once Postgres is available.
 
 For tighter RPO in production, enable point-in-time recovery on your managed PostgreSQL service rather than relying on logical dumps alone. Vendor-specific console steps are outside this runbook.
 
@@ -77,9 +77,9 @@ Use **custom format** (`-Fc`) for flexible restore and compression. Add `--no-ow
 ### From a connection URL
 
 ```bash
-export OPENLICENSD_DATABASE_URL='postgres://user:pass@host:5432/openlicensd?sslmode=require'
+export DATABASE_URL='postgres://user:pass@host:5432/openlicensd?sslmode=require'
 
-pg_dump "$OPENLICENSD_DATABASE_URL" \
+pg_dump "$DATABASE_URL" \
   --format=custom \
   --no-owner \
   --no-acl \
@@ -140,7 +140,7 @@ pg_restore \
   openlicensd-20260101-120000.dump
 ```
 
-Update `OPENLICENSD_DATABASE_URL` (or Helm `secret.data.databaseUrl`) to point at the restored database, then start OpenLicensd.
+Update the discrete `OPENLICENSD_DATABASE_*` variables (or Helm `config.database.*` / `secret.data.databasePassword`) to point at the restored database, then start OpenLicensd.
 
 Migrations run automatically on startup. If `schema_migrations` was restored with the dump, already-applied migrations are skipped.
 
@@ -150,7 +150,7 @@ Only when you intend to replace all data:
 
 ```bash
 pg_restore \
-  --dbname="$OPENLICENSD_DATABASE_URL" \
+  --dbname="$DATABASE_URL" \
   --clean \
   --if-exists \
   --no-owner \
@@ -204,7 +204,7 @@ Sign in to the admin UI and confirm products, policies, and licenses are present
 
 - [upgrade.md](upgrade.md) — upgrade procedure and when to take a dump before upgrading
 - [deployment.md](deployment.md) — Helm, Docker, binary install, and PostgreSQL requirements
-- [configuration.md](configuration.md) — `OPENLICENSD_DATABASE_URL` and pool settings
+- [configuration.md](configuration.md) — discrete database connection variables and pool settings
 - [troubleshooting.md](troubleshooting.md) — common failures: database, migrations, OIDC, Harbor
 - [QUICKSTART.md](../QUICKSTART.md) — get running quickly
 - [charts/openlicensd/README.md](../charts/openlicensd/README.md) — Helm chart reference

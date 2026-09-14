@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
@@ -171,10 +170,7 @@ func (m *mockOIDCProvider) signIDToken(sub, email, name, picture, nonce string) 
 func setupOIDCTestEnv(t *testing.T, idp *mockOIDCProvider, redirectURL string) (http.Handler, *store.Store) {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	cfg := &config.Config{
 		Addr:              ":8080",
@@ -217,10 +213,7 @@ func TestOIDCRoutesDisabledWhenOIDCOff(t *testing.T) {
 }
 
 func TestLocalLoginDisabledReturnsForbidden(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	idp := newMockOIDCProvider(t, "test-client")
 	redirectURL := "http://example.com/api/v1/auth/oidc/callback"
@@ -265,10 +258,6 @@ func TestLocalLoginDisabledReturnsForbidden(t *testing.T) {
 }
 
 func TestAuthProvidersReflectsOIDCConfig(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
 
 	idp := newMockOIDCProvider(t, "providers-client")
 	handler, _ := setupOIDCTestEnv(t, idp, "http://example.com/api/v1/auth/oidc/callback")

@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/alvarorg14/openlicensd/server/internal/auth"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"github.com/alvarorg14/openlicensd/server/internal/logging"
 	"github.com/alvarorg14/openlicensd/server/internal/store"
 )
@@ -17,10 +17,7 @@ import (
 func setupAuthTest(t *testing.T) (*auth.Service, *store.Store, *bytes.Buffer) {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)
