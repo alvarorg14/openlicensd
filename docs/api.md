@@ -350,7 +350,7 @@ curl -s -b cookies.txt -X DELETE "http://localhost:8080/api/v1/users/$USER_ID" \
 
 User objects include `id`, `email`, `name`, `role`, `auth_provider`, `created_at`, and `updated_at`. `disabled_at` and `last_login_at` are present only when applicable.
 
-The last enabled admin cannot be demoted, disabled, or deleted. Those mutations return `400` so the server cannot be left with zero admins. The same guard applies to admin API tokens (`Authorization: Bearer`), which do not have a user identity and therefore bypass the self-disable/self-delete checks.
+The last enabled admin cannot be demoted, disabled, or deleted. Those mutations return `400` so the server cannot be left with zero admins. The check is enforced atomically in the same database transaction as the mutation, so concurrent requests cannot both succeed and leave zero admins. The same guard applies to admin API tokens (`Authorization: Bearer`), which do not have a user identity and therefore bypass the self-disable/self-delete checks.
 
 ## Example: create a product and policy
 

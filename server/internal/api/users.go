@@ -110,24 +110,6 @@ func parseRole(role string) (store.Role, bool) {
 	}
 }
 
-// rejectIfLastAdmin writes a 400 and returns true when mutating user would
-// leave the server with zero enabled admins.
-func (s *Server) rejectIfLastAdmin(w http.ResponseWriter, r *http.Request, user *store.User, message string) bool {
-	if user.Role != store.RoleAdmin || user.DisabledAt != nil {
-		return false
-	}
-	count, err := s.store.CountAdmins(r.Context())
-	if err != nil {
-		writeInternalError(w, r, err, "failed to count admins")
-		return true
-	}
-	if count <= 1 {
-		writeError(w, http.StatusBadRequest, message)
-		return true
-	}
-	return false
-}
-
 func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 	params, err := parseListParams(r, userSorts)
 	if err != nil {
@@ -252,23 +234,12 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if role != store.RoleAdmin {
-		existing, loadErr := s.store.GetUserByID(r.Context(), id)
-		if loadErr != nil {
-			writeInternalError(w, r, loadErr, "failed to load user")
-			return
-		}
-		if existing == nil {
-			writeError(w, http.StatusNotFound, "user not found")
-			return
-		}
-		if s.rejectIfLastAdmin(w, r, existing, "cannot demote the last admin") {
-			return
-		}
-	}
-
 	user, err := s.store.UpdateUser(r.Context(), id, req.Email, strings.TrimSpace(req.Name), role)
 	if err != nil {
+		if errors.Is(err, store.ErrLastAdmin) {
+			writeError(w, http.StatusBadRequest, "cannot demote the last admin")
+			return
+		}
 		if writeStoreError(w, err, "") {
 			return
 		}
@@ -338,21 +309,12 @@ func (s *Server) handleDisableUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existing, err := s.store.GetUserByID(r.Context(), id)
-	if err != nil {
-		writeInternalError(w, r, err, "failed to load user")
-		return
-	}
-	if existing == nil {
-		writeError(w, http.StatusNotFound, "user not found")
-		return
-	}
-	if s.rejectIfLastAdmin(w, r, existing, "cannot disable the last admin") {
-		return
-	}
-
 	user, err := s.store.SetUserDisabled(r.Context(), id, true)
 	if err != nil {
+		if errors.Is(err, store.ErrLastAdmin) {
+			writeError(w, http.StatusBadRequest, "cannot disable the last admin")
+			return
+		}
 		writeInternalError(w, r, err, "failed to disable user")
 		return
 	}
@@ -408,21 +370,12 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existing, err := s.store.GetUserByID(r.Context(), id)
-	if err != nil {
-		writeInternalError(w, r, err, "failed to load user")
-		return
-	}
-	if existing == nil {
-		writeError(w, http.StatusNotFound, "user not found")
-		return
-	}
-	if s.rejectIfLastAdmin(w, r, existing, "cannot delete the last admin") {
-		return
-	}
-
 	deleted, err := s.store.DeleteUser(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, store.ErrLastAdmin) {
+			writeError(w, http.StatusBadRequest, "cannot delete the last admin")
+			return
+		}
 		writeInternalError(w, r, err, "failed to delete user")
 		return
 	}
