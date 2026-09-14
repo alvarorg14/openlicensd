@@ -267,6 +267,8 @@ Triggers on push/PR to `main` (skips when only SDK-owned paths change; see path 
 |-----|---------|
 | Server | `make lint-server`, `go test` (with coverage upload to Codecov), `go build` |
 | UI | `npm ci`, `make lint-ui`, `npm run generate` |
+
+The UI job does **not** run `nuxt typecheck`. The UI is on TypeScript 7 (`typescript@^7.0.0`); `vue-tsc` still requires TypeScript 6's JS compiler API (`typescript/lib/tsc`), which TS 7 does not export. Tracked in [#114](https://github.com/alvarorg14/openlicensd/issues/114) (Post-1.0). Revisit when `vue-tsc` can consume TypeScript 7.1's programmatic API without a second `typescript` package.
 | E2E | `make ui`, `make server`, Playwright E2E (happy path, RBAC, revoke/delete, audit log) |
 | GoReleaser | `goreleaser check`, snapshot release |
 | Helm | `helm lint`, `helm template`, `helm package` |

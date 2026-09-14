@@ -31,7 +31,7 @@ Adoption blockers: scoped API tokens for automation, an append-only audit log, R
 
 ## v0.9.0 — Harden the contract
 
-Pre-freeze hardening before the v1.0 stability promise: true partial PATCH semantics, consistent API response shapes (`/auth/me`, timestamps), safety guards (last-admin protection, session revocation on password reset), schema fixes (bootstrap idempotency, audit retention, cleanup indexes), discrete database connection variables (replacing `OPENLICENSD_DATABASE_URL`), UI/SDK freeze prep (typecheck in CI, expanded E2E), OpenAPI contract tests, and operator docs (security hardening, production checklist).
+Pre-freeze hardening before the v1.0 stability promise: true partial PATCH semantics, consistent API response shapes (`/auth/me`, timestamps), safety guards (last-admin protection, session revocation on password reset), schema fixes (bootstrap idempotency, audit retention, cleanup indexes), discrete database connection variables (replacing `OPENLICENSD_DATABASE_URL`), UI/SDK freeze prep (expanded E2E), OpenAPI contract tests, and operator docs (security hardening, production checklist). UI `nuxt typecheck` in CI is deferred — see Post-1.0 and [#114](https://github.com/alvarorg14/openlicensd/issues/114).
 
 ## v1.0.0 — Commit to stability
 
@@ -40,6 +40,8 @@ Document the API stability and deprecation policy, define the support window, cl
 ## Post-1.0
 
 Features that expand the product surface without blocking the stability promise: offline signed licenses, entitlements and metadata, webhooks, client-side machine deactivation, bulk import/export, key rotation, expiring-soon notifications, and additional client SDKs (TypeScript/Node first).
+
+UI `nuxt typecheck` in CI ([#114](https://github.com/alvarorg14/openlicensd/issues/114)) waits on `vue-tsc` support for TypeScript 7's programmatic compiler API (or TS 7.1). Until then, `nuxt typecheck` fails against plain `typescript@7` (`ERR_PACKAGE_PATH_NOT_EXPORTED` for `typescript/lib/tsc`). Upstream: [vuejs/language-tools#6124](https://github.com/vuejs/language-tools/issues/6124), [vuejs/language-tools#5381](https://github.com/vuejs/language-tools/issues/5381).
 
 ---
 
