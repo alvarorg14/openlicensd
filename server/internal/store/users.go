@@ -215,13 +215,48 @@ func (s *Store) GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 func (s *Store) UpdateUser(ctx context.Context, id uuid.UUID, email, name string, role Role) (*User, error) {
-	const q = `
+	email = strings.ToLower(strings.TrimSpace(email))
+	if role == RoleAdmin {
+		return s.updateUser(ctx, s.pool, id, email, name, role)
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	existing, err := getUserByIDTx(ctx, tx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, nil
+	}
+	if existing.Role == RoleAdmin && existing.DisabledAt == nil {
+		if err := ensureNotLastEnabledAdminTx(ctx, tx, id); err != nil {
+			return nil, err
+		}
+	}
+
+	u, err := s.updateUser(ctx, tx, id, email, name, role)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (s *Store) updateUser(ctx context.Context, q querier, id uuid.UUID, email, name string, role Role) (*User, error) {
+	const query = `
 		UPDATE users
 		SET email = $2, name = $3, role = $4, updated_at = NOW()
 		WHERE id = $1
 		RETURNING ` + userColumns
 
-	row := s.pool.QueryRow(ctx, q, id, strings.ToLower(strings.TrimSpace(email)), name, role)
+	row := q.QueryRow(ctx, query, id, email, name, role)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -250,22 +285,56 @@ func (s *Store) SetUserPassword(ctx context.Context, id uuid.UUID, passwordHash 
 }
 
 func (s *Store) SetUserDisabled(ctx context.Context, id uuid.UUID, disabled bool) (*User, error) {
-	var q string
+	if !disabled {
+		return s.setUserDisabled(ctx, s.pool, id, disabled)
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	existing, err := getUserByIDTx(ctx, tx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, nil
+	}
+	if existing.Role == RoleAdmin && existing.DisabledAt == nil {
+		if err := ensureNotLastEnabledAdminTx(ctx, tx, id); err != nil {
+			return nil, err
+		}
+	}
+
+	u, err := s.setUserDisabled(ctx, tx, id, disabled)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (s *Store) setUserDisabled(ctx context.Context, q querier, id uuid.UUID, disabled bool) (*User, error) {
+	var query string
 	if disabled {
-		q = `
+		query = `
 			UPDATE users
 			SET disabled_at = NOW(), updated_at = NOW()
 			WHERE id = $1
 			RETURNING ` + userColumns
 	} else {
-		q = `
+		query = `
 			UPDATE users
 			SET disabled_at = NULL, failed_login_attempts = 0, locked_until = NULL, updated_at = NOW()
 			WHERE id = $1
 			RETURNING ` + userColumns
 	}
 
-	row := s.pool.QueryRow(ctx, q, id)
+	row := q.QueryRow(ctx, query, id)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -277,13 +346,90 @@ func (s *Store) SetUserDisabled(ctx context.Context, id uuid.UUID, disabled bool
 }
 
 func (s *Store) DeleteUser(ctx context.Context, id uuid.UUID) (bool, error) {
-	const q = `DELETE FROM users WHERE id = $1`
-
-	tag, err := s.pool.Exec(ctx, q, id)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return false, err
 	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	existing, err := getUserByIDTx(ctx, tx, id)
+	if err != nil {
+		return false, err
+	}
+	if existing == nil {
+		return false, nil
+	}
+	if existing.Role == RoleAdmin && existing.DisabledAt == nil {
+		if err := ensureNotLastEnabledAdminTx(ctx, tx, id); err != nil {
+			return false, err
+		}
+	}
+
+	tag, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
 	return tag.RowsAffected() > 0, nil
+}
+
+type querier interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// ensureNotLastEnabledAdminTx locks enabled admin rows in stable order and rejects
+// when targetID is the sole remaining enabled admin.
+func ensureNotLastEnabledAdminTx(ctx context.Context, tx pgx.Tx, targetID uuid.UUID) error {
+	rows, err := tx.Query(ctx, `
+		SELECT id
+		FROM users
+		WHERE role = 'admin' AND disabled_at IS NULL
+		ORDER BY id
+		FOR UPDATE`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var count int
+	var targetFound bool
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		count++
+		if id == targetID {
+			targetFound = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if targetFound && count <= 1 {
+		return ErrLastAdmin
+	}
+	return nil
+}
+
+func getUserByIDTx(ctx context.Context, tx pgx.Tx, id uuid.UUID) (*User, error) {
+	const q = `
+		SELECT ` + userColumns + `
+		FROM users
+		WHERE id = $1
+	`
+
+	row := tx.QueryRow(ctx, q, id)
+	u, err := scanUser(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return u, nil
 }
 
 func (s *Store) RecordFailedLogin(ctx context.Context, id uuid.UUID, maxAttempts int, lockDuration time.Duration) error {

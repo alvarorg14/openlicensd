@@ -11,6 +11,10 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- fix(store): make last-admin demote/disable/delete atomic (#287)
+
 ## [0.9.0] - 2026-09-14
 
 ### New Features
