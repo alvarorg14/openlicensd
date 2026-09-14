@@ -137,7 +137,7 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --create-namespace
 ```
 
-Try the published image with Docker Compose:
+Try the published image with Docker Compose (pin with `OPENLICENSD_IMAGE_TAG=X.Y.Z` for production):
 
 ```bash
 make stack-up

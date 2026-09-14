@@ -57,6 +57,8 @@ Run PostgreSQL and OpenLicensd together from the published image:
 make stack-up
 ```
 
+By default the stack pulls `ghcr.io/alvarorg14/openlicensd:latest` for quick evaluation. Pin a release with `OPENLICENSD_IMAGE_TAG=X.Y.Z make stack-up` (replace `X.Y.Z` with a [release](https://github.com/alvarorg14/openlicensd/releases) version).
+
 Open http://localhost:8080 and sign in with:
 
 - Email: `admin@example.com`
@@ -87,7 +89,11 @@ make stack-down ARGS=-v
 
 ## Docker
 
+Replace `X.Y.Z` with a pinned [release](https://github.com/alvarorg14/openlicensd/releases) version (semver without the `v` prefix). The `:latest` tag tracks the most recent release but can change without notice — do not use it in production.
+
 ```bash
+docker pull ghcr.io/alvarorg14/openlicensd:X.Y.Z
+
 docker run -d \
   --name openlicensd \
   -p 8080:8080 \
@@ -100,7 +106,7 @@ docker run -d \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH='$2a$10$...' \
   -e OPENLICENSD_COOKIE_SECURE=true \
-  ghcr.io/alvarorg14/openlicensd:latest
+  ghcr.io/alvarorg14/openlicensd:X.Y.Z
 ```
 
 ### Verify (Docker)

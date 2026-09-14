@@ -249,6 +249,14 @@ For a self-contained local stack (PostgreSQL + OpenLicensd), use [docker-compose
 make stack-up
 ```
 
+By default the stack pulls `ghcr.io/alvarorg14/openlicensd:latest` for quick evaluation. Pin a release for production-like runs:
+
+```bash
+OPENLICENSD_IMAGE_TAG=X.Y.Z make stack-up
+```
+
+Replace `X.Y.Z` with a pinned [release](https://github.com/alvarorg14/openlicensd/releases) version (semver without the `v` prefix). The `:latest` tag tracks the most recent release but can change without notice — do not use it in production.
+
 Open http://localhost:8080 and sign in with `admin@example.com` / `admin`. This uses the default bootstrap credentials and is intended for evaluation only — change the password hash before any real use.
 
 [`docker-compose.stack.yml`](../docker-compose.stack.yml) exposes the full `.env.example` variable set with stack-safe defaults. To override settings, use a `.env.stack` file and `COMPOSE_ENV_FILES=.env.stack make stack-up`; do not copy `.env` or `.env.example` verbatim — keep `OPENLICENSD_DATABASE_HOST=postgres` (the compose file sets discrete database variables for you).
@@ -257,10 +265,12 @@ Stop with `make stack-down` (add `ARGS=-v` to drop the stack's database volume).
 
 ### Single container
 
+Replace `X.Y.Z` with a pinned [release](https://github.com/alvarorg14/openlicensd/releases) version (semver without the `v` prefix). The `:latest` tag tracks the most recent release but can change without notice — do not use it in production.
+
 Pull the image:
 
 ```bash
-docker pull ghcr.io/alvarorg14/openlicensd:latest
+docker pull ghcr.io/alvarorg14/openlicensd:X.Y.Z
 ```
 
 Run with required environment variables:
@@ -278,7 +288,7 @@ docker run -d \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com \
   -e OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH='$2a$10$...' \
   -e OPENLICENSD_COOKIE_SECURE=true \
-  ghcr.io/alvarorg14/openlicensd:latest
+  ghcr.io/alvarorg14/openlicensd:X.Y.Z
 ```
 
 The production image is built from a multi-stage Dockerfile (Node 24 UI build → Go 1.26 compile → distroless non-root).
