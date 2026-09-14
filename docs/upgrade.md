@@ -200,7 +200,7 @@ OpenLicensd uses GitHub labels and Release Drafter to surface breaking changes:
 | PR label `deprecations` | Included in the **Deprecations** section |
 | [docs/openapi.yaml](openapi.yaml) | HTTP API contract (stamped at publish time on releases) |
 
-**Before v1.0**, these signals communicate intent but do not constitute a formal API stability or deprecation policy. That policy is planned for the v1.0 milestone ([#70](https://github.com/alvarorg14/openlicensd/issues/70)).
+From **v1.0.0** onward, the formal API stability and deprecation policy is [COMPATIBILITY.md](../COMPATIBILITY.md). Pre-1.0 releases did not follow that contract — see the [Pre-1.0 history](../COMPATIBILITY.md#pre-10-history) section when upgrading from 0.x.
 
 When a release lists breaking changes, read each item and verify:
 

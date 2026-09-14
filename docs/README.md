@@ -19,6 +19,7 @@ Published site: **https://alvarorg14.github.io/openlicensd/**
 | [scaling.md](scaling.md) | HA, scaling, session stickiness, and multi-replica caveats |
 | [troubleshooting.md](troubleshooting.md) | Common failures: database, migrations, OIDC, and Harbor |
 | [CHANGELOG.md](../CHANGELOG.md) | Server version history (Keep a Changelog) |
+| [COMPATIBILITY.md](../COMPATIBILITY.md) | API stability, SemVer scope, and deprecation policy (from v1.0.0) |
 | [SUPPORT.md](../SUPPORT.md) | Support channels, supported versions, and response expectations |
 
 ## Quick links

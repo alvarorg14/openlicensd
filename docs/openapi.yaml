@@ -4,6 +4,9 @@ info:
   description: |
     HTTP API for OpenLicensd — an open source license server for creating and validating license keys.
 
+    From v1.0.0, the `/api/v1` contract follows Semantic Versioning as defined in COMPATIBILITY.md
+    (https://github.com/alvarorg14/openlicensd/blob/main/COMPATIBILITY.md).
+
     Admin endpoints accept either a session cookie (from `POST /api/v1/auth/login` or OIDC SSO) or a
     scoped API token via `Authorization: Bearer <token>`. Session-based unsafe methods also require
     the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie; Bearer requests do not use CSRF.
@@ -2685,7 +2688,7 @@ components:
           default: 0
         max_activations:
           type: ["integer", "null"]
-          description: Maximum concurrent machine activations; null for unlimited
+          description: Maximum concurrent machine activations; null for unlimited (subject to a 1000-machine ceiling per license)
 
     UpdatePolicyRequest:
       type: object
@@ -2714,7 +2717,7 @@ components:
           description: Omitted to keep the current value. Cannot be set to `null`. Live on every validation; edits affect existing licenses immediately.
         max_activations:
           type: ["integer", "null"]
-          description: Omitted to keep the current value. Set to `null` for unlimited activations. Not backfilled to existing licenses; only affects new licenses created after the update.
+          description: Omitted to keep the current value. Set to `null` for unlimited activations (subject to a 1000-machine ceiling per license). Not backfilled to existing licenses; only affects new licenses created after the update.
 
     Product:
       type: object
@@ -2793,7 +2796,7 @@ components:
           description: Read live from the joined policy on every validation.
         max_activations:
           type: ["integer", "null"]
-          description: Policy default for new licenses; null means unlimited. Copied to `licenses.max_activations` at create and not backfilled on policy edit.
+          description: Policy default for new licenses; null means unlimited (subject to a 1000-machine ceiling per license). Copied to `licenses.max_activations` at create and not backfilled on policy edit.
         created_at:
           type: string
           format: date-time
@@ -2833,7 +2836,7 @@ components:
           description: Omitted to keep the current value. Set to `null` for a key that never expires.
         max_activations:
           type: ["integer", "null"]
-          description: Omitted to keep the current value. Set to `null` for unlimited machine activations.
+          description: Omitted to keep the current value. Set to `null` for unlimited machine activations (subject to a 1000-machine ceiling per license).
 
     License:
       type: object
@@ -2897,7 +2900,7 @@ components:
           description: Number of successful validations; failed lookups do not increment this counter
         max_activations:
           type: ["integer", "null"]
-          description: Snapshotted activation limit; null means unlimited
+          description: Snapshotted activation limit; null means unlimited (subject to a 1000-machine ceiling per license)
         activation_count:
           type: integer
           format: int64

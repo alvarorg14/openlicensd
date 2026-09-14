@@ -35,7 +35,7 @@ Pre-freeze hardening before the v1.0 stability promise: true partial PATCH seman
 
 ## v1.0.0 — Commit to stability
 
-Document the API stability and deprecation policy, define the support window, clarify platform scope (Linux binaries), and tag `v1.0.0` plus `sdk/go/v1.0.0`.
+Document the API stability and deprecation policy ([COMPATIBILITY.md](COMPATIBILITY.md)), define the support window, clarify platform scope (Linux binaries), and tag `v1.0.0` plus `sdk/go/v1.0.0`.
 
 ## Post-1.0
 

@@ -9,6 +9,7 @@ on:
       - 'QUICKSTART.md'
       - 'CONTRIBUTING.md'
       - 'CHANGELOG.md'
+      - 'COMPATIBILITY.md'
       - 'SUPPORT.md'
       - '.github/workflows/docs.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'QUICKSTART.md'
       - 'CONTRIBUTING.md'
       - 'CHANGELOG.md'
+      - 'COMPATIBILITY.md'
       - 'SUPPORT.md'
       - '.github/workflows/docs.yml'
   workflow_dispatch:

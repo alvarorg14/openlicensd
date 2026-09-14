@@ -6,6 +6,10 @@ The OpenLicensd HTTP API is documented in [openapi.yaml](openapi.yaml) (OpenAPI 
 
 All API endpoints are served from the root of the server (default `http://localhost:8080`). Versioned routes live under `/api/v1`.
 
+## Stability
+
+From **v1.0.0**, the `/api/v1` HTTP contract follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as defined in [COMPATIBILITY.md](../COMPATIBILITY.md). [openapi.yaml](openapi.yaml) is the source of truth for paths, schemas, and status codes. Pre-1.0 releases did not follow that policy.
+
 ## Authentication
 
 Admin endpoints require a session cookie (`openlicensd_session`) or a scoped API token (`Authorization: Bearer <token>`). Session-based unsafe methods (POST, PATCH, DELETE) also require the `X-CSRF-Token` header matching the `openlicensd_csrf` cookie. Bearer requests do not use CSRF.
@@ -383,7 +387,7 @@ curl -s -b cookies.txt -X POST http://localhost:8080/api/v1/licenses \
 
 The response includes the raw `key` field **once**. Store it securely — it cannot be retrieved later.
 
-You can optionally override the policy-derived expiration with `expires_at` and the activation limit with `max_activations` (null = unlimited). Both values are **snapshotted** onto the license at create and are not updated when the policy changes later.
+You can optionally override the policy-derived expiration with `expires_at` and the activation limit with `max_activations` (`null` = unlimited, subject to a **1000-machine ceiling** per license — see [COMPATIBILITY.md](../COMPATIBILITY.md#unlimited-activations-cap-at-1000-machines)). Both values are **snapshotted** onto the license at create and are not updated when the policy changes later.
 
 ## Example: validate a license
 
@@ -395,7 +399,7 @@ curl -s -X POST http://localhost:8080/api/v1/validate \
   -d '{"key":"X4F9K-7QP2M-3RH8N-BW6TG-YZ2CD","product":"acme-widget","fingerprint":"550e8400-e29b-41d4-a716-446655440000","hostname":"dev-macbook.local"}' | jq
 ```
 
-When the license has `max_activations`, `fingerprint` is required. Known fingerprints reuse a seat; new fingerprints beyond the limit return:
+When the license has `max_activations`, `fingerprint` is required. Known fingerprints reuse a seat; new fingerprints beyond the limit return `activation_limit`. When `max_activations` is `null`, the same reason applies once 1000 active machines are registered. Example with an explicit limit:
 
 ```json
 { "valid": false, "reason": "activation_limit", "activation_count": 2, "max_activations": 2 }
