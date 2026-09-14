@@ -201,4 +201,4 @@ Plan WAF or ingress rules accordingly. License keys are stored as SHA-256 hashes
 - [backup-restore.md](backup-restore.md) — backup strategy and restore verification
 - [upgrade.md](upgrade.md) — upgrade procedure and rollback path
 - [troubleshooting.md](troubleshooting.md) — common failures (OIDC, database, Harbor)
-- [SECURITY.md](../SECURITY.md) — vulnerability reporting and supported versions
+- [SECURITY.md](../SECURITY.md) — vulnerability reporting, supported versions, and EOL schedule

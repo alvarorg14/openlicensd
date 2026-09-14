@@ -18,7 +18,7 @@ From v1.0.0 onward:
 
 Deprecated behavior introduced in a minor release **remains functional through all of 1.x** and is removed only in the next major release.
 
-**Security exception:** When a vulnerability has no compatible fix, a patch release may change behavior in a way that would otherwise require a major bump. Such changes are called out in the release notes and [SECURITY.md](SECURITY.md). This exception does not redefine the support window.
+**Security exception:** When a vulnerability has no compatible fix, a patch release may change behavior in a way that would otherwise require a major bump. Such changes are called out in the release notes and [SECURITY.md](SECURITY.md). Which release lines receive patches is defined in [SECURITY.md — Supported Versions](SECURITY.md#supported-versions); this document defines API shape only.
 
 ## Covered surfaces
 
