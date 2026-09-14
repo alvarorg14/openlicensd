@@ -171,7 +171,7 @@ jobs:
       - name: Build UI and server
         run: make ui && make server
 
-      - name: Run Playwright smoke test
+      - name: Run Playwright E2E tests
         env:
           OPENLICENSD_DATABASE_URL: postgres://openlicensd:openlicensd@localhost:5432/openlicensd?sslmode=disable
           OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: admin@example.com
