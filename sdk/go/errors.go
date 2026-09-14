@@ -9,10 +9,13 @@ import (
 
 // Sentinel errors for errors.Is checks.
 var (
-	ErrRateLimited  = errors.New("openlicensd: rate limited")
-	ErrBadRequest   = errors.New("openlicensd: bad request")
-	ErrUnavailable  = errors.New("openlicensd: service unavailable")
-	ErrInvalidKey   = errors.New("openlicensd: invalid license key format")
+	ErrRateLimited = errors.New("openlicensd: rate limited")
+	ErrBadRequest  = errors.New("openlicensd: bad request")
+	ErrUnavailable = errors.New("openlicensd: service unavailable")
+	// ErrInvalidKey is a sentinel for caller-side ValidateKeyFormat checks.
+	// Validate and ValidateProduct do not return this error; malformed keys are
+	// rejected by the server as Valid=false (typically ReasonInvalid).
+	ErrInvalidKey = errors.New("openlicensd: invalid license key format")
 	ErrInvalidURL   = errors.New("openlicensd: invalid base URL")
 	ErrMissingEnv   = errors.New("openlicensd: missing required environment variable")
 	ErrMissingProduct = errors.New("openlicensd: product is required")

@@ -92,3 +92,57 @@ func TestGuardFirstUnreachable(t *testing.T) {
 		t.Fatal("expected nil guard when first Validate fails")
 	}
 }
+
+func TestGuardStopIdempotent(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(ValidationResult{Valid: true})
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(1, time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	guard, err := NewGuard(ctx, client, "TEST-KEY")
+	if err != nil {
+		t.Fatalf("NewGuard() error: %v", err)
+	}
+
+	guard.Stop()
+	guard.Stop()
+}
+
+func TestGuardValidateProduct(t *testing.T) {
+	var gotProduct string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req validateRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		gotProduct = req.Product
+		_ = json.NewEncoder(w).Encode(ValidationResult{Valid: true, Product: req.Product})
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "acme-widget", WithRetry(1, time.Millisecond))
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	guard, err := NewGuard(ctx, client, "TEST-KEY", WithProduct("other-product"))
+	if err != nil {
+		t.Fatalf("NewGuard() error: %v", err)
+	}
+	defer guard.Stop()
+
+	if gotProduct != "other-product" {
+		t.Fatalf("product = %q, want other-product", gotProduct)
+	}
+}
