@@ -53,7 +53,7 @@ func validationToResponse(result license.ValidationResult) validationResponse {
 
 func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProduct, fingerprint, hostname, clientIP string) (*store.License, license.ValidationResult, error) {
 	keyHash := license.HashKey(rawKey)
-	lic, err := s.store.GetLicenseByKeyHash(ctx, keyHash)
+	lic, err := s.store.GetLicenseByKeyHashForValidation(ctx, keyHash)
 	if err != nil {
 		return nil, license.ValidationResult{}, err
 	}
@@ -70,12 +70,8 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 		lic.DurationDays != nil {
 		expiresAt := license.ComputeExpiry(lic.DurationDays, now)
 		if expiresAt != nil {
-			activated, err := s.store.ActivateLicense(ctx, lic.ID, *expiresAt)
-			if err != nil {
+			if err := s.store.ActivateLicense(ctx, lic, *expiresAt); err != nil {
 				return nil, license.ValidationResult{}, err
-			}
-			if activated != nil {
-				lic = activated
 			}
 		}
 	}
@@ -99,42 +95,38 @@ func (s *Server) resolveValidLicense(ctx context.Context, rawKey, requestedProdu
 
 	if lic.MaxActivations != nil {
 		if fingerprint == "" {
+			lic.ActivationCount, err = s.store.CountActiveMachines(ctx, lic.ID)
+			if err != nil {
+				return nil, license.ValidationResult{}, err
+			}
 			result.Valid = false
 			result.Reason = "fingerprint_required"
 			s.setActivationFields(&result, lic)
 			return lic, result, nil
 		}
 
-		machine, allowed, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, lic.MaxActivations)
+		_, allowed, activeCount, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, lic.MaxActivations)
 		if err != nil {
 			return nil, license.ValidationResult{}, err
 		}
+		lic.ActivationCount = activeCount
 		if !allowed {
 			result.Valid = false
 			result.Reason = "activation_limit"
 			s.setActivationFields(&result, lic)
 			return lic, result, nil
-		}
-		if machine != nil {
-			lic.ActivationCount, err = s.store.CountActiveMachines(ctx, lic.ID)
-			if err != nil {
-				return nil, license.ValidationResult{}, err
-			}
 		}
 	} else if fingerprint != "" {
-		_, allowed, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, nil)
+		_, allowed, activeCount, err := s.store.RecordActivation(ctx, lic.ID, fingerprint, hostname, clientIP, nil)
 		if err != nil {
 			return nil, license.ValidationResult{}, err
 		}
+		lic.ActivationCount = activeCount
 		if !allowed {
 			result.Valid = false
 			result.Reason = "activation_limit"
 			s.setActivationFields(&result, lic)
 			return lic, result, nil
-		}
-		lic.ActivationCount, err = s.store.CountActiveMachines(ctx, lic.ID)
-		if err != nil {
-			return nil, license.ValidationResult{}, err
 		}
 	}
 
