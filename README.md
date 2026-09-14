@@ -119,7 +119,7 @@ built-in billing, or client SDKs beyond Go.
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - **API tokens** — scoped, revocable Bearer credentials for CI, Terraform, and other automation
 - **Audit log** — append-only record of admin mutations (who, what, when, IP) for compliance
-- Single binary distribution with embedded UI
+- Single binary distribution with embedded UI (published releases: Linux amd64/arm64; see [docs/deployment.md](docs/deployment.md#platforms))
 - PostgreSQL storage with automatic migrations
 - Prometheus metrics on a dedicated listener (`/metrics` on `:9090` by default)
 - Helm chart for Kubernetes deployment

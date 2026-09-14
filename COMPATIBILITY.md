@@ -67,7 +67,7 @@ These are part of the v1 stability promise. The HTTP contract is defined in [doc
 - **JSON object key order** — clients must ignore unknown fields
 - **Server Go internals** and the `github.com/alvarorg14/openlicensd/server` module
 - **Rate-limit numeric capacity** as a performance SLA (env var names and the fail-open default *are* covered)
-- **Which OS binaries are published** — see [#127](https://github.com/alvarorg14/openlicensd/issues/127)
+- **Which OS binaries are published** — documented in [docs/deployment.md](docs/deployment.md#platforms) (Linux amd64/arm64 only; expanding the matrix later is additive, not an API change)
 - **Which versions receive security patches** — see [#126](https://github.com/alvarorg14/openlicensd/issues/126)
 
 ## Breaking vs additive changes

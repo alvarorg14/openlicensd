@@ -43,7 +43,7 @@ Maintainers respond on a best-effort basis. Security advisories follow the timel
 Maintainers generally cannot help with:
 
 - Modified forks or unofficial builds
-- Third-party infrastructure beyond the documented [Helm](docs/deployment.md), Docker, and binary deployment paths
+- Third-party infrastructure beyond the documented [Helm](docs/deployment.md), Docker/GHCR, and **Linux** binary deployment paths (see [Platforms](docs/deployment.md#platforms))
 - Custom integrations not covered in the documentation
 
 ## Commercial support

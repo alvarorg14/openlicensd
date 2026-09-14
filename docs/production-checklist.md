@@ -116,7 +116,7 @@ Review on a schedule (for example quarterly) or after significant changes.
 
 - [ ] Read release notes and [CHANGELOG.md](../CHANGELOG.md) before each upgrade
 - [ ] Take `pg_dump` immediately before upgrading (see [upgrade.md](upgrade.md#before-you-upgrade))
-- [ ] Pin target version — Helm `--version X.Y.Z`, image tag `X.Y.Z`
+- [ ] Pin target version — Helm `--version X.Y.Z`, Linux amd64/arm64 image tag `X.Y.Z`, or Linux binary archive matching your node architecture (see [deployment.md](deployment.md#platforms))
 - [ ] Confirm `/readyz` before and after upgrade
 - [ ] Roll back via database restore + previous image if a migration commits and the new version fails
 

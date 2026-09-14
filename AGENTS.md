@@ -4,7 +4,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 ## Project Overview
 
-**OpenLicensd** is an open source license server for creating, managing, and validating license keys. It ships as a single Go binary with an embedded Nuxt admin UI, backed by PostgreSQL.
+**OpenLicensd** is an open source license server for creating, managing, and validating license keys. It ships as a single Go binary with an embedded Nuxt admin UI, backed by PostgreSQL. Published release binaries and container images target **Linux amd64 and arm64** only (see [docs/deployment.md](docs/deployment.md#platforms)); `make build` on other OSes is for local development.
 
 ### Key Purpose
 
@@ -374,7 +374,7 @@ SDK drafts include pull requests that touched SDK-owned paths (`sdk/**`, `docs/s
 
 On GitHub release publish (server tags only — SDK releases are excluded):
 
-- GoReleaser builds binaries and pushes `ghcr.io/alvarorg14/openlicensd` (amd64 + arm64)
+- GoReleaser builds Linux amd64/arm64 binaries and pushes `ghcr.io/alvarorg14/openlicensd` (`linux/amd64`, `linux/arm64`)
 - Release job stamps `docs/openapi.yaml` `info.version` from the tag and attaches it to the GitHub release
 - Syft generates SPDX JSON SBOMs for release archives (via GoReleaser) and GHCR image platforms (uploaded after publish)
 - Cosign signs the published GHCR image digest; `actions/attest` publishes SLSA build provenance to GHCR
