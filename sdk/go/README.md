@@ -137,6 +137,8 @@ if !openlicensd.ValidateKeyFormat(key) {
 }
 ```
 
+The server also normalizes keys before hash lookup on `/validate` and `/registry-credentials`, so client-side normalization is optional for matching but still recommended for local format checks.
+
 ## Cached validation
 
 Reduce server round-trips with a TTL cache over `Validate`:

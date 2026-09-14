@@ -114,7 +114,7 @@ built-in billing, or client SDKs beyond Go.
 - **Max activations** — limit concurrent machines per license key (policy default, per-license override)
 - Machine activation tracking with admin release and rename
 - Public validation endpoint with optional product scoping, machine fingerprint, and grace period support
-- Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`)
+- Human-readable Crockford Base32 key format (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`); validation accepts case- and dash-insensitive Crockford variants
 - Optional Harbor registry credentials endpoint (short-lived robot accounts)
 - Optional OIDC SSO for admin login (Google, Entra ID, Keycloak, Okta, GitLab, and other providers)
 - **API tokens** — scoped, revocable Bearer credentials for CI, Terraform, and other automation
