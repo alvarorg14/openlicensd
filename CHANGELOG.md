@@ -11,28 +11,57 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
-### Documentation
+## [0.9.0] - 2026-09-14
 
-- docs: defer UI typecheck in CI until vue-tsc supports TypeScript 7 (#114)
-- docs: pin deployment examples to semver tags (#247)
-- docs: fix stale SDK admin-auth documentation (#246)
-- docs: add security hardening guide and production checklist (#245)
+### New Features
+
+- feat(api): add GET by id for products, policies, and users (#258)
 
 ### Enhancements
 
-- enhancement(server): replace `OPENLICENSD_DATABASE_URL` with discrete PostgreSQL connection variables (#241, #243, #244)
-- enhancement(ci): rename Go test harness to `OPENLICENSD_TEST_DATABASE_URL` (#242)
+- feat(server): replace database URL with discrete connection variables (#280)
+- enhancement(ui): add confirm dialogs for unrevoke and disable (#277)
+- feat(ui): standardize API errors and add success toasts (#276)
+- perf(server): trim /validate hot path database round-trips (#275)
+- feat(store): add nullable licenses.metadata JSONB column (#274)
+- feat(server): add CHECK constraints for policy and license numeric fields (#273)
+- feat(server): add cleanup indexes for sessions and rate limit buckets (#272)
+- feat(server): audit log DELETE protection and optional retention (#271)
+- feat(server): make postgres rate limit fail-open configurable (#269)
+- feat(server): add HTTP request body size limits (#268)
+- enhancement(server): rename machine path param to machine_id (#257)
+- enhancement(server): rate limit authenticated admin endpoints (#253)
 
 ### Bug Fixes
 
-- fix(api): reject demote/disable/delete of the last admin (#227)
-- fix(server): normalize API response timestamps to RFC3339 strings (#220)
-- fix(server): support true partial PATCH updates for licenses, products, and policies (#218)
+- fix: make BootstrapAdmin idempotent for multi-replica startup (#270)
+- fix(api): revoke sessions on admin password reset (#267)
+- fix(api): reject demote/disable/delete of the last admin (#266)
+- fix(docs): align OpenAPI spec with server implementation (#259)
+- fix(server): normalize API response timestamps to RFC3339 strings (#256)
+- fix(server): support true partial PATCH updates for licenses, products, and policies (#255)
+- fix(api): stabilize GET /auth/me with typed oneOf contract (#254)
 
-### Enhancements
+### Updated Dependencies
 
-- enhancement(server): rename license machine path param from `machineId` to `machine_id` (#221)
-- enhancement(server): rate limit authenticated admin endpoints per user or API token (#176)
+- fix(deps): update module golang.org/x/time to v0.16.0 (#217)
+
+### Documentation
+
+- docs: defer UI typecheck in CI until vue-tsc supports TypeScript 7 (#284)
+- docs: pin deployment examples to semver tags (#283)
+- docs: fix stale SDK admin-auth documentation (#282)
+- docs: add security hardening guide and production checklist (#281)
+- docs: document live vs snapshotted policy fields (#262)
+- docs: freeze and document validation error model (#261)
+- docs: add v0.9.0 hardening phase to ROADMAP (#249)
+
+### CI
+
+- ci(ui): expand Playwright E2E beyond admin happy path (#278)
+- ci(server): add OpenAPI contract test to CI (#260)
+- chore(deps): update module golang.org/x/vuln to v1.8.0 (#250)
+
 ## [0.8.0] - 2026-09-08
 
 ### New Features
