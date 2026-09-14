@@ -43,6 +43,10 @@
     "fullnameOverride": {
       "type": "string"
     },
+    "global": {
+      "type": "object",
+      "additionalProperties": true
+    },
     "serviceAccount": {
       "type": "object",
       "additionalProperties": false,
