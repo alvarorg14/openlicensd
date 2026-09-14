@@ -18,7 +18,16 @@ The SDK covers the **public, unauthenticated** API:
 - `POST /api/v1/registry-credentials` — Harbor credentials (when enabled on the server)
 - `GET /healthz`, `GET /readyz` — health probes
 
-Admin API endpoints (license/product/policy management) are not included. Those require browser session cookies and CSRF tokens.
+Admin API endpoints (license, product, policy, user, and audit management) are **not included in the SDK**. Automate admin operations with the HTTP API using scoped Bearer API tokens (`Authorization: Bearer <token>`) — no CSRF header required. Since v0.8.0, most admin routes accept Bearer tokens with role-based access (`admin`, `operator`, or `viewer`).
+
+Session cookies and CSRF remain required for browser-based admin UI flows and for session-only routes: API token management (`/api/v1/api-tokens`), logout, and password change.
+
+```bash
+curl -s https://licenses.example.com/api/v1/licenses \
+  -H "Authorization: Bearer olsd_..."
+```
+
+See [api.md](../api.md#6-api-tokens-for-automation) for creating tokens, role requirements, and the full endpoint access matrix.
 
 ## Basic usage
 
