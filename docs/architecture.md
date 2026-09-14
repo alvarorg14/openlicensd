@@ -104,10 +104,10 @@ erDiagram
 | `product_id` | `UUID` | FK to `products` |
 | `name` | `TEXT` | Policy name (unique per product) |
 | `description` | `TEXT` | Optional description |
-| `duration_days` | `INTEGER` | Null = perpetual; read **live** from the joined policy on validation (used to set `expires_at` on first validation when basis is `on_first_validation`) |
+| `duration_days` | `INTEGER` | Null = perpetual; `CHECK (duration_days IS NULL OR duration_days >= 1)`; read **live** from the joined policy on validation (used to set `expires_at` on first validation when basis is `on_first_validation`) |
 | `expiration_basis` | `TEXT` | `on_creation` or `on_first_validation`; read **live** while `expires_at` is still unset |
-| `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds; read **live** from the joined policy on every validation |
-| `max_activations` | `INTEGER` | Policy default for new licenses; null = unlimited. Copied to `licenses.max_activations` at create and not backfilled on policy edit |
+| `grace_period_days` | `INTEGER` | Days after expiry when validation still succeeds; `CHECK (grace_period_days >= 0)`; read **live** from the joined policy on every validation |
+| `max_activations` | `INTEGER` | Policy default for new licenses; null = unlimited (`CHECK (max_activations IS NULL OR max_activations >= 1)`). Copied to `licenses.max_activations` at create and not backfilled on policy edit |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | Timestamps |
 
 ### `licenses` table
@@ -125,8 +125,8 @@ erDiagram
 | `revoked` | `BOOLEAN` | Whether the license is revoked |
 | `created_at` | `TIMESTAMPTZ` | Creation timestamp |
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
-| `validation_count` | `BIGINT` | Successful validation count |
-| `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited |
+| `validation_count` | `BIGINT` | Successful validation count (`CHECK (validation_count >= 0)`) |
+| `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited (`CHECK (max_activations IS NULL OR max_activations >= 1)`) |
 
 ### `license_machines` table
 
@@ -140,7 +140,7 @@ erDiagram
 | `first_seen_at` | `TIMESTAMPTZ` | First activation time |
 | `last_seen_at` | `TIMESTAMPTZ` | Last successful validation from this fingerprint |
 | `last_seen_ip` | `TEXT` | Last client IP observed during validation |
-| `validation_count` | `BIGINT` | Validations from this fingerprint |
+| `validation_count` | `BIGINT` | Validations from this fingerprint (`CHECK (validation_count >= 0)`) |
 | `deactivated_at` | `TIMESTAMPTZ` | Set when an operator releases the machine |
 | `deactivated_by` | `UUID` | FK to `users`; operator who released the machine |
 
