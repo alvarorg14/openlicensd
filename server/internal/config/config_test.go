@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -701,5 +702,53 @@ func TestReadTimeoutWhenRequestTimeoutDisabled(t *testing.T) {
 	}
 	if cfg.ReadTimeout() != 60*time.Second {
 		t.Fatalf("read timeout=%s want 60s", cfg.ReadTimeout())
+	}
+}
+
+func TestLoadInvalidBoolEnv(t *testing.T) {
+	setRequiredDatabaseEnv(t)
+	t.Setenv("OPENLICENSD_LOCAL_LOGIN_ENABLED", "no")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatal("expected error for invalid boolean env value")
+	}
+	if !strings.Contains(err.Error(), "OPENLICENSD_LOCAL_LOGIN_ENABLED") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(err.Error(), "must be a boolean") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadInvalidIntEnv(t *testing.T) {
+	setRequiredDatabaseEnv(t)
+	t.Setenv("OPENLICENSD_SESSION_TTL_HOURS", "abc")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatal("expected error for invalid integer env value")
+	}
+	if !strings.Contains(err.Error(), "OPENLICENSD_SESSION_TTL_HOURS") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(err.Error(), "must be an integer") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadInvalidDatabasePortEnv(t *testing.T) {
+	setRequiredDatabaseEnv(t)
+	t.Setenv("OPENLICENSD_DATABASE_PORT", "notaport")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatal("expected error for invalid database port env value")
+	}
+	if !strings.Contains(err.Error(), "OPENLICENSD_DATABASE_PORT") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(err.Error(), "must be an integer") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

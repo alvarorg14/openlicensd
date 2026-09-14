@@ -98,9 +98,8 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	localLoginEnabled := getBoolEnv("OPENLICENSD_LOCAL_LOGIN_ENABLED", true)
-
-	database := loadDatabaseConfig()
+	env := newEnvReader()
+	database := loadDatabaseConfig(env)
 
 	cfg := &Config{
 		Addr:     getEnv("OPENLICENSD_ADDR", ":8080"),
@@ -110,48 +109,48 @@ func Load() (*Config, error) {
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
 			PasswordHash: os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH"),
 		},
-		RequestTimeoutSeconds:         getIntEnv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", 30),
-		RequestBodyMaxBytes:           getIntEnv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", 1048576),
-		SessionTTLHours:               getIntEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
-		SessionCleanupIntervalMinutes: getIntEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
-		AuditRetentionDays:            getIntEnv("OPENLICENSD_AUDIT_RETENTION_DAYS", 0),
-		AuditCleanupIntervalMinutes:   getIntEnv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", 1440),
-		CookieSecure:                  getBoolEnv("OPENLICENSD_COOKIE_SECURE", true),
-		LocalLoginEnabled:             localLoginEnabled,
+		RequestTimeoutSeconds:         env.intEnv("OPENLICENSD_REQUEST_TIMEOUT_SECONDS", 30),
+		RequestBodyMaxBytes:           env.intEnv("OPENLICENSD_REQUEST_BODY_MAX_BYTES", 1048576),
+		SessionTTLHours:               env.intEnv("OPENLICENSD_SESSION_TTL_HOURS", 24),
+		SessionCleanupIntervalMinutes: env.intEnv("OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES", 60),
+		AuditRetentionDays:            env.intEnv("OPENLICENSD_AUDIT_RETENTION_DAYS", 0),
+		AuditCleanupIntervalMinutes:   env.intEnv("OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES", 1440),
+		CookieSecure:                  env.boolEnv("OPENLICENSD_COOKIE_SECURE", true),
+		LocalLoginEnabled:             env.boolEnv("OPENLICENSD_LOCAL_LOGIN_ENABLED", true),
 		TrustedProxies:                parseCSV(os.Getenv("OPENLICENSD_TRUSTED_PROXIES")),
 		Log: LogConfig{
 			Level:  getEnv("OPENLICENSD_LOG_LEVEL", "info"),
 			Format: getEnv("OPENLICENSD_LOG_FORMAT", "json"),
 		},
 		Metrics: MetricsConfig{
-			Enabled: getBoolEnv("OPENLICENSD_METRICS_ENABLED", true),
+			Enabled: env.boolEnv("OPENLICENSD_METRICS_ENABLED", true),
 			Addr:    getEnv("OPENLICENSD_METRICS_ADDR", ":9090"),
 		},
 		RateLimit: RateLimitConfig{
-			Enabled:         getBoolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
-			Backend:         getEnv("OPENLICENSD_RATE_LIMIT_BACKEND", "memory"),
-			FailOpen:        getBoolEnv("OPENLICENSD_RATE_LIMIT_FAIL_OPEN", true),
-			PublicPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
-			PublicBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", 60),
-			LoginPerMinute:         getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
-			LoginBurst:             getIntEnv("OPENLICENSD_RATE_LIMIT_LOGIN_BURST", 10),
-			AuthenticatedPerMinute: getIntEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE", 300),
-			AuthenticatedBurst:     getIntEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST", 60),
-			IdleMinutes:            getIntEnv("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES", 10),
+			Enabled:                env.boolEnv("OPENLICENSD_RATE_LIMIT_ENABLED", true),
+			Backend:                getEnv("OPENLICENSD_RATE_LIMIT_BACKEND", "memory"),
+			FailOpen:               env.boolEnv("OPENLICENSD_RATE_LIMIT_FAIL_OPEN", true),
+			PublicPerMinute:        env.intEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE", 600),
+			PublicBurst:            env.intEnv("OPENLICENSD_RATE_LIMIT_PUBLIC_BURST", 60),
+			LoginPerMinute:         env.intEnv("OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE", 30),
+			LoginBurst:             env.intEnv("OPENLICENSD_RATE_LIMIT_LOGIN_BURST", 10),
+			AuthenticatedPerMinute: env.intEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE", 300),
+			AuthenticatedBurst:     env.intEnv("OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST", 60),
+			IdleMinutes:            env.intEnv("OPENLICENSD_RATE_LIMIT_IDLE_MINUTES", 10),
 		},
 		Harbor: HarborConfig{
-			Enabled:            getBoolEnv("OPENLICENSD_HARBOR_ENABLED", false),
+			Enabled:            env.boolEnv("OPENLICENSD_HARBOR_ENABLED", false),
 			URL:                os.Getenv("OPENLICENSD_HARBOR_URL"),
 			AdminUsername:      os.Getenv("OPENLICENSD_HARBOR_ADMIN_USERNAME"),
 			AdminPassword:      os.Getenv("OPENLICENSD_HARBOR_ADMIN_PASSWORD"),
 			Projects:           parseCSV(os.Getenv("OPENLICENSD_HARBOR_PROJECTS")),
-			RobotDurationDays:  getIntEnv("OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS", 1),
+			RobotDurationDays:  env.intEnv("OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS", 1),
 			RobotNamePrefix:    getEnv("OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX", "openlicensd"),
-			InsecureSkipVerify: getBoolEnv("OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY", false),
-			Debug:              getBoolEnv("OPENLICENSD_HARBOR_DEBUG", false),
+			InsecureSkipVerify: env.boolEnv("OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY", false),
+			Debug:              env.boolEnv("OPENLICENSD_HARBOR_DEBUG", false),
 		},
 		OIDC: OIDCConfig{
-			Enabled:      getBoolEnv("OPENLICENSD_OIDC_ENABLED", false),
+			Enabled:      env.boolEnv("OPENLICENSD_OIDC_ENABLED", false),
 			IssuerURL:    os.Getenv("OPENLICENSD_OIDC_ISSUER_URL"),
 			ClientID:     os.Getenv("OPENLICENSD_OIDC_CLIENT_ID"),
 			ClientSecret: os.Getenv("OPENLICENSD_OIDC_CLIENT_SECRET"),
@@ -161,6 +160,10 @@ func Load() (*Config, error) {
 			ProviderName: getEnv("OPENLICENSD_OIDC_PROVIDER_NAME", "SSO"),
 			AdminEmails:  parseLowerCSV(os.Getenv("OPENLICENSD_OIDC_ADMIN_EMAILS")),
 		},
+	}
+
+	if err := env.Err(); err != nil {
+		return nil, err
 	}
 
 	if err := cfg.Database.validateConnection(); err != nil {
@@ -432,6 +435,42 @@ func parseLowerCSV(value string) []string {
 	return out
 }
 
+type envReader struct {
+	err error
+}
+
+func newEnvReader() *envReader {
+	return &envReader{}
+}
+
+func (r *envReader) Err() error {
+	return r.err
+}
+
+func (r *envReader) boolEnv(key string, fallback bool) bool {
+	if r.err != nil {
+		return fallback
+	}
+	parsed, err := parseBoolEnv(key, fallback)
+	if err != nil {
+		r.err = err
+		return fallback
+	}
+	return parsed
+}
+
+func (r *envReader) intEnv(key string, fallback int) int {
+	if r.err != nil {
+		return fallback
+	}
+	parsed, err := parseIntEnv(key, fallback)
+	if err != nil {
+		r.err = err
+		return fallback
+	}
+	return parsed
+}
+
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
@@ -439,30 +478,28 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getBoolEnv(key string, fallback bool) bool {
+func parseBoolEnv(key string, fallback bool) (bool, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return fallback
+		return fallback, nil
 	}
-
 	parsed, err := strconv.ParseBool(v)
 	if err != nil {
-		return fallback
+		return fallback, fmt.Errorf("%s must be a boolean (true/false/1/0), got %q", key, v)
 	}
-	return parsed
+	return parsed, nil
 }
 
-func getIntEnv(key string, fallback int) int {
+func parseIntEnv(key string, fallback int) (int, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return fallback
+		return fallback, nil
 	}
-
 	parsed, err := strconv.Atoi(v)
 	if err != nil {
-		return fallback
+		return fallback, fmt.Errorf("%s must be an integer, got %q", key, v)
 	}
-	return parsed
+	return parsed, nil
 }
 
 func parseCSV(value string) []string {

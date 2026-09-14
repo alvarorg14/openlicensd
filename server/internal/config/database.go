@@ -7,19 +7,19 @@ import (
 	"strings"
 )
 
-func loadDatabaseConfig() DatabaseConfig {
+func loadDatabaseConfig(env *envReader) DatabaseConfig {
 	return DatabaseConfig{
 		Host:                    os.Getenv("OPENLICENSD_DATABASE_HOST"),
-		Port:                    getIntEnv("OPENLICENSD_DATABASE_PORT", 5432),
+		Port:                    env.intEnv("OPENLICENSD_DATABASE_PORT", 5432),
 		User:                    os.Getenv("OPENLICENSD_DATABASE_USER"),
 		Password:                os.Getenv("OPENLICENSD_DATABASE_PASSWORD"),
 		Name:                    os.Getenv("OPENLICENSD_DATABASE_NAME"),
 		SSLMode:                 getEnv("OPENLICENSD_DATABASE_SSLMODE", "require"),
 		Options:                 os.Getenv("OPENLICENSD_DATABASE_OPTIONS"),
-		MaxConns:                getIntEnv("OPENLICENSD_DATABASE_MAX_CONNS", 0),
-		MinConns:                getIntEnv("OPENLICENSD_DATABASE_MIN_CONNS", 0),
-		MaxConnIdleMinutes:      getIntEnv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", 0),
-		StatementTimeoutSeconds: getIntEnv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", 0),
+		MaxConns:                env.intEnv("OPENLICENSD_DATABASE_MAX_CONNS", 0),
+		MinConns:                env.intEnv("OPENLICENSD_DATABASE_MIN_CONNS", 0),
+		MaxConnIdleMinutes:      env.intEnv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", 0),
+		StatementTimeoutSeconds: env.intEnv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", 0),
 	}
 }
 

@@ -2,6 +2,8 @@
 
 OpenLicensd is configured entirely through environment variables. In Kubernetes, these are set via the Helm chart's `config`, `secret`, and `extraEnv` values.
 
+Unset or empty variables use the documented default. Boolean variables accept `true`, `false`, `1`, or `0` (case-insensitive). Integer variables accept base-10 integers. Invalid boolean or integer values fail startup with `config load failed` instead of silently falling back to the default.
+
 ## Environment variables
 
 ### Core
