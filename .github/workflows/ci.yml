@@ -282,6 +282,15 @@ jobs:
       - name: Template chart
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml > /dev/null
 
+      - name: Assert integer env vars render as decimal strings
+        run: |
+          rendered=$(helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml)
+          echo "$rendered" | grep -q 'OPENLICENSD_REQUEST_BODY_MAX_BYTES: "1048576"'
+          if echo "$rendered" | grep -q 'OPENLICENSD_REQUEST_BODY_MAX_BYTES:.*e+'; then
+            echo "expected decimal OPENLICENSD_REQUEST_BODY_MAX_BYTES, got scientific notation"
+            exit 1
+          fi
+
       - name: Template chart with PDB enabled
         run: helm template test charts/openlicensd -f charts/openlicensd/ci/test-values.yaml --set pdb.enabled=true > /dev/null
 
