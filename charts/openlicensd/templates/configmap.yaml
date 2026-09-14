@@ -6,12 +6,12 @@ metadata:
     {{- include "openlicensd.labels" . | nindent 4 }}
 data:
   OPENLICENSD_ADDR: {{ .Values.config.addr | quote }}
-  OPENLICENSD_SESSION_TTL_HOURS: {{ .Values.config.sessionTTLHours | quote }}
-  OPENLICENSD_REQUEST_TIMEOUT_SECONDS: {{ .Values.config.requestTimeoutSeconds | quote }}
-  OPENLICENSD_REQUEST_BODY_MAX_BYTES: {{ .Values.config.requestBodyMaxBytes | quote }}
-  OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES: {{ .Values.config.sessionCleanupIntervalMinutes | quote }}
-  OPENLICENSD_AUDIT_RETENTION_DAYS: {{ .Values.config.auditRetentionDays | quote }}
-  OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES: {{ .Values.config.auditCleanupIntervalMinutes | quote }}
+  OPENLICENSD_SESSION_TTL_HOURS: {{ include "openlicensd.envInt" .Values.config.sessionTTLHours }}
+  OPENLICENSD_REQUEST_TIMEOUT_SECONDS: {{ include "openlicensd.envInt" .Values.config.requestTimeoutSeconds }}
+  OPENLICENSD_REQUEST_BODY_MAX_BYTES: {{ include "openlicensd.envInt" .Values.config.requestBodyMaxBytes }}
+  OPENLICENSD_SESSION_CLEANUP_INTERVAL_MINUTES: {{ include "openlicensd.envInt" .Values.config.sessionCleanupIntervalMinutes }}
+  OPENLICENSD_AUDIT_RETENTION_DAYS: {{ include "openlicensd.envInt" .Values.config.auditRetentionDays }}
+  OPENLICENSD_AUDIT_CLEANUP_INTERVAL_MINUTES: {{ include "openlicensd.envInt" .Values.config.auditCleanupIntervalMinutes }}
   OPENLICENSD_COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
   OPENLICENSD_LOCAL_LOGIN_ENABLED: {{ .Values.config.localLoginEnabled | quote }}
   OPENLICENSD_LOG_LEVEL: {{ .Values.config.log.level | quote }}
@@ -19,27 +19,27 @@ data:
   OPENLICENSD_METRICS_ENABLED: {{ .Values.config.metrics.enabled | quote }}
   OPENLICENSD_METRICS_ADDR: {{ .Values.config.metrics.addr | quote }}
   OPENLICENSD_DATABASE_HOST: {{ required "config.database.host is required" .Values.config.database.host | quote }}
-  OPENLICENSD_DATABASE_PORT: {{ .Values.config.database.port | quote }}
+  OPENLICENSD_DATABASE_PORT: {{ include "openlicensd.envInt" .Values.config.database.port }}
   OPENLICENSD_DATABASE_USER: {{ required "config.database.user is required" .Values.config.database.user | quote }}
   OPENLICENSD_DATABASE_NAME: {{ required "config.database.name is required" .Values.config.database.name | quote }}
   OPENLICENSD_DATABASE_SSLMODE: {{ .Values.config.database.sslmode | quote }}
   {{- if .Values.config.database.options }}
   OPENLICENSD_DATABASE_OPTIONS: {{ .Values.config.database.options | quote }}
   {{- end }}
-  OPENLICENSD_DATABASE_MAX_CONNS: {{ .Values.config.database.maxConns | quote }}
-  OPENLICENSD_DATABASE_MIN_CONNS: {{ .Values.config.database.minConns | quote }}
-  OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES: {{ .Values.config.database.maxConnIdleMinutes | quote }}
-  OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS: {{ .Values.config.database.statementTimeoutSeconds | quote }}
+  OPENLICENSD_DATABASE_MAX_CONNS: {{ include "openlicensd.envInt" .Values.config.database.maxConns }}
+  OPENLICENSD_DATABASE_MIN_CONNS: {{ include "openlicensd.envInt" .Values.config.database.minConns }}
+  OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES: {{ include "openlicensd.envInt" .Values.config.database.maxConnIdleMinutes }}
+  OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS: {{ include "openlicensd.envInt" .Values.config.database.statementTimeoutSeconds }}
   OPENLICENSD_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
   OPENLICENSD_RATE_LIMIT_ENABLED: {{ .Values.config.rateLimit.enabled | quote }}
   OPENLICENSD_RATE_LIMIT_BACKEND: {{ .Values.config.rateLimit.backend | quote }}
-  OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ .Values.config.rateLimit.publicPerMinute | quote }}
-  OPENLICENSD_RATE_LIMIT_PUBLIC_BURST: {{ .Values.config.rateLimit.publicBurst | quote }}
-  OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE: {{ .Values.config.rateLimit.loginPerMinute | quote }}
-  OPENLICENSD_RATE_LIMIT_LOGIN_BURST: {{ .Values.config.rateLimit.loginBurst | quote }}
-  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE: {{ .Values.config.rateLimit.authenticatedPerMinute | quote }}
-  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST: {{ .Values.config.rateLimit.authenticatedBurst | quote }}
-  OPENLICENSD_RATE_LIMIT_IDLE_MINUTES: {{ .Values.config.rateLimit.idleMinutes | quote }}
+  OPENLICENSD_RATE_LIMIT_PUBLIC_PER_MINUTE: {{ include "openlicensd.envInt" .Values.config.rateLimit.publicPerMinute }}
+  OPENLICENSD_RATE_LIMIT_PUBLIC_BURST: {{ include "openlicensd.envInt" .Values.config.rateLimit.publicBurst }}
+  OPENLICENSD_RATE_LIMIT_LOGIN_PER_MINUTE: {{ include "openlicensd.envInt" .Values.config.rateLimit.loginPerMinute }}
+  OPENLICENSD_RATE_LIMIT_LOGIN_BURST: {{ include "openlicensd.envInt" .Values.config.rateLimit.loginBurst }}
+  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_PER_MINUTE: {{ include "openlicensd.envInt" .Values.config.rateLimit.authenticatedPerMinute }}
+  OPENLICENSD_RATE_LIMIT_AUTHENTICATED_BURST: {{ include "openlicensd.envInt" .Values.config.rateLimit.authenticatedBurst }}
+  OPENLICENSD_RATE_LIMIT_IDLE_MINUTES: {{ include "openlicensd.envInt" .Values.config.rateLimit.idleMinutes }}
   OPENLICENSD_RATE_LIMIT_FAIL_OPEN: {{ .Values.config.rateLimit.failOpen | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL: {{ .Values.config.bootstrapAdmin.email | quote }}
   OPENLICENSD_BOOTSTRAP_ADMIN_NAME: {{ .Values.config.bootstrapAdmin.name | quote }}
@@ -47,7 +47,7 @@ data:
   {{- if .Values.config.harbor.enabled }}
   OPENLICENSD_HARBOR_URL: {{ required "config.harbor.url is required when config.harbor.enabled is true" .Values.config.harbor.url | quote }}
   OPENLICENSD_HARBOR_PROJECTS: {{ required "config.harbor.projects is required when config.harbor.enabled is true" .Values.config.harbor.projects | quote }}
-  OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS: {{ .Values.config.harbor.robotDurationDays | quote }}
+  OPENLICENSD_HARBOR_ROBOT_DURATION_DAYS: {{ include "openlicensd.envInt" .Values.config.harbor.robotDurationDays }}
   OPENLICENSD_HARBOR_ROBOT_NAME_PREFIX: {{ .Values.config.harbor.robotNamePrefix | quote }}
   OPENLICENSD_HARBOR_INSECURE_SKIP_VERIFY: {{ .Values.config.harbor.insecureSkipVerify | quote }}
   OPENLICENSD_HARBOR_DEBUG: {{ .Values.config.harbor.debug | quote }}

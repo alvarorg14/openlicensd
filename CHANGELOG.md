@@ -25,6 +25,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Bug Fixes
 
+- fix(helm): render integer ConfigMap env vars as decimal strings so large values (e.g. `requestBodyMaxBytes: 1048576`) are not quoted in scientific notation
 - fix(helm): allow `global` in values schema so the chart works as a subchart in umbrella and Argo CD proxy charts
 - fix(config): fail startup on invalid boolean and integer env values instead of silently using defaults (#290)
 - fix(oidc): require verified email before SSO provisioning and account linking (#289)

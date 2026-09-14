@@ -52,3 +52,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "openlicensd.configMapName" -}}
 {{- printf "%s-config" (include "openlicensd.fullname" .) }}
 {{- end }}
+
+{{- define "openlicensd.envInt" -}}
+{{- printf "%d" (. | int64) | quote }}
+{{- end }}
