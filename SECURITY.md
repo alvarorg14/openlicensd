@@ -2,14 +2,44 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities. Which versions are eligible for receiving such patches depends on the CVSS v3.0 Rating:
+OpenLicensd is volunteer-maintained. There is **no SLA** for security patches — the table below describes which release lines are eligible for fixes, not when a fix will ship. For general support expectations, see [SUPPORT.md](SUPPORT.md). For API compatibility (what changes in a patch vs minor vs major), see [COMPATIBILITY.md](COMPATIBILITY.md).
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.x.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+### GitHub policy snapshot
 
-The latest release is always recommended. Older 0.x releases may not receive backports unless the vulnerability is critical.
+| Version | Supported |
+| ------- | --------- |
+| 1.x (when published) | :white_check_mark: — latest 1.x release |
+| 0.x | :white_check_mark: until `v1.0.0` is published; EOL after that |
+| < 0.1 | :x: |
+
+The latest release on each supported line is always recommended.
+
+### Until `v1.0.0` is published
+
+- **Server / Helm** — the [latest `0.x` release](https://github.com/alvarorg14/openlicensd/releases) (`vX.Y.Z` tags). Helm chart `X.Y.Z` is stamped from the same tag.
+- **Go SDK** — the latest `sdk/go/v0.x` release, versioned independently.
+- **Older 0.x minors** — no dedicated backport train; maintainers may patch an older minor at their discretion for critical issues only.
+
+### From `v1.0.0` (server) / `sdk/go/v1.0.0` (SDK)
+
+| Line | Security patches | Bug fixes | Notes |
+|------|------------------|-----------|-------|
+| **Latest 1.x** (`v1.x.y`, Helm `X.Y.Z` from the same tag) | Yes | Yes | Recommended production line. Patches land on the latest 1.x patch of the latest 1.x minor. |
+| **Older 1.x minors** (e.g. stay on `1.0` after `1.1`) | No dedicated backport train | No | Upgrade the minor — 1.x is backward compatible per [COMPATIBILITY.md](COMPATIBILITY.md). |
+| **0.x** | No | No | **EOL** on the day `v1.0.0` is published. Historical tags remain downloadable. |
+| **Previous major after a new major** (e.g. `1.x` after `v2.0.0`) | Security-only for **12 months** from the new major's publish date | No | Then EOL. The exact end date is announced in this file and the new major's release notes. |
+
+The **Go SDK** follows the same table on its own tag series (`sdk/go/v1.x` when `sdk/go/v1.0.0` exists; `sdk/go/v0.x` EOL on that day). SDK vs server API pairing is documented in [docs/sdk/go.md](docs/sdk/go.md).
+
+**Helm** is not a separate support line — chart version tracks the server release.
+
+**What “v1 LTS” means:** the entire `1.x` major is the long-lived line (API stable per COMPATIBILITY.md, security and bugfix patches on the latest 1.x) until `v2.0.0`, then 12 months of security-only patches on `1.x`. It is **not** a freeze of `1.0.0` forever, and it is **not** a commercial SLA.
+
+### End-of-life
+
+- **0.x** — EOL when `v1.0.0` is published. Upgrade via [docs/upgrade.md](docs/upgrade.md) before that date.
+- **Previous major** — when a new major is published (e.g. `v2.0.0`), the prior major receives security-only patches for 12 months, then EOL.
+- **EOL releases** — tags and container images remain on GitHub/GHCR; they receive no further patches.
 
 ## Reporting a Vulnerability
 
@@ -77,7 +107,7 @@ Quick reference:
 
 Security updates will be:
 
-- Released as patch versions (e.g., 0.1.1, 0.1.2)
+- Released as patch versions (e.g., `1.0.1`, `1.1.3`)
 - Announced via GitHub releases
 - Tagged with `security` label where applicable
 

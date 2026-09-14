@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Documentation
 
+- docs: define support window, EOL schedule, and v1 LTS policy in SECURITY.md (#126)
 - docs: add API stability and deprecation policy (COMPATIBILITY.md) (#125)
 
 ### Bug Fixes

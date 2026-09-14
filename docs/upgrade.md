@@ -17,6 +17,8 @@ This runbook covers upgrade steps for Helm, Docker Compose, single-container, an
 
 For HA, replica-count, and rate-limiting caveats during multi-replica deployments, see [scaling.md](scaling.md).
 
+When `v1.0.0` is published, the `0.x` release line is end-of-life — plan to upgrade before that date. See [SECURITY.md](../SECURITY.md#supported-versions) and [SUPPORT.md](../SUPPORT.md#supported-versions).
+
 ## Upgrading to v0.9.0 — discrete database configuration
 
 OpenLicensd v0.9.0 removes `OPENLICENSD_DATABASE_URL`. Configure PostgreSQL with discrete variables instead:

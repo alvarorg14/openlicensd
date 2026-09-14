@@ -15,14 +15,20 @@ When opening a bug report, include your OpenLicensd version, deployment method, 
 
 ## Supported versions
 
-OpenLicensd is pre-1.0. There is no long-term support (LTS) commitment yet — that will be defined as part of the v1.0 release.
+Run a release on a supported line. The canonical policy — including end-of-life dates and what “v1 LTS” means — is [SECURITY.md — Supported Versions](SECURITY.md#supported-versions).
 
-Until then:
+**Until `v1.0.0` is published:**
 
-- **Server** — use the [latest published release](https://github.com/alvarorg14/openlicensd/releases) (`vX.Y.Z` tags).
-- **Go SDK** — use the latest published SDK release (`sdk/go/vX.Y.Z` tags), versioned independently from the server.
+- **Server / Helm** — [latest `0.x` release](https://github.com/alvarorg14/openlicensd/releases) (`vX.Y.Z` tags).
+- **Go SDK** — latest `sdk/go/v0.x` release, versioned independently from the server.
 
-For which versions receive security patches, see [SECURITY.md — Supported Versions](SECURITY.md#supported-versions).
+**From `v1.0.0` / `sdk/go/v1.0.0`:**
+
+- **Latest 1.x** is the recommended production line (security and bugfix patches).
+- **0.x** is end-of-life — upgrade via [docs/upgrade.md](docs/upgrade.md).
+- **Older 1.x minors** do not receive a dedicated backport train; upgrade to the latest 1.x minor (additive per [COMPATIBILITY.md](COMPATIBILITY.md)).
+
+There is no commercial SLA or paid long-term support. “v1 LTS” means the entire `1.x` major receives patches until `v2.0.0`, then 12 months of security-only patches — not a freeze of `1.0.0` forever.
 
 For API stability, SemVer scope, and the deprecation process from v1.0.0 onward, see [COMPATIBILITY.md](COMPATIBILITY.md).
 

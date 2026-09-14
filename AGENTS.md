@@ -463,4 +463,4 @@ SDK and server versions are independent. Server tags use a `v` prefix (`v0.5.0`)
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributor workflow
 - [COMPATIBILITY.md](COMPATIBILITY.md) — API stability and deprecation policy
 - [SUPPORT.md](SUPPORT.md) — Support channels and version guidance
-- [SECURITY.md](SECURITY.md) — Security policy and vulnerability reporting
+- [SECURITY.md](SECURITY.md) — Security policy, supported versions, EOL schedule, and vulnerability reporting

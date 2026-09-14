@@ -136,8 +136,9 @@ Review on a schedule (for example quarterly) or after significant changes.
 
 ### Security maintenance
 
-- [ ] Upgrade OpenLicensd to the latest patch release
-- [ ] Review [SECURITY.md](../SECURITY.md) supported versions policy
+- [ ] Run a supported release line — latest `0.x` until `v1.0.0` ships, then latest `1.x` (see [SECURITY.md](../SECURITY.md#supported-versions))
+- [ ] Upgrade OpenLicensd to the latest patch on that line
+- [ ] Review [SECURITY.md](../SECURITY.md) supported versions and EOL policy
 - [ ] Re-verify Cosign signatures when deploying new image digests
 
 ## Related

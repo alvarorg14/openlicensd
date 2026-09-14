@@ -20,7 +20,8 @@ Published site: **https://alvarorg14.github.io/openlicensd/**
 | [troubleshooting.md](troubleshooting.md) | Common failures: database, migrations, OIDC, and Harbor |
 | [CHANGELOG.md](../CHANGELOG.md) | Server version history (Keep a Changelog) |
 | [COMPATIBILITY.md](../COMPATIBILITY.md) | API stability, SemVer scope, and deprecation policy (from v1.0.0) |
-| [SUPPORT.md](../SUPPORT.md) | Support channels, supported versions, and response expectations |
+| [SUPPORT.md](../SUPPORT.md) | Support channels, supported versions, EOL/LTS summary, and response expectations |
+| [SECURITY.md](../SECURITY.md) | Vulnerability reporting and canonical supported-versions policy (GitHub Security tab) |
 
 ## Quick links
 

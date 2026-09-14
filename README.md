@@ -319,7 +319,7 @@ Contributions are welcome! Issues and pull requests help make this project bette
 
 If you discover a security vulnerability, please report it via a private GitHub security advisory. Do **not** open a public issue.
 
-See [SECURITY.md](SECURITY.md) for the full security policy.
+See [SECURITY.md](SECURITY.md) for the full security policy, including [which versions receive security patches](SECURITY.md#supported-versions).
 
 For production deployment hardening and go-live checklists, see [docs/security-hardening.md](docs/security-hardening.md) and [docs/production-checklist.md](docs/production-checklist.md).
 
