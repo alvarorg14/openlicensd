@@ -13,6 +13,8 @@ Choose one deployment path:
 | **Docker** | [Docker](https://docs.docker.com/get-docker/), a PostgreSQL instance |
 | **Local dev** | Go 1.26+, Node.js 24+, Docker (for PostgreSQL) |
 
+Published server binaries and container images are **Linux amd64 and arm64** only. Helm and Docker paths inherit that platform scope. See [docs/deployment.md](docs/deployment.md#platforms).
+
 ## Helm (production)
 
 Container images are published to `ghcr.io/alvarorg14/openlicensd`. The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
@@ -126,7 +128,7 @@ Open http://localhost:8080.
 
 ## Binary
 
-Download from [GitHub Releases](https://github.com/alvarorg14/openlicensd/releases) or build from source:
+Download a **Linux amd64 or arm64** archive from [GitHub Releases](https://github.com/alvarorg14/openlicensd/releases), or build from source for local development on any OS:
 
 ```bash
 make build

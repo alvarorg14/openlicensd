@@ -1,6 +1,6 @@
 # Go SDK
 
-The official Go client for integrating OpenLicensd license validation into CLIs, APIs, and services.
+The official Go client for integrating OpenLicensd license validation into CLIs, APIs, and services. The SDK runs on any GOOS/GOARCH supported by Go 1.26+; the **server** publishes Linux amd64/arm64 binaries and images only (see [deployment.md](../deployment.md#platforms)).
 
 ## Install
 

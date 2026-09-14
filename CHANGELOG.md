@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Documentation
 
+- docs: document Linux amd64/arm64 platform scope for published server artifacts (#127)
 - docs: define support window, EOL schedule, and v1 LTS policy in SECURITY.md (#126)
 - docs: add API stability and deprecation policy (COMPATIBILITY.md) (#125)
 

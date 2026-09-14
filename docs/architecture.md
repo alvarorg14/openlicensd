@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpenLicensd is a single-binary license server with an embedded admin UI. It exposes a REST API for license management and public validation, backed by PostgreSQL.
+OpenLicensd is a single-binary license server with an embedded admin UI. It exposes a REST API for license management and public validation, backed by PostgreSQL. Published release binaries and container images target **Linux amd64 and arm64** (see [deployment.md](deployment.md#platforms)).
 
 ```mermaid
 flowchart TB

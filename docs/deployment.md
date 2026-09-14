@@ -4,6 +4,22 @@ OpenLicensd can be deployed as a Helm chart on Kubernetes, as a Docker container
 
 For production security guidance, see [security-hardening.md](security-hardening.md) and the [production-checklist.md](production-checklist.md).
 
+## Platforms
+
+OpenLicensd publishes **Linux amd64 and arm64** server artifacts. GoReleaser ([`.goreleaser.yaml`](../.goreleaser.yaml)) builds `linux/amd64` and `linux/arm64` release archives only â€” there are no published darwin or Windows binaries.
+
+| Artifact | Production support |
+|----------|-------------------|
+| GitHub release archives | **Linux amd64 and arm64** (`openlicensd_*_linux_amd64.tar.gz`, `openlicensd_*_linux_arm64.tar.gz`) |
+| GHCR container image | **linux/amd64**, **linux/arm64** |
+| Helm chart (OCI) | Runs wherever those images run (Linux nodes) |
+| `make build` / `go build` from source | Works on macOS and Windows for **local development**; those binaries are not published and are not a supported production path |
+| Go SDK ([docs/sdk/go.md](sdk/go.md)) | Any GOOS/GOARCH supported by Go 1.26+; not bound to the server OS matrix |
+
+PostgreSQL **16+** is required regardless of host OS.
+
+Adding darwin or Windows release archives in a future version would be additive (new artifacts), not an API-breaking change. There is no commitment to do so for v1.0.
+
 ## Helm (recommended)
 
 Container images are published to `ghcr.io/alvarorg14/openlicensd` on release (image tags: `X.Y.Z`, `X.Y`, `latest`; git tags: `vX.Y.Z`). The Helm chart is published to `oci://ghcr.io/alvarorg14/charts/openlicensd`.
@@ -303,7 +319,7 @@ The production image is built from a multi-stage Dockerfile (Node 24 UI build â†
 
 ## Binary
 
-Download a release binary from [GitHub Releases](https://github.com/alvarorg14/openlicensd/releases) or build from source:
+Download a **Linux amd64 or arm64** release archive from [GitHub Releases](https://github.com/alvarorg14/openlicensd/releases) or build from source for local development:
 
 ```bash
 make build
@@ -369,7 +385,7 @@ curl -s -o /dev/null -w "%{http_code}\n" localhost:8080/readyz
 
 ## Releases
 
-Server version history lives in [CHANGELOG.md](../CHANGELOG.md). Publish a GitHub release to trigger cross-platform binaries, Docker images, and Helm chart packaging:
+Server version history lives in [CHANGELOG.md](../CHANGELOG.md). Publish a GitHub release to trigger Linux amd64/arm64 binaries, Docker images, and Helm chart packaging:
 
 ```bash
 gh release create vX.Y.Z --generate-notes
