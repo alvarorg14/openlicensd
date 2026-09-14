@@ -135,6 +135,16 @@
       :loading="deleting"
       @confirm="confirmDelete"
     />
+
+    <ConfirmModal
+      v-model:open="showDisableConfirm"
+      title="Disable user"
+      :description="disableConfirmDescription"
+      confirm-label="Disable"
+      confirm-color="error"
+      :loading="disabling"
+      @confirm="confirmDisable"
+    />
   </UContainer>
 </template>
 
@@ -174,9 +184,12 @@ const editingUser = ref<User | null>(null)
 const detailsUser = ref<User | null>(null)
 const resetTarget = ref<User | null>(null)
 const showDeleteConfirm = ref(false)
+const showDisableConfirm = ref(false)
 const deleteTarget = ref<User | null>(null)
+const disableTarget = ref<User | null>(null)
 const actionId = ref<string | null>(null)
 const deleting = ref(false)
+const disabling = ref(false)
 
 const columns = [
   { accessorKey: 'name', header: 'Name', enableSorting: true },
@@ -211,6 +224,11 @@ const deleteConfirmDescription = computed(() => {
   return `Are you sure you want to delete "${name}"? This cannot be undone.`
 })
 
+const disableConfirmDescription = computed(() => {
+  const name = disableTarget.value?.name ?? 'this user'
+  return `Are you sure you want to disable "${name}"? They will no longer be able to sign in.`
+})
+
 const openCreate = () => {
   editingUser.value = null
   showForm.value = true
@@ -229,6 +247,11 @@ const openDetails = (user: User) => {
 const openDelete = (user: User) => {
   deleteTarget.value = user
   showDeleteConfirm.value = true
+}
+
+const openDisable = (user: User) => {
+  disableTarget.value = user
+  showDisableConfirm.value = true
 }
 
 const openReset = (user: User) => {
@@ -250,14 +273,14 @@ const getActionItems = (user: User): DropdownMenuItem[][] => {
       menuItems.push({
         label: 'Enable',
         icon: 'i-lucide-user-check',
-        onSelect: () => toggleDisabled(user, false)
+        onSelect: () => toggleDisabled(user)
       })
     } else {
       menuItems.push({
         label: 'Disable',
         icon: 'i-lucide-user-x',
         color: 'warning',
-        onSelect: () => toggleDisabled(user, true)
+        onSelect: () => openDisable(user)
       })
     }
   }
@@ -275,20 +298,37 @@ const getActionItems = (user: User): DropdownMenuItem[][] => {
   return destructive.length > 0 ? [menuItems, destructive] : [menuItems]
 }
 
-const toggleDisabled = async (user: User, disable: boolean) => {
+const toggleDisabled = async (user: User) => {
   actionId.value = user.id
   try {
-    if (disable) {
-      await disableUser(user.id)
-    } else {
-      await enableUser(user.id)
-    }
-    toastSuccess(disable ? 'User disabled' : 'User enabled')
+    await enableUser(user.id)
+    toastSuccess('User enabled')
     await refresh()
   } catch (err) {
-    error.value = getApiErrorMessage(err, disable ? 'Failed to disable user' : 'Failed to enable user')
+    error.value = getApiErrorMessage(err, 'Failed to enable user')
   } finally {
     actionId.value = null
+  }
+}
+
+const confirmDisable = async () => {
+  if (!disableTarget.value) {
+    return
+  }
+
+  actionId.value = disableTarget.value.id
+  disabling.value = true
+  try {
+    await disableUser(disableTarget.value.id)
+    showDisableConfirm.value = false
+    toastSuccess('User disabled')
+    await refresh()
+  } catch (err) {
+    error.value = getApiErrorMessage(err, 'Failed to disable user')
+  } finally {
+    actionId.value = null
+    disabling.value = false
+    disableTarget.value = null
   }
 }
 

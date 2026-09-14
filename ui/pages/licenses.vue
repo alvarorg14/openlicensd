@@ -271,6 +271,16 @@
       :loading="actionType === 'delete'"
       @confirm="confirmDelete"
     />
+
+    <ConfirmModal
+      v-model:open="showUnrevokeConfirm"
+      title="Unrevoke license"
+      :description="unrevokeConfirmDescription"
+      confirm-label="Unrevoke"
+      confirm-color="primary"
+      :loading="actionType === 'unrevoke'"
+      @confirm="confirmUnrevoke"
+    />
   </UContainer>
 </template>
 
@@ -327,6 +337,7 @@ const showKeyModal = ref(false)
 const showDetails = ref(false)
 const showRevokeConfirm = ref(false)
 const showDeleteConfirm = ref(false)
+const showUnrevokeConfirm = ref(false)
 const showMachines = ref(false)
 const createdKey = ref('')
 const createdLabel = ref('')
@@ -486,6 +497,11 @@ const deleteConfirmDescription = computed(() => {
   return `Are you sure you want to permanently delete "${label}"? This action cannot be undone.`
 })
 
+const unrevokeConfirmDescription = computed(() => {
+  const label = confirmTarget.value?.label ?? 'this license'
+  return `Are you sure you want to unrevoke "${label}"? The key will become valid again.`
+})
+
 const fetchStats = async () => {
   try {
     stats.value = await getLicenseStats()
@@ -540,7 +556,7 @@ const getActionItems = (license: License): DropdownMenuItem[][] => {
       label: 'Unrevoke',
       icon: 'i-lucide-check',
       color: 'success',
-      onSelect: () => unrevoke(license.id)
+      onSelect: () => openUnrevokeConfirm(license)
     })
   }
 
@@ -587,6 +603,11 @@ const openDeleteConfirm = (license: License) => {
   showDeleteConfirm.value = true
 }
 
+const openUnrevokeConfirm = (license: License) => {
+  confirmTarget.value = license
+  showUnrevokeConfirm.value = true
+}
+
 const confirmRevoke = async () => {
   if (!confirmTarget.value) {
     return
@@ -629,11 +650,16 @@ const confirmDelete = async () => {
   }
 }
 
-const unrevoke = async (id: string) => {
-  actionId.value = id
+const confirmUnrevoke = async () => {
+  if (!confirmTarget.value) {
+    return
+  }
+
+  actionId.value = confirmTarget.value.id
   actionType.value = 'unrevoke'
   try {
-    await unrevokeLicense(id)
+    await unrevokeLicense(confirmTarget.value.id)
+    showUnrevokeConfirm.value = false
     toastSuccess('License unrevoked')
     await reload()
   } catch (err) {
@@ -641,6 +667,7 @@ const unrevoke = async (id: string) => {
   } finally {
     actionId.value = null
     actionType.value = null
+    confirmTarget.value = null
   }
 }
 
