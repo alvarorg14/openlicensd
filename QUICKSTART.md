@@ -8,7 +8,7 @@ Choose one deployment path:
 
 | Path | Requirements |
 |------|-------------|
-| **Helm** | Kubernetes cluster, [Helm 3](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/) |
+| **Helm** | Kubernetes cluster, [Helm 3](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/), PostgreSQL 16+ |
 | **Docker Compose** | [Docker](https://docs.docker.com/get-docker/), [Docker Compose](https://docs.docker.com/compose/) |
 | **Docker** | [Docker](https://docs.docker.com/get-docker/), a PostgreSQL instance |
 | **Local dev** | Go 1.26+, Node.js 24+, Docker (for PostgreSQL) |
@@ -25,16 +25,22 @@ helm install openlicensd oci://ghcr.io/alvarorg14/charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
   --set config.bootstrapAdmin.email=admin@example.com \
-  --set secret.data.databaseUrl="postgres://user:pass@host:5432/openlicensd?sslmode=require" \
+  --set config.database.host=postgres.example.com \
+  --set config.database.port=5432 \
+  --set config.database.name=openlicensd \
+  --set config.database.user=openlicensd \
+  --set config.database.sslmode=require \
+  --set secret.data.databasePassword='change-me' \
   --set secret.data.bootstrapAdminPasswordHash="$(make hash-password PASSWORD=yourpassword)"
 ```
 
-Or install from the chart source:
+Or install from the chart source (set `image.tag` — git `Chart.yaml` uses a `0.0.0-dev` placeholder):
 
 ```bash
 helm install openlicensd ./charts/openlicensd \
   --namespace openlicensd \
   --create-namespace \
+  --set image.tag=X.Y.Z \
   -f my-values.yaml
 ```
 

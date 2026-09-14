@@ -71,7 +71,7 @@ OpenLicensd exits with code `1` on any fatal startup error. The process never bi
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `config load failed` + `OPENLICENSD_DATABASE_HOST is required` | Missing database host | Set `OPENLICENSD_DATABASE_HOST` (and `USER`, `NAME`; or Helm `config.database.*`) |
+| `config load failed` + `OPENLICENSD_DATABASE_HOST is required` | Missing database host | Set `OPENLICENSD_DATABASE_HOST` (and `USER`, `NAME`; or Helm `config.database.*` + `secret.data.databasePassword`). The removed `secret.data.databaseUrl` key is rejected by the chart schema — see [upgrade.md](upgrade.md#upgrading-to-v090--discrete-database-configuration) |
 | `config load failed` + validation error on pool settings | Invalid `OPENLICENSD_DATABASE_MIN_CONNS` / `MAX_CONNS` | Fix pool env vars; see [configuration.md](configuration.md) |
 | `config load failed` + `at least one login method must be enabled` | Both local login and OIDC disabled | Set `OPENLICENSD_LOCAL_LOGIN_ENABLED=true` or `OPENLICENSD_OIDC_ENABLED=true` |
 | `store init failed` | Database unreachable, auth failure, or migration error | See [Database connectivity](#database-connectivity) and [Migration failures and locks](#migration-failures-and-locks) |
