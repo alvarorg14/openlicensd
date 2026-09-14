@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Documentation
 
+- docs: defer UI typecheck in CI until vue-tsc supports TypeScript 7 (#114)
 - docs: pin deployment examples to semver tags (#247)
 - docs: fix stale SDK admin-auth documentation (#246)
 - docs: add security hardening guide and production checklist (#245)
