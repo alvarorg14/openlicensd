@@ -13,6 +13,7 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Bug Fixes
 
+- fix(config): fail startup on invalid boolean and integer env values instead of silently using defaults (#290)
 - fix(oidc): require verified email before SSO provisioning and account linking (#289)
 - fix(store): make last-admin demote/disable/delete atomic (#287)
 
