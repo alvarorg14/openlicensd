@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -24,10 +23,7 @@ var testRemoteAddrCounter atomic.Int64
 func setupRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) http.Handler {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	cfg := &config.Config{
 		Addr:              ":8080",
@@ -102,10 +98,7 @@ func tightAuthenticatedRateLimitConfig() config.RateLimitConfig {
 func setupAuthenticatedRateLimitTestEnv(t *testing.T, rateLimit config.RateLimitConfig) testEnv {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	passwordHash, err := auth.HashPassword("test-password")
 	if err != nil {
@@ -292,10 +285,7 @@ func TestRateLimitPostgresBackendReturns429(t *testing.T) {
 }
 
 func TestRateLimitPostgresBackendSharedBudgetAcrossReplicas(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	cfg := &config.Config{
 		Addr:              ":8080",
@@ -434,7 +424,7 @@ func TestRateLimitAuthenticatedPostgresSharedBudgetAcrossReplicas(t *testing.T) 
 	ctx := context.Background()
 	cfg := &config.Config{
 		Addr:              ":8080",
-		DatabaseURL:       os.Getenv("OPENLICENSD_DATABASE_URL"),
+		DatabaseURL:       config.TestDatabaseURL(t),
 		SessionTTLHours:   24,
 		CookieSecure:      false,
 		LocalLoginEnabled: true,

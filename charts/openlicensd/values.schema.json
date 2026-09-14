@@ -280,6 +280,26 @@
         "database": {
           "type": "object",
           "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "name": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
+            },
+            "sslmode": {
+              "type": "string"
+            },
+            "options": {
+              "type": "string"
+            },
             "maxConns": {
               "type": "integer",
               "minimum": 0
@@ -397,7 +417,7 @@
         "data": {
           "type": "object",
           "properties": {
-            "databaseUrl": {
+            "databasePassword": {
               "type": "string"
             },
             "bootstrapAdminPasswordHash": {

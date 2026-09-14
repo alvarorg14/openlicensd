@@ -193,7 +193,12 @@ result, _ := client.Validate(ctx, licenseKey)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | HTTP listen address |
-| `OPENLICENSD_DATABASE_URL` | *(required)* | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_HOST` | *(required)* | PostgreSQL host |
+| `OPENLICENSD_DATABASE_PORT` | `5432` | PostgreSQL port |
+| `OPENLICENSD_DATABASE_USER` | *(required)* | PostgreSQL user |
+| `OPENLICENSD_DATABASE_PASSWORD` | — | PostgreSQL password |
+| `OPENLICENSD_DATABASE_NAME` | *(required)* | PostgreSQL database name |
+| `OPENLICENSD_DATABASE_SSLMODE` | `require` | PostgreSQL `sslmode` |
 | `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | Maximum pool connections (`0` = pgx default) |
 | `OPENLICENSD_DATABASE_MIN_CONNS` | `0` | Minimum pool connections (`0` = pgx default) |
 | `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | Idle connection lifetime in minutes (`0` = pgx default) |

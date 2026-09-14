@@ -11,6 +11,11 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ## [Unreleased]
 
+### Enhancements
+
+- enhancement(server): replace `OPENLICENSD_DATABASE_URL` with discrete PostgreSQL connection variables (#241, #243, #244)
+- enhancement(ci): rename Go test harness to `OPENLICENSD_TEST_DATABASE_URL` (#242)
+
 ### Bug Fixes
 
 - fix(api): reject demote/disable/delete of the last admin (#227)

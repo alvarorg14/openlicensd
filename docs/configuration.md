@@ -9,7 +9,13 @@ OpenLicensd is configured entirely through environment variables. In Kubernetes,
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `OPENLICENSD_ADDR` | `:8080` | No | HTTP listen address |
-| `OPENLICENSD_DATABASE_URL` | — | **Yes** | PostgreSQL connection URL |
+| `OPENLICENSD_DATABASE_HOST` | — | **Yes** | PostgreSQL host |
+| `OPENLICENSD_DATABASE_PORT` | `5432` | No | PostgreSQL port |
+| `OPENLICENSD_DATABASE_USER` | — | **Yes** | PostgreSQL user |
+| `OPENLICENSD_DATABASE_PASSWORD` | — | No | PostgreSQL password |
+| `OPENLICENSD_DATABASE_NAME` | — | **Yes** | PostgreSQL database name |
+| `OPENLICENSD_DATABASE_SSLMODE` | `require` | No | PostgreSQL `sslmode` |
+| `OPENLICENSD_DATABASE_OPTIONS` | — | No | Optional libpq keyword/value pairs (for example `connect_timeout=5 application_name=openlicensd`) |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL` | — | Yes on empty DB | Email for the first admin user |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_NAME` | `Administrator` | No | Display name for bootstrap admin |
 | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` | — | Yes on empty DB | Bcrypt hash for bootstrap admin password |
@@ -61,6 +67,8 @@ See [metrics.md](metrics.md) for the full metric catalog and scrape configuratio
 
 ### Database pool
 
+Connection settings above are assembled into a libpq keyword/value string internally. Pool tuning env vars apply after the connection is established.
+
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `OPENLICENSD_DATABASE_MAX_CONNS` | `0` | No | Maximum pool connections; `0` uses pgx default (`max(4, NumCPU)`) |
@@ -68,7 +76,7 @@ See [metrics.md](metrics.md) for the full metric catalog and scrape configuratio
 | `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` | `0` | No | Close idle connections after this many minutes; `0` uses pgx default (`30m`) |
 | `OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS` | `0` | No | PostgreSQL `statement_timeout` in seconds; `0` leaves the server default |
 
-The connection URL is parsed first (`pool_*` query parameters are supported). Non-zero env vars override URL pool settings. Effective pool limits appear in the `openlicensd_db_pool_*` Prometheus gauges — see [metrics.md](metrics.md).
+Non-zero pool env vars override pgx defaults. Effective pool limits appear in the `openlicensd_db_pool_*` Prometheus gauges — see [metrics.md](metrics.md).
 
 ### Rate limiting
 
@@ -160,6 +168,12 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 | `config.log.level` | `OPENLICENSD_LOG_LEVEL` |
 | `config.metrics.addr` | `OPENLICENSD_METRICS_ADDR` |
 | `config.metrics.enabled` | `OPENLICENSD_METRICS_ENABLED` |
+| `config.database.host` | `OPENLICENSD_DATABASE_HOST` |
+| `config.database.port` | `OPENLICENSD_DATABASE_PORT` |
+| `config.database.user` | `OPENLICENSD_DATABASE_USER` |
+| `config.database.name` | `OPENLICENSD_DATABASE_NAME` |
+| `config.database.sslmode` | `OPENLICENSD_DATABASE_SSLMODE` |
+| `config.database.options` | `OPENLICENSD_DATABASE_OPTIONS` |
 | `config.database.maxConns` | `OPENLICENSD_DATABASE_MAX_CONNS` |
 | `config.database.minConns` | `OPENLICENSD_DATABASE_MIN_CONNS` |
 | `config.database.maxConnIdleMinutes` | `OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES` |
@@ -197,7 +211,7 @@ The defaults use a local PostgreSQL instance started by `make dev-db`.
 
 | Helm value | Environment variable |
 |------------|---------------------|
-| `secret.data.databaseUrl` | `OPENLICENSD_DATABASE_URL` |
+| `secret.data.databasePassword` | `OPENLICENSD_DATABASE_PASSWORD` |
 | `secret.data.bootstrapAdminPasswordHash` | `OPENLICENSD_BOOTSTRAP_ADMIN_PASSWORD_HASH` |
 | `secret.data.oidcClientSecret` | `OPENLICENSD_OIDC_CLIENT_SECRET` |
 | `secret.data.harborAdminUsername` | `OPENLICENSD_HARBOR_ADMIN_USERNAME` |

@@ -63,10 +63,17 @@ type MetricsConfig struct {
 }
 
 type DatabaseConfig struct {
-	MaxConns                 int
-	MinConns                 int
-	MaxConnIdleMinutes       int
-	StatementTimeoutSeconds  int
+	Host                    string
+	Port                    int
+	User                    string
+	Password                string
+	Name                    string
+	SSLMode                 string
+	Options                 string
+	MaxConns                int
+	MinConns                int
+	MaxConnIdleMinutes      int
+	StatementTimeoutSeconds int
 }
 
 type Config struct {
@@ -93,15 +100,11 @@ type Config struct {
 func Load() (*Config, error) {
 	localLoginEnabled := getBoolEnv("OPENLICENSD_LOCAL_LOGIN_ENABLED", true)
 
+	database := loadDatabaseConfig()
+
 	cfg := &Config{
-		Addr:        getEnv("OPENLICENSD_ADDR", ":8080"),
-		DatabaseURL: os.Getenv("OPENLICENSD_DATABASE_URL"),
-		Database: DatabaseConfig{
-			MaxConns:                getIntEnv("OPENLICENSD_DATABASE_MAX_CONNS", 0),
-			MinConns:                getIntEnv("OPENLICENSD_DATABASE_MIN_CONNS", 0),
-			MaxConnIdleMinutes:      getIntEnv("OPENLICENSD_DATABASE_MAX_CONN_IDLE_MINUTES", 0),
-			StatementTimeoutSeconds: getIntEnv("OPENLICENSD_DATABASE_STATEMENT_TIMEOUT_SECONDS", 0),
-		},
+		Addr:     getEnv("OPENLICENSD_ADDR", ":8080"),
+		Database: database,
 		BootstrapAdmin: BootstrapAdminConfig{
 			Email:        os.Getenv("OPENLICENSD_BOOTSTRAP_ADMIN_EMAIL"),
 			Name:         getEnv("OPENLICENSD_BOOTSTRAP_ADMIN_NAME", "Administrator"),
@@ -160,9 +163,10 @@ func Load() (*Config, error) {
 		},
 	}
 
-	if cfg.DatabaseURL == "" {
-		return nil, fmt.Errorf("OPENLICENSD_DATABASE_URL is required")
+	if err := cfg.Database.validateConnection(); err != nil {
+		return nil, err
 	}
+	cfg.DatabaseURL = cfg.Database.ConnectionString()
 	if cfg.RequestTimeoutSeconds < 0 {
 		return nil, fmt.Errorf("OPENLICENSD_REQUEST_TIMEOUT_SECONDS must be 0 or greater")
 	}
@@ -252,6 +256,9 @@ func (o OIDCConfig) IsAdminEmail(email string) bool {
 }
 
 func (d DatabaseConfig) validate() error {
+	if err := d.validateConnection(); err != nil {
+		return err
+	}
 	if d.MaxConns < 0 {
 		return fmt.Errorf("OPENLICENSD_DATABASE_MAX_CONNS must be 0 or greater")
 	}

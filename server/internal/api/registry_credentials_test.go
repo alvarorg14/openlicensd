@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -17,10 +16,7 @@ import (
 )
 
 func TestRegistryCredentialsRouteDisabled(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	passwordHash, err := auth.HashPassword("test-password")
 	if err != nil {
@@ -69,10 +65,7 @@ func TestRegistryCredentialsRouteDisabled(t *testing.T) {
 }
 
 func TestRegistryCredentialsEnabled(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	harborServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {

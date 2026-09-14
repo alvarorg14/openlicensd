@@ -12,10 +12,27 @@ This runbook covers upgrade steps for Helm, Docker Compose, single-container, an
 |------------|----------------|
 | **Helm / Kubernetes** | `helm upgrade` with a pinned chart version; rolling pod replacement |
 | **Docker Compose stack** (`make stack-up`) | Pull a pinned image tag and recreate the app container |
-| **Single container** | Stop, replace the image, restart with the same `OPENLICENSD_DATABASE_URL` |
+| **Single container** | Stop, replace the image, restart with the same database connection env vars |
 | **Binary** | Replace the executable and restart the process |
 
 For HA, replica-count, and rate-limiting caveats during multi-replica deployments, see [scaling.md](scaling.md).
+
+## Upgrading to v0.9.0 — discrete database configuration
+
+OpenLicensd v0.9.0 removes `OPENLICENSD_DATABASE_URL`. Configure PostgreSQL with discrete variables instead:
+
+| Removed | Replacement |
+|---------|-------------|
+| `OPENLICENSD_DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require` | `OPENLICENSD_DATABASE_HOST=host`, `OPENLICENSD_DATABASE_PORT=5432`, `OPENLICENSD_DATABASE_USER=user`, `OPENLICENSD_DATABASE_PASSWORD=pass`, `OPENLICENSD_DATABASE_NAME=db`, `OPENLICENSD_DATABASE_SSLMODE=require` |
+| Helm `secret.data.databaseUrl` | `config.database.host` / `port` / `name` / `user` / `sslmode` / `options` plus `secret.data.databasePassword` |
+
+Before upgrading to v0.9.0:
+
+1. Map your existing URL into the discrete variables (or Helm values) using the table above.
+2. For local development, update `.env` from [`.env.example`](../.env.example).
+3. For Helm, update values and run `helm upgrade` with the new `config.database.*` keys — see [configuration.md](configuration.md).
+
+Go integration tests use `OPENLICENSD_TEST_DATABASE_URL` (URL format) — this variable is **not** read by the server binary.
 
 ## Before you upgrade
 
@@ -99,12 +116,17 @@ docker rm openlicensd
 docker run -d \
   --name openlicensd \
   -p 8080:8080 \
-  -e OPENLICENSD_DATABASE_URL="postgres://user:pass@host:5432/openlicensd?sslmode=require" \
+  -e OPENLICENSD_DATABASE_HOST=host \
+  -e OPENLICENSD_DATABASE_PORT=5432 \
+  -e OPENLICENSD_DATABASE_USER=user \
+  -e OPENLICENSD_DATABASE_PASSWORD=pass \
+  -e OPENLICENSD_DATABASE_NAME=openlicensd \
+  -e OPENLICENSD_DATABASE_SSLMODE=require \
   # ... same env vars as before ...
   ghcr.io/alvarorg14/openlicensd:X.Y.Z
 ```
 
-Use the same environment variables (especially `OPENLICENSD_DATABASE_URL`) as the previous container.
+Use the same environment variables (especially the discrete `OPENLICENSD_DATABASE_*` settings) as the previous container.
 
 ### Binary
 

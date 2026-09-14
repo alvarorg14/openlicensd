@@ -2,18 +2,15 @@ package store_test
 
 import (
 	"context"
-	"os"
 	"sync"
 	"testing"
 
 	"github.com/alvarorg14/openlicensd/server/internal/store"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 )
 
 func TestMigrateConcurrent(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := store.New(ctx, databaseURL)

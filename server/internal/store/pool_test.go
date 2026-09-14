@@ -1,7 +1,7 @@
 package store
 
 import (
-	"os"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"testing"
 )
 
@@ -52,10 +52,7 @@ func TestApplyPoolConfigStatementTimeout(t *testing.T) {
 }
 
 func TestNewWithPoolMaxConns(t *testing.T) {
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := t.Context()
 	st, err := NewWithPool(ctx, databaseURL, PoolConfig{MaxConns: 2})

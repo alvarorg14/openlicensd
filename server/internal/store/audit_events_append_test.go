@@ -2,7 +2,7 @@ package store
 
 import (
 	"context"
-	"os"
+	"github.com/alvarorg14/openlicensd/server/internal/config"
 	"testing"
 	"time"
 
@@ -12,10 +12,7 @@ import (
 func openIntegrationStore(t *testing.T) *Store {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	ctx := context.Background()
 	st, err := New(ctx, databaseURL)

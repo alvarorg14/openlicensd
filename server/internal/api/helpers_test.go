@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -31,10 +30,7 @@ type testEnv struct {
 func setupTestEnv(t *testing.T) testEnv {
 	t.Helper()
 
-	databaseURL := os.Getenv("OPENLICENSD_DATABASE_URL")
-	if databaseURL == "" {
-		t.Skip("OPENLICENSD_DATABASE_URL not set")
-	}
+	databaseURL := config.TestDatabaseURL(t)
 
 	passwordHash, err := auth.HashPassword("test-password")
 	if err != nil {
