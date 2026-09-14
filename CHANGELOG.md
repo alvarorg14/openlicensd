@@ -44,6 +44,8 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### Updated Dependencies
 
+- chore(deps): update dependency @iconify-json/lucide to v1.2.132 (#263)
+- fix(deps): update module golang.org/x/crypto to v0.57.0 (#251)
 - fix(deps): update module golang.org/x/time to v0.16.0 (#217)
 
 ### Documentation
@@ -58,6 +60,8 @@ Release notes are drafted by [Release Drafter](https://github.com/release-drafte
 
 ### CI
 
+- chore(deps): update dependency @redocly/cli to v2.53.0 (#265)
+- chore(deps): update github/codeql-action digest to b96794f (#252)
 - ci(ui): expand Playwright E2E beyond admin happy path (#278)
 - ci(server): add OpenAPI contract test to CI (#260)
 - chore(deps): update module golang.org/x/vuln to v1.8.0 (#250)
