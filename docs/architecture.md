@@ -127,6 +127,7 @@ erDiagram
 | `last_validated_at` | `TIMESTAMPTZ` | Last successful validation lookup |
 | `validation_count` | `BIGINT` | Successful validation count (`CHECK (validation_count >= 0)`) |
 | `max_activations` | `INTEGER` | Snapshotted activation limit; null = unlimited (`CHECK (max_activations IS NULL OR max_activations >= 1)`) |
+| `metadata` | `JSONB` | Optional structured data for future entitlements; not exposed via API yet |
 
 ### `license_machines` table
 
