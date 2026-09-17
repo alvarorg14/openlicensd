@@ -339,4 +339,4 @@ jobs:
       # Response-shape contract tests (handler vs spec) run in the Server go test job.
       - name: Lint OpenAPI spec
         # renovate: datasource=npm depName=@redocly/cli
-        run: npx @redocly/cli@2.53.2 lint docs/openapi.yaml --config docs/redocly.yaml
+        run: npx @redocly/cli@2.53.3 lint docs/openapi.yaml --config docs/redocly.yaml
