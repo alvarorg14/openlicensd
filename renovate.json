@@ -7,7 +7,7 @@
     "helpers:pinGitHubActionDigests"
   ],
   "schedule": ["before 6am on monday"],
-  "prConcurrentLimit": 5,
+  "prConcurrentLimit": 10,
   "packageRules": [
     {
       "description": "Stay on Go 1.26 until a coordinated minor upgrade",

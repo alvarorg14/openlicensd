@@ -351,7 +351,7 @@ Cosign is pinned in the release workflow; Renovate proposes updates. Verificatio
 
 ### Dependency updates (Renovate)
 
-[Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions (including digest bumps via `helpers:pinGitHubActionDigests`). Non-major updates are grouped per ecosystem (server Go modules, SDK Go modules, UI npm, docs npm, Docker base images, and CI dependencies) and opened on a weekly Monday schedule, with at most five PRs open at once. Major upgrades stay in separate PRs. npm updates wait three days after publish before they are eligible. The OpenAPI CI job pins `@redocly/cli` via a custom regex manager. Grouped and major pull requests still receive exactly one of `dependencies` or `ci` to satisfy the PR policy below.
+[Renovate](https://docs.renovatebot.com/) is configured in [`renovate.json`](renovate.json) to propose updates for Go modules, npm packages, Docker base images, and GitHub Actions (including digest bumps via `helpers:pinGitHubActionDigests`). Non-major updates are grouped per ecosystem (server Go modules, SDK Go modules, UI npm, docs npm, Docker base images, and CI dependencies) and opened on a weekly Monday schedule, with at most ten PRs open at once. Major upgrades stay in separate PRs. npm updates wait three days after publish before they are eligible. The OpenAPI CI job pins `@redocly/cli` via a custom regex manager. Grouped and major pull requests still receive exactly one of `dependencies` or `ci` to satisfy the PR policy below.
 
 ### PR Policy (`.github/workflows/pr-policy.yml`)
 
