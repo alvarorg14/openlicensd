@@ -6,6 +6,8 @@
     ":dependencyDashboard",
     "helpers:pinGitHubActionDigests"
   ],
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 10,
   "packageRules": [
     {
       "description": "Stay on Go 1.26 until a coordinated minor upgrade",
@@ -52,6 +54,57 @@
         "golang.org/x/vuln",
         "sigstore/cosign"
       ],
+      "labels": ["ci"]
+    },
+    {
+      "description": "Wait 3 days before npm updates so yanked releases are less likely to land",
+      "matchManagers": ["npm"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group non-major server Go module updates into one weekly PR",
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["server/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "server go modules",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Group non-major SDK Go module updates into one weekly PR",
+      "matchManagers": ["gomod"],
+      "matchFileNames": ["sdk/go/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "sdk go modules",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Group non-major UI npm updates into one weekly PR",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["ui/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "ui npm",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Group non-major docs npm updates into one weekly PR",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["docs/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "docs npm",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Group non-major Docker base image updates into one weekly PR",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "docker base images",
+      "labels": ["dependencies"]
+    },
+    {
+      "description": "Group non-major CI updates so Actions digests and pinned tools share one weekly PR",
+      "matchManagers": ["github-actions", "custom.regex"],
+      "matchUpdateTypes": ["digest", "patch", "minor"],
+      "groupName": "ci dependencies",
       "labels": ["ci"]
     }
   ],
