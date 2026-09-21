@@ -70,7 +70,7 @@ jobs:
         run: go test -p 1 -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           disable_search: true
           fail_ci_if_error: true
@@ -228,7 +228,7 @@ jobs:
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           # renovate: datasource=github-releases depName=goreleaser/goreleaser
-          version: v2.18.1
+          version: v2.18.2
           args: check
 
       - name: Set GoReleaser snapshot tag
@@ -241,13 +241,13 @@ jobs:
         uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
           # renovate: datasource=github-releases depName=anchore/syft
-          syft-version: v1.51.1
+          syft-version: v1.52.0
 
       - name: Run GoReleaser snapshot
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           # renovate: datasource=github-releases depName=goreleaser/goreleaser
-          version: v2.18.1
+          version: v2.18.2
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -339,4 +339,4 @@ jobs:
       # Response-shape contract tests (handler vs spec) run in the Server go test job.
       - name: Lint OpenAPI spec
         # renovate: datasource=npm depName=@redocly/cli
-        run: npx @redocly/cli@2.53.2 lint docs/openapi.yaml --config docs/redocly.yaml
+        run: npx @redocly/cli@2.53.3 lint docs/openapi.yaml --config docs/redocly.yaml
