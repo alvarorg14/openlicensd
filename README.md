@@ -282,7 +282,7 @@ See [docs/oidc-sso.md](docs/oidc-sso.md) for setup, configuration, and troublesh
 
 ## 💻 Local Development
 
-Requires Go 1.26+, Node.js 24+, and Docker (for local PostgreSQL).
+Requires Go 1.27+, Node.js 24+, and Docker (for local PostgreSQL).
 
 Run `make help` to list all available targets:
 

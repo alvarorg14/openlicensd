@@ -14,7 +14,7 @@ OpenLicensd publishes **Linux amd64 and arm64** server artifacts. GoReleaser ([`
 | GHCR container image | **linux/amd64**, **linux/arm64** |
 | Helm chart (OCI) | Runs wherever those images run (Linux nodes) |
 | `make build` / `go build` from source | Works on macOS and Windows for **local development**; those binaries are not published and are not a supported production path |
-| Go SDK ([docs/sdk/go.md](sdk/go.md)) | Any GOOS/GOARCH supported by Go 1.26+; not bound to the server OS matrix |
+| Go SDK ([docs/sdk/go.md](sdk/go.md)) | Any GOOS/GOARCH supported by Go 1.27+; not bound to the server OS matrix |
 
 PostgreSQL **16+** is required regardless of host OS.
 
@@ -317,7 +317,7 @@ docker run -d \
   ghcr.io/alvarorg14/openlicensd:X.Y.Z
 ```
 
-The production image is built from a multi-stage Dockerfile (Node 24 UI build → Go 1.26 compile → distroless non-root).
+The production image is built from a multi-stage Dockerfile (Node 24 UI build → Go 1.27 compile → distroless non-root).
 
 ## Binary
 
