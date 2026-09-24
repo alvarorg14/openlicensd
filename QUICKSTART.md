@@ -11,7 +11,7 @@ Choose one deployment path:
 | **Helm** | Kubernetes cluster, [Helm 3](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/), PostgreSQL 16+ |
 | **Docker Compose** | [Docker](https://docs.docker.com/get-docker/), [Docker Compose](https://docs.docker.com/compose/) |
 | **Docker** | [Docker](https://docs.docker.com/get-docker/), a PostgreSQL instance |
-| **Local dev** | Go 1.26+, Node.js 24+, Docker (for PostgreSQL) |
+| **Local dev** | Go 1.27+, Node.js 24+, Docker (for PostgreSQL) |
 
 Published server binaries and container images are **Linux amd64 and arm64** only. Helm and Docker paths inherit that platform scope. See [docs/deployment.md](docs/deployment.md#platforms).
 

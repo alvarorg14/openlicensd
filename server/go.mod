@@ -1,8 +1,8 @@
 module github.com/alvarorg14/openlicensd/server
 
-go 1.26.0
+go 1.27.0
 
-toolchain go1.26.6
+toolchain go1.27.1
 
 require (
 	github.com/coreos/go-oidc/v3 v3.21.0

@@ -21,7 +21,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `server/cmd/openlicensd/` (main entry), `server/internal/` (core logic)
 - **Module**: `github.com/alvarorg14/openlicensd/server`
-- **Go version**: 1.26+
+- **Go version**: 1.27+
 - **Key dependencies**: `go-chi/chi`, `golang-jwt/jwt`, `jackc/pgx`, `google/uuid`
 
 ### Frontend (Nuxt)
@@ -43,7 +43,7 @@ This document provides context and guidelines for AI coding assistants working o
 
 - **Location**: `sdk/go/`
 - **Module**: `github.com/alvarorg14/openlicensd/sdk/go`
-- **Go version**: 1.26+
+- **Go version**: 1.27+
 - **Dependencies**: stdlib only
 - **Scope**: public validation API (`/validate`, `/registry-credentials`, health probes)
 - **Release tags**: `sdk/go/vX.Y.Z` (independent from server tags)
@@ -239,7 +239,7 @@ make release       # Local GoReleaser release
 
 ### Prerequisites
 
-- Go 1.26+
+- Go 1.27+
 - Node.js 24+
 - Docker (for local PostgreSQL)
 - golangci-lint v2.12.2 (installed automatically by `make lint-server`)
@@ -291,7 +291,7 @@ Triggers on push/PR to `main` when `sdk/**` or the workflow file changes:
 
 | Job | Command |
 |-----|---------|
-| Go SDK | `make lint-sdk`, `go test` (with coverage upload to Codecov) (Go 1.26) |
+| Go SDK | `make lint-sdk`, `go test` (with coverage upload to Codecov) (Go 1.27) |
 
 ### Vulnerability scanning (`.github/workflows/vuln.yml`)
 
