@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenLicensd Issue"
+  short_description: "Plan and resolve an OpenLicensd GitHub issue"
+  default_prompt: "Use $openlicensd-issue to plan and resolve OpenLicensd issue #<number>."
