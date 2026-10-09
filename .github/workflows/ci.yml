@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24"
           cache: npm
@@ -148,7 +148,7 @@ jobs:
           cache-dependency-path: server/go.sum
 
       - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24"
           cache: npm
@@ -190,7 +190,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-report
           path: ui/playwright-report/
@@ -212,7 +212,7 @@ jobs:
           cache: true
 
       - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24"
           cache: npm
@@ -228,7 +228,7 @@ jobs:
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           # renovate: datasource=github-releases depName=goreleaser/goreleaser
-          version: v2.18.2
+          version: v2.18.3
           args: check
 
       - name: Set GoReleaser snapshot tag
@@ -241,13 +241,13 @@ jobs:
         uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
           # renovate: datasource=github-releases depName=anchore/syft
-          syft-version: v1.52.0
+          syft-version: v1.54.1
 
       - name: Run GoReleaser snapshot
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           # renovate: datasource=github-releases depName=goreleaser/goreleaser
-          version: v2.18.2
+          version: v2.18.3
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -329,7 +329,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24"
 
@@ -339,4 +339,4 @@ jobs:
       # Response-shape contract tests (handler vs spec) run in the Server go test job.
       - name: Lint OpenAPI spec
         # renovate: datasource=npm depName=@redocly/cli
-        run: npx @redocly/cli@2.53.3 lint docs/openapi.yaml --config docs/redocly.yaml
+        run: npx @redocly/cli@2.62.1 lint docs/openapi.yaml --config docs/redocly.yaml
