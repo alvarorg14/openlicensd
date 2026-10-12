@@ -47,7 +47,14 @@ categories:
     when:
       label: 'ci'
   - title: 'Other Changes 🛠️'
-change-template: '- $TITLE (#$NUMBER)'
+change-template: '- $TITLE ($NUMBERS)'
+group-changes:
+  - pattern: '/^(?<group>chore\(deps\): update ui npm)$/'
+    title-template: '$GROUP'
+  - pattern: '/^(?<group>chore\(deps\): update ci dependencies)$/'
+    title-template: '$GROUP'
+  - pattern: '/^(?<group>fix\(deps\): update server go modules)$/'
+    title-template: '$GROUP'
 change-title-escapes: '\<*_&'
 
 template: |
