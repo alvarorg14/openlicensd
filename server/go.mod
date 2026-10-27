@@ -2,7 +2,7 @@ module github.com/alvarorg14/openlicensd/server
 
 go 1.27.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 require (
 	github.com/coreos/go-oidc/v3 v3.21.0
@@ -10,7 +10,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/pb33f/libopenapi v0.41.6
+	github.com/pb33f/libopenapi v0.41.7
 	github.com/pb33f/libopenapi-validator v0.16.1
 	github.com/prometheus/client_golang v1.25.0
 	golang.org/x/crypto v0.58.0
