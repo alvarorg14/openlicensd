@@ -44,6 +44,8 @@ server/internal/static/dist/*
 # Test / coverage
 coverage.out
 *.test
+docs/test-results/
+docs/playwright-report/
 ui/test-results/
 ui/playwright-report/
 ui/blob-report/
