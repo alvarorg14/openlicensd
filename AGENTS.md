@@ -34,7 +34,7 @@ This document provides context and guidelines for AI coding assistants working o
 ### Documentation site (VitePress)
 
 - **Location**: `docs/` (content) and `docs/.vitepress/` (site config)
-- **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference and `vitepress-plugin-mermaid` for Mermaid diagrams
+- **Framework**: VitePress 1.x with `vitepress-openapi` for the embedded OpenAPI reference and `vitepress-mermaid-renderer` for Mermaid diagrams
 - **Published at**: `https://alvarorg14.github.io/openlicensd/` (GitHub Pages via `.github/workflows/docs.yml`)
 - **Content**: `docs/*.md` served in place; `README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `COMPATIBILITY.md`, and `SUPPORT.md` included via VitePress file includes (no duplication)
 - **Build**: `make docs-build` (or `cd docs && npm run docs:build`); `make docs-dev` for local preview
@@ -219,6 +219,7 @@ make dev-server    # Run Go API server (loads .env)
 make dev-ui        # Run Nuxt dev server
 make docs-dev      # Run VitePress docs dev server
 make docs-build    # Build VitePress docs site
+cd docs && npm run test:docs  # Browser smoke test after docs-build
 make stack-up      # Start Postgres + openlicensd from GHCR (docker-compose.stack.yml)
 make stack-down    # Stop full stack (ARGS=-v to drop its data)
 make stack-logs    # Tail full stack logs
@@ -282,7 +283,7 @@ Triggers on push/PR to `main` when `docs/**`, root guides, or the workflow file 
 
 | Job | Command |
 |-----|---------|
-| Build | `npm ci`, `npm run docs:build` in `docs/` |
+| Build | `npm ci`, `npm run docs:build`, Playwright Chromium diagram smoke test in `docs/` |
 | Deploy | GitHub Pages (push to `main` only) |
 
 ### SDK CI (`.github/workflows/sdk-ci.yml`)

@@ -1,9 +1,8 @@
 import yaml from '@rollup/plugin-yaml'
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import { repoLinksPlugin } from './plugins/repoLinks'
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   base: '/openlicensd/',
   title: 'OpenLicensd',
   description: 'Open source license server for creating and validating license keys',
@@ -118,4 +117,4 @@ export default withMermaid(defineConfig({
   sitemap: {
     hostname: 'https://alvarorg14.github.io',
   },
-}))
+})
