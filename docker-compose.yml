@@ -2,7 +2,7 @@ name: openlicensd
 
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:19-alpine
     ports:
       - "5432:5432"
     environment:
